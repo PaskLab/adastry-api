@@ -60,18 +60,28 @@ export class SyncService {
       }
 
       for (let i = 0; i < history.length; i++) {
-        let epoch = new Epoch();
+        const epoch = new Epoch();
         epoch.epoch = history[i].epoch;
         epoch.startTime = history[i].startTime;
         epoch.endTime = history[i].endTime;
         epochRepository.save(epoch);
+        console.log(
+          `[${new Date().toUTCString()}] Epoch Sync - Saving Epoch ${
+            epoch.epoch
+          }`,
+        );
       }
 
-      let epoch = new Epoch();
+      const epoch = new Epoch();
       epoch.epoch = lastEpoch.epoch;
       epoch.startTime = lastEpoch.startTime;
       epoch.endTime = lastEpoch.endTime;
       lastStoredEpoch = await epochRepository.save(epoch);
+      console.log(
+        `[${new Date().toUTCString()}] Epoch Sync - Saving Epoch ${
+          epoch.epoch
+        }`,
+      );
     }
 
     return lastStoredEpoch ? lastStoredEpoch : null;

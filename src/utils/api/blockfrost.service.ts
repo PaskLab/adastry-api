@@ -42,8 +42,8 @@ export class BlockfrostService {
       ? {
           poolId: (await registration).pool_id,
           hex: (await registration).hex,
-          name: (await registration).name,
-          ticker: (await registration).ticker,
+          name: (await metadata).name,
+          ticker: (await metadata).ticker,
           blocksMinted: (await registration).blocks_minted,
           liveStake: (await registration).live_stake,
           liveSaturation: (await registration).live_saturation,
@@ -67,11 +67,11 @@ export class BlockfrostService {
       page++;
     } while (result && result.length === PROVIDER_LIMIT);
 
-    let infos: PoolUpdateType[] = [];
+    const infos: PoolUpdateType[] = [];
 
     for (let i = 0; i < updates.length; i++) {
       if (updates[i].action === 'registered') {
-        let info = await this.getRegistration(
+        const info = await this.getRegistration(
           updates[i].tx_hash,
           updates[i].cert_index,
         );
@@ -80,7 +80,7 @@ export class BlockfrostService {
           infos.push(info);
         }
       } else {
-        let info = await this.getRetirement(
+        const info = await this.getRetirement(
           updates[i].tx_hash,
           updates[i].cert_index,
         );

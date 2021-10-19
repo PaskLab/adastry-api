@@ -3,8 +3,6 @@ import {
   Column,
   ManyToOne,
   OneToMany,
-  OneToOne,
-  JoinColumn,
   PrimaryGeneratedColumn,
   Index,
 } from 'typeorm';
@@ -28,8 +26,7 @@ export class PoolUpdate {
   @OneToMany(() => PoolOwner, (poolOwner) => poolOwner.own, { cascade: true })
   owners!: PoolOwner[];
 
-  @OneToOne(() => Account, { cascade: true })
-  @JoinColumn()
+  @ManyToOne(() => Account, { cascade: true })
   rewardAccount!: Account;
 
   @Column({ type: 'float', default: null, nullable: true })

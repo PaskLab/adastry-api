@@ -1,5 +1,5 @@
 export class CreateAccountDto {
-  stakeAddress: string = '';
-  name: string = '';
+  stakeAddress = '';
+  name = '';
   currency: string | null = null;
 }

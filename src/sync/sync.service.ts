@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { Account } from '../account/entities/account.entity';
 import { AccountRepository } from '../account/repositories/account.repository';
-import { Pool } from '../pool/entities/pool.entity';
 import { PoolRepository } from '../pool/repositories/pool.repository';
 import { SyncService as AccountSyncService } from '../account/sync.service';
 import { SyncService as PoolSyncService } from '../pool/sync.service';
@@ -34,8 +32,8 @@ export class SyncService {
 
   private async syncPools(lastEpoch: Epoch): Promise<void> {
     const pools = await this.em.getCustomRepository(PoolRepository).find();
-    for (let i = 0; i < pools.length; i++) {
-      await this.poolSyncService.syncPool(pools[i], lastEpoch);
+    for (const pool of pools) {
+      await this.poolSyncService.syncPool(pool, lastEpoch);
     }
   }
 
@@ -43,8 +41,8 @@ export class SyncService {
     const accounts = await this.em
       .getCustomRepository(AccountRepository)
       .find();
-    for (let i = 0; i < accounts.length; i++) {
-      await this.accountSyncService.syncAccount(accounts[i], lastEpoch);
+    for (const account of accounts) {
+      await this.accountSyncService.syncAccount(account, lastEpoch);
     }
   }
 }

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EpochService } from './epoch.service';
 import { CreateEpochDto } from './dto/create-epoch.dto';
 import { UpdateEpochDto } from './dto/update-epoch.dto';

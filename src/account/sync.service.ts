@@ -32,28 +32,40 @@ export class SyncService {
     const accountRepository = this.em.getCustomRepository(AccountRepository);
     const currencyRepository = this.em.getCustomRepository(CurrencyRepository);
 
-    accounts.forEach(async (account) => {
-      let accountEntity = await accountRepository.findOne(account.stakeAddress);
+    for (const account of accounts) {
+      const accountEntity = await accountRepository.findOne(
+        account.stakeAddress,
+      );
       if (!accountEntity) {
-        let newAccount = new Account();
+        const newAccount = new Account();
 
         newAccount.stakeAddress = account.stakeAddress;
         newAccount.name = account.name;
         if (account.currency) {
-          let currency = await currencyRepository.findOne(account.currency);
+          const currency = await currencyRepository.findOne(account.currency);
           newAccount.currency = currency ? currency : null;
         }
 
         accountRepository.save(newAccount);
+        console.log(
+          `[${new Date().toUTCString()}] Account Init - Creating account ${
+            newAccount.stakeAddress
+          }`,
+        );
       } else {
         accountEntity.name = account.name;
         if (account.currency) {
-          let currency = await currencyRepository.findOne(account.currency);
+          const currency = await currencyRepository.findOne(account.currency);
           accountEntity.currency = currency ? currency : null;
         }
         await accountRepository.save(accountEntity);
+        console.log(
+          `[${new Date().toUTCString()}] Account Init - Updating account ${
+            accountEntity.stakeAddress
+          }`,
+        );
       }
-    });
+    }
   }
 
   async syncAccount(account: Account, lastEpoch: Epoch): Promise<void> {
@@ -63,13 +75,13 @@ export class SyncService {
 
   async syncInfo(account: Account, lastEpoch: Epoch): Promise<void> {
     if (account.epoch !== lastEpoch) {
-      let accountUpdate = await this.source.getAccountInfo(
+      const accountUpdate = await this.source.getAccountInfo(
         account.stakeAddress,
       );
 
       if (!accountUpdate) {
         console.log(
-          `ERROR::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress})`,
+          `ERROR::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress}) returned ${accountUpdate}.`,
         );
         return;
       }
@@ -96,6 +108,11 @@ export class SyncService {
       account.loyalty = account.pool?.isMember ? account.loyalty + 1 : 0;
 
       this.em.getCustomRepository(AccountRepository).save(account);
+      console.log(
+        `[${new Date().toUTCString()}] Account Sync - Updating account ${
+          account.stakeAddress
+        }`,
+      );
     }
   }
 
@@ -106,14 +123,6 @@ export class SyncService {
     const lastStoredEpoch = await accountHistoryRepository.findLastEpoch(
       account.stakeAddress,
     );
-
-    if (!lastStoredEpoch) {
-      console.log(
-        `ERROR::AccountSync()->syncHistory()->findLastEpoch() 
-        for epoch: ${lastEpoch.epoch} and account: ${account.stakeAddress}`,
-      );
-      return;
-    }
 
     const epochToSync = lastStoredEpoch
       ? lastEpoch.epoch - lastStoredEpoch.epoch.epoch
@@ -126,12 +135,12 @@ export class SyncService {
     for (let i = pages; i >= 1; i--) {
       const limit =
         i === pages ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
-      let fetchUpstreamHistory = this.source.getAccountHistory(
+      const fetchUpstreamHistory = this.source.getAccountHistory(
         account.stakeAddress,
         i,
         this.PROVIDER_LIMIT,
       );
-      let fetchUpstreamRewardsHistory = this.source.getAccountRewardsHistory(
+      const fetchUpstreamRewardsHistory = this.source.getAccountRewardsHistory(
         account.stakeAddress,
         i,
         this.PROVIDER_LIMIT,
@@ -141,7 +150,7 @@ export class SyncService {
 
       if (!upstreamHistory) {
         console.log(
-          `ERROR::AccountSync()->syncHistory()->source.getAccountHistory()`,
+          `ERROR::AccountSync()->syncHistory()->this.source.getAccountHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamHistory}.`,
         );
         return;
       }
@@ -150,7 +159,7 @@ export class SyncService {
 
       if (!upstreamRewardsHistory) {
         console.log(
-          `ERROR::AccountSync()->syncHistory()->source.getAccountRewardsHistory()`,
+          `ERROR::AccountSync()->syncHistory()->this.source.getAccountRewardsHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamRewardsHistory}`,
         );
         return;
       }
@@ -189,7 +198,7 @@ export class SyncService {
         pool.poolId = history[i].poolId;
       }
 
-      let newHistory = new AccountHistory();
+      const newHistory = new AccountHistory();
 
       newHistory.account = account;
       newHistory.epoch = epoch;
@@ -198,6 +207,11 @@ export class SyncService {
       newHistory.pool = pool;
 
       accountHistoryRepository.save(newHistory);
+      console.log(
+        `[${new Date().toUTCString()}] Account History Sync - Creating Epoch ${
+          newHistory.epoch.epoch
+        } history record for account ${account.stakeAddress}`,
+      );
     }
   }
 }

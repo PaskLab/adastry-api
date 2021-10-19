@@ -7,7 +7,7 @@ export class PoolUpdateRepository extends Repository<PoolUpdate> {
     poolId: string,
     untilEpoch?: number,
   ): Promise<PoolUpdate | undefined> {
-    let query = this.createQueryBuilder('update')
+    const query = this.createQueryBuilder('update')
       .innerJoin('update.pool', 'pool')
       .innerJoin('update.epoch', 'epoch')
       .where('pool.poolId = :poolId')

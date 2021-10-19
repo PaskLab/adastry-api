@@ -2,8 +2,6 @@ import {
   Entity,
   Column,
   ManyToOne,
-  OneToOne,
-  JoinColumn,
   PrimaryGeneratedColumn,
   Index,
 } from 'typeorm';
@@ -35,7 +33,6 @@ export class PoolHistory {
   @Column({ default: 0 })
   activeStake!: number;
 
-  @OneToOne(() => PoolUpdate)
-  @JoinColumn()
+  @ManyToOne(() => PoolUpdate)
   registration!: PoolUpdate;
 }

@@ -42,6 +42,11 @@ export class SyncService {
         poolEntity.isMember = true;
 
         poolRepository.save(poolEntity);
+        console.log(
+          `[${new Date().toUTCString()}] Pool Init - Creating Pool ${
+            poolEntity.poolId
+          }`,
+        );
       }
     });
   }
@@ -53,7 +58,7 @@ export class SyncService {
   }
 
   async syncPoolInfo(pool: Pool, lastEpoch: Epoch): Promise<void> {
-    let poolUpdate = await this.source.getPoolInfo(pool.poolId);
+    const poolUpdate = await this.source.getPoolInfo(pool.poolId);
 
     if (!poolUpdate) {
       console.log(
@@ -86,6 +91,11 @@ export class SyncService {
       );
 
       this.em.getCustomRepository(PoolRepository).save(pool);
+      console.log(
+        `[${new Date().toUTCString()}] Pool Sync - Updating Pool ${
+          pool.poolId
+        }`,
+      );
     }
   }
 
@@ -118,7 +128,7 @@ export class SyncService {
       if (poolUpdates[i].epoch > lastStoredEpoch) {
         const poolUpdate = poolUpdates[i];
 
-        let epoch = poolUpdate.epoch
+        const epoch = poolUpdate.epoch
           ? await epochRepository.findOne(poolUpdate.epoch)
           : null;
 
@@ -129,7 +139,7 @@ export class SyncService {
           return;
         }
 
-        let newUpdate = new PoolUpdate();
+        const newUpdate = new PoolUpdate();
         newUpdate.pool = pool;
         newUpdate.epoch = epoch;
         newUpdate.active = poolUpdate.active;
@@ -164,7 +174,7 @@ export class SyncService {
               owner.stakeAddress = updateOwner;
             }
 
-            let bindRecord = new PoolOwner();
+            const bindRecord = new PoolOwner();
             bindRecord.own = newUpdate;
             bindRecord.account = owner;
 
@@ -172,8 +182,13 @@ export class SyncService {
           }
         }
 
-        this.em.transaction(async (em) => {
-          em.save(newUpdate);
+        await this.em.transaction(async (em) => {
+          await em.save(newUpdate);
+          console.log(
+            `[${new Date().toUTCString()}] Pool Update Sync - Adding new epoch ${
+              newUpdate.epoch.epoch
+            } registration for Pool ${newUpdate.pool.poolId}`,
+          );
         });
       }
     }
@@ -187,14 +202,7 @@ export class SyncService {
       pool.poolId,
     );
 
-    if (!lastStoredEpoch) {
-      console.log(
-        `ERROR::PoolSync()->syncPoolHistory()->this.poolHistoryRepository.findLastEpoch(${pool.poolId}) returned ${lastStoredEpoch}`,
-      );
-      return;
-    }
-
-    const epochToSync = lastStoredEpoch.epoch
+    const epochToSync = lastStoredEpoch
       ? lastEpoch.epoch - lastStoredEpoch.epoch.epoch
       : lastEpoch.epoch - 207;
     const pages = Math.ceil(epochToSync / this.PROVIDER_LIMIT);
@@ -251,7 +259,7 @@ export class SyncService {
         continue;
       }
 
-      let newHistory = new PoolHistory();
+      const newHistory = new PoolHistory();
       newHistory.epoch = epoch;
       newHistory.pool = pool;
       newHistory.rewards = history[i].rewards;
@@ -261,6 +269,11 @@ export class SyncService {
       newHistory.registration = registration;
 
       poolHistoryRepository.save(newHistory);
+      console.log(
+        `[${new Date().toUTCString()}] Pool Update Sync - Creating Epoch ${
+          newHistory.epoch.epoch
+        } history record for Pool ${newHistory.pool.poolId}`,
+      );
     }
   }
 }

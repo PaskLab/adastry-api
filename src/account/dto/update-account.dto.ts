@@ -1,6 +1,6 @@
 export class UpdateAccountDto {
-  stakeAddress: string = '';
-  name: string = '';
+  stakeAddress = '';
+  name = '';
   currency?: null = null;
   rewardsSum?: number;
   loyalty?: number;
