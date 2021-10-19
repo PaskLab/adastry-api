@@ -1,0 +1,23 @@
+{
+  "provider": {
+    "url": "https://cardano-mainnet.blockfrost.io/api/v0",
+    "limit": 100
+  },
+  "pools": [
+    {
+      "name": "BERRY",
+      "id": "pool19f6guwy97mmnxg9dz65rxyj8hq07qxud886hamyu4fgfz7dj9gl"
+    }
+  ],
+  "accounts": [{
+    "name": "Alice",
+    "stakeAddress": "stake1u8qmz8r5ycz96yd3gcq9m7kwzfr9yhekc6kwhxup6clx23cwv63g2",
+    "currency": "EUR"
+  },
+    {
+      "name": "Bob",
+      "stakeAddress": "stake1ux9r7qjwtczc6g8qvfd2p4fntk30ffemghcwa8h7qm8vacsers3g8",
+      "currency": "CAD"
+    }
+  ]
+}
