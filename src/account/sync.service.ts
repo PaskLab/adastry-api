@@ -105,8 +105,6 @@ export class SyncService {
         account.pool = pool;
       }
 
-      account.loyalty = account.pool?.isMember ? account.loyalty + 1 : 0;
-
       this.em.getCustomRepository(AccountRepository).save(account);
       console.log(
         `[${new Date().toUTCString()}] Account Sync - Updating account ${
@@ -205,6 +203,9 @@ export class SyncService {
       newHistory.balance = history[i].balance;
       newHistory.rewards = rh ? rh.rewards : 0;
       newHistory.pool = pool;
+
+      // Tracking user loyalty to configured pools
+      account.loyalty = account.pool?.isMember ? account.loyalty + 1 : 0;
 
       accountHistoryRepository.save(newHistory);
       console.log(

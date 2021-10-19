@@ -17,6 +17,7 @@ export class AccountHistory {
   id!: number;
 
   @ManyToOne(() => Account, (account) => account.history, {
+    cascade: true,
     onDelete: 'CASCADE',
   })
   account!: Account;
