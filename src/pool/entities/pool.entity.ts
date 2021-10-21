@@ -1,11 +1,12 @@
 import {
   Entity,
   Column,
-  PrimaryColumn,
   ManyToOne,
   OneToMany,
   OneToOne,
   JoinColumn,
+  Index,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Epoch } from '../../epoch/entities/epoch.entity';
 import { Account } from '../../account/entities/account.entity';
@@ -14,7 +15,11 @@ import { PoolUpdate } from './pool-update.entity';
 
 @Entity()
 export class Pool {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column()
+  @Index({ unique: true })
   poolId!: string;
 
   @Column({ default: '' })

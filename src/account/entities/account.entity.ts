@@ -1,9 +1,10 @@
 import {
   Entity,
   Column,
-  PrimaryColumn,
   OneToMany,
   ManyToOne,
+  PrimaryGeneratedColumn,
+  Index,
 } from 'typeorm';
 import { AccountHistory } from './account-history.entity';
 import { Pool } from '../../pool/entities/pool.entity';
@@ -12,7 +13,11 @@ import { Currency } from '../../spot/entities/currency.entity';
 
 @Entity()
 export class Account {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column()
+  @Index({ unique: true })
   stakeAddress!: string;
 
   @Column({ default: '' })

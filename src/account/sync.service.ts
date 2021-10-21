@@ -33,16 +33,18 @@ export class SyncService {
     const currencyRepository = this.em.getCustomRepository(CurrencyRepository);
 
     for (const account of accounts) {
-      const accountEntity = await accountRepository.findOne(
-        account.stakeAddress,
-      );
+      const accountEntity = await accountRepository.findOne({
+        stakeAddress: account.stakeAddress,
+      });
       if (!accountEntity) {
         const newAccount = new Account();
 
         newAccount.stakeAddress = account.stakeAddress;
         newAccount.name = account.name;
         if (account.currency) {
-          const currency = await currencyRepository.findOne(account.currency);
+          const currency = await currencyRepository.findOne({
+            name: account.currency,
+          });
           newAccount.currency = currency ? currency : null;
         }
 
@@ -55,7 +57,9 @@ export class SyncService {
       } else {
         accountEntity.name = account.name;
         if (account.currency) {
-          const currency = await currencyRepository.findOne(account.currency);
+          const currency = await currencyRepository.findOne({
+            name: account.currency,
+          });
           accountEntity.currency = currency ? currency : null;
         }
         await accountRepository.save(accountEntity);
@@ -93,7 +97,7 @@ export class SyncService {
         let pool = accountUpdate.poolId
           ? await this.em
               .getCustomRepository(PoolRepository)
-              .findOne(accountUpdate.poolId)
+              .findOne({ poolId: accountUpdate.poolId })
           : null;
 
         if (pool === undefined) {
@@ -178,10 +182,10 @@ export class SyncService {
     for (let i = 0; i < history.length; i++) {
       const rh = rewardsHistory.find((rh) => rh.epoch === history[i].epoch);
       const epoch = history[i].epoch
-        ? await epochRepository.findOne(history[i].epoch)
+        ? await epochRepository.findOne({ epoch: history[i].epoch })
         : null;
       let pool = history[i].poolId
-        ? await poolRepository.findOne(history[i].poolId)
+        ? await poolRepository.findOne({ poolId: history[i].poolId })
         : null;
 
       if (!epoch) {

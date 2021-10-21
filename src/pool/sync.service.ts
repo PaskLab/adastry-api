@@ -34,7 +34,7 @@ export class SyncService {
     const poolRepository = this.em.getCustomRepository(PoolRepository);
 
     pools.forEach(async (pool) => {
-      let poolEntity = await poolRepository.findOne(pool.id);
+      let poolEntity = await poolRepository.findOne({ poolId: pool.id });
       if (!poolEntity) {
         poolEntity = new Pool();
         poolEntity.poolId = pool.id;
@@ -129,7 +129,7 @@ export class SyncService {
         const poolUpdate = poolUpdates[i];
 
         const epoch = poolUpdate.epoch
-          ? await epochRepository.findOne(poolUpdate.epoch)
+          ? await epochRepository.findOne({ epoch: poolUpdate.epoch })
           : null;
 
         if (!epoch) {
@@ -152,7 +152,9 @@ export class SyncService {
         // Add or create reward account
         if (poolUpdate.rewardAccount) {
           let rewardAccount = poolUpdate.rewardAccount
-            ? await accountRepository.findOne(poolUpdate.rewardAccount)
+            ? await accountRepository.findOne({
+                stakeAddress: poolUpdate.rewardAccount,
+              })
             : null;
 
           if (!rewardAccount) {
@@ -167,7 +169,9 @@ export class SyncService {
         if (poolUpdate.owners) {
           for (let j = 0; j < poolUpdate.owners.length; j++) {
             const updateOwner = poolUpdate.owners[j];
-            let owner = await accountRepository.findOne(updateOwner);
+            let owner = await accountRepository.findOne({
+              stakeAddress: updateOwner,
+            });
 
             if (!owner) {
               owner = new Account();
@@ -237,7 +241,7 @@ export class SyncService {
 
     for (let i = 0; i < history.length; i++) {
       const epoch = history[i].epoch
-        ? await epochRepository.findOne(history[i].epoch)
+        ? await epochRepository.findOne({ epoch: history[i].epoch })
         : null;
 
       if (!epoch) {
