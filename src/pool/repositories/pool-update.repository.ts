@@ -8,8 +8,8 @@ export class PoolUpdateRepository extends Repository<PoolUpdate> {
     untilEpoch?: number,
   ): Promise<PoolUpdate | undefined> {
     const query = this.createQueryBuilder('update')
-      .innerJoin('update.pool', 'pool')
-      .innerJoin('update.epoch', 'epoch')
+      .innerJoinAndSelect('update.pool', 'pool')
+      .innerJoinAndSelect('update.epoch', 'epoch')
       .where('pool.poolId = :poolId')
       .orderBy('epoch.epoch', 'DESC')
       .limit(1)

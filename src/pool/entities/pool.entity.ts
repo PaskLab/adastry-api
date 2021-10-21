@@ -34,13 +34,13 @@ export class Pool {
 
   @OneToOne(() => PoolUpdate)
   @JoinColumn()
-  registration!: PoolUpdate;
+  registration!: PoolUpdate | null;
 
   @Column({ default: false })
   isMember!: boolean;
 
   @ManyToOne(() => Epoch)
-  epoch!: Epoch;
+  epoch!: Epoch | null;
 
   @OneToMany(() => Account, (account) => account.pool)
   accounts!: Account[];

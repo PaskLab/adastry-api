@@ -7,8 +7,8 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
     stakeAddress: string,
   ): Promise<AccountHistory | undefined> {
     return this.createQueryBuilder('history')
-      .innerJoin('history.account', 'account')
-      .innerJoin('history.epoch', 'epoch')
+      .innerJoinAndSelect('history.account', 'account')
+      .innerJoinAndSelect('history.epoch', 'epoch')
       .where('account.stakeAddress = :stakeAddress')
       .orderBy('epoch.epoch', 'DESC')
       .limit(1)

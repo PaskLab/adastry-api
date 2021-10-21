@@ -31,7 +31,7 @@ export class SyncService {
   }
 
   private async syncPools(lastEpoch: Epoch): Promise<void> {
-    const pools = await this.em.getCustomRepository(PoolRepository).find();
+    const pools = await this.em.getCustomRepository(PoolRepository).findAll();
     for (const pool of pools) {
       await this.poolSyncService.syncPool(pool, lastEpoch);
     }
@@ -40,7 +40,7 @@ export class SyncService {
   private async syncAccounts(lastEpoch: Epoch): Promise<void> {
     const accounts = await this.em
       .getCustomRepository(AccountRepository)
-      .find();
+      .findAll();
     for (const account of accounts) {
       await this.accountSyncService.syncAccount(account, lastEpoch);
     }
