@@ -14,6 +14,7 @@ import { SyncModule } from './sync/sync.module';
 import { ApiModule } from './utils/api/api.module';
 import { ConfigModule } from '@nestjs/config';
 import { PoolOwner } from './pool/entities/pool-owner.entity';
+import { Rate } from './spot/entities/rate.entity';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PoolOwner } from './pool/entities/pool-owner.entity';
         PoolOwner,
         Currency,
         Spot,
+        Rate,
       ],
       synchronize: true,
     }),

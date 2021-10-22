@@ -2,11 +2,14 @@ export type SyncConfigType = {
   provider: SyncConfigProvider;
   pools: SyncConfigPools;
   accounts: SyncConfigAccounts;
+  currencies: SyncConfigCurrencies;
 };
 
 export type SyncConfigProvider = {
-  url: string;
-  limit: number;
+  [key: string]: {
+    url: string;
+    limit: number;
+  };
 };
 
 export type SyncConfigPools = {
@@ -18,4 +21,9 @@ export type SyncConfigAccounts = {
   name: string;
   stakeAddress: string;
   currency: string;
+}[];
+
+export type SyncConfigCurrencies = {
+  code: string;
+  name: string;
 }[];

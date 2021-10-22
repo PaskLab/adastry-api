@@ -6,16 +6,20 @@ import {
   Index,
 } from 'typeorm';
 import { Epoch } from '../../epoch/entities/epoch.entity';
+import { Currency } from './currency.entity';
 
 @Entity()
-export class Spot {
+@Index(['epoch', 'currency'], { unique: true })
+export class Rate {
   @PrimaryGeneratedColumn()
   id!: number;
 
   @ManyToOne(() => Epoch, { onDelete: 'CASCADE' })
-  @Index({ unique: true })
   epoch!: Epoch;
 
-  @Column({ type: 'float', comment: 'USD Spot Price' })
-  price!: number;
+  @ManyToOne(() => Currency, { onDelete: 'CASCADE' })
+  currency!: Currency;
+
+  @Column({ type: 'float', comment: 'Rate against USD' })
+  rate!: number;
 }
