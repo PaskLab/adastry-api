@@ -5,7 +5,10 @@
       "limit": 100
     },
     "fixerio": {
-      "url": "http://data.fixer.io/api/"
+      "url": "http://data.fixer.io/api"
+    },
+    "coingecko": {
+      "url": "https://api.coingecko.com/api/v3"
     }
   },
   "pools": [

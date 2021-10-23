@@ -9,7 +9,7 @@ import type { EpochType } from '../utils/api/types/epoch.type';
 
 @Injectable()
 export class SyncService {
-  private readonly PROVIDER_LIMIT = config.provider.limit;
+  private readonly PROVIDER_LIMIT = config.provider.blockfrost.limit;
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,

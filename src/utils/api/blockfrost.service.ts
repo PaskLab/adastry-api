@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
 import config from '../../../sync-config.json';
 import { Injectable } from '@nestjs/common';
+import { request as apiRequest } from './api.helper';
 import type { AccountInfoType } from './types/account-info.type';
 import type { AccountHistoryType } from './types/account-history.type';
 import type { AccountRewardsHistoryType } from './types/account-rewards-history.type';
@@ -244,23 +244,14 @@ export class BlockfrostService {
     headers?: any,
     body?: any,
   ): Promise<any | null> {
-    return await fetch(PROVIDER_URL + endpoint, {
-      headers: {
+    return await apiRequest(
+      PROVIDER_URL,
+      endpoint,
+      {
         project_id: process.env.BLOCKFROST_API_KEY,
         ...headers,
-        'User-Agent': 'rewards-tracker',
       },
-      method: body ? 'POST' : 'GET',
       body,
-    })
-      .then((res) => {
-        if (res.ok) {
-          return res.json();
-        } else {
-          console.log(res.status, res.url, res.statusText);
-          return null;
-        }
-      })
-      .catch(console.log);
+    );
   }
 }

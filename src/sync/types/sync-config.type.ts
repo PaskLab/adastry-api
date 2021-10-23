@@ -1,29 +1,29 @@
 export type SyncConfigType = {
-  provider: SyncConfigProvider;
-  pools: SyncConfigPools;
-  accounts: SyncConfigAccounts;
-  currencies: SyncConfigCurrencies;
+  provider: SyncConfigProviderType;
+  pools: SyncConfigPoolsType;
+  accounts: SyncConfigAccountsType;
+  currencies: SyncConfigCurrenciesType;
 };
 
-export type SyncConfigProvider = {
+export type SyncConfigProviderType = {
   [key: string]: {
     url: string;
-    limit: number;
+    limit?: number;
   };
 };
 
-export type SyncConfigPools = {
+export type SyncConfigPoolsType = {
   name: string;
   id: string;
 }[];
 
-export type SyncConfigAccounts = {
+export type SyncConfigAccountsType = {
   name: string;
   stakeAddress: string;
   currency: string;
 }[];
 
-export type SyncConfigCurrencies = {
+export type SyncConfigCurrenciesType = {
   code: string;
   name: string;
 }[];

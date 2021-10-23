@@ -14,23 +14,21 @@ import { PoolHistoryRepository } from './repositories/pool-history.repository';
 import { PoolUpdateRepository } from './repositories/pool-update.repository';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { AccountRepository } from '../account/repositories/account.repository';
-import type { SyncConfigPools } from '../sync/types/sync-config.type';
+import type { SyncConfigPoolsType } from '../sync/types/sync-config.type';
 import type { PoolHistoryType } from '../utils/api/types/pool-history.type';
 
 @Injectable()
 export class SyncService {
-  private readonly PROVIDER_LIMIT = config.provider.limit;
+  private readonly PROVIDER_LIMIT = config.provider.blockfrost.limit;
 
   constructor(
     @InjectEntityManager()
     private readonly em: EntityManager,
     private readonly source: BlockfrostService,
-  ) {
-    this.init();
-  }
+  ) {}
 
   async init(): Promise<void> {
-    const pools: SyncConfigPools = config.pools;
+    const pools: SyncConfigPoolsType = config.pools;
     const poolRepository = this.em.getCustomRepository(PoolRepository);
 
     pools.forEach(async (pool) => {

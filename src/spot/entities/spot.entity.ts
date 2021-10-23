@@ -16,6 +16,6 @@ export class Spot {
   @Index({ unique: true })
   epoch!: Epoch;
 
-  @Column({ type: 'float', comment: 'USD Spot Price' })
+  @Column({ type: 'float', comment: 'EUR Spot Price' })
   price!: number;
 }

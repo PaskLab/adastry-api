@@ -6,6 +6,7 @@ import { PoolRepository } from '../pool/repositories/pool.repository';
 import { SyncService as AccountSyncService } from '../account/sync.service';
 import { SyncService as PoolSyncService } from '../pool/sync.service';
 import { SyncService as EpochSyncService } from '../epoch/sync.service';
+import { SyncService as SpotSyncService } from '../spot/sync.service';
 import { Epoch } from '../epoch/entities/epoch.entity';
 
 @Injectable()
@@ -15,9 +16,13 @@ export class SyncService {
     private readonly accountSyncService: AccountSyncService,
     private readonly poolSyncService: PoolSyncService,
     private readonly epochSyncService: EpochSyncService,
+    private readonly spotSyncService: SpotSyncService,
   ) {}
 
   async start(): Promise<void> {
+    this.accountSyncService.init();
+    this.poolSyncService.init();
+    this.spotSyncService.init();
     this.sync();
   }
 
@@ -27,6 +32,7 @@ export class SyncService {
     if (lastEpoch) {
       await this.syncPools(lastEpoch);
       await this.syncAccounts(lastEpoch);
+      await this.syncSpotPrices(lastEpoch);
     }
   }
 
@@ -44,5 +50,10 @@ export class SyncService {
     for (const account of accounts) {
       await this.accountSyncService.syncAccount(account, lastEpoch);
     }
+  }
+
+  private async syncSpotPrices(lastEpoch: Epoch): Promise<void> {
+    this.spotSyncService.syncRates(lastEpoch);
+    this.spotSyncService.syncSpotPrices(lastEpoch);
   }
 }

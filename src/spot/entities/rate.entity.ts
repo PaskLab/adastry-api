@@ -20,6 +20,6 @@ export class Rate {
   @ManyToOne(() => Currency, { onDelete: 'CASCADE' })
   currency!: Currency;
 
-  @Column({ type: 'float', comment: 'Rate against USD' })
+  @Column({ type: 'float', comment: 'Rate against EUR' })
   rate!: number;
 }

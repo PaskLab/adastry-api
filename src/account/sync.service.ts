@@ -14,21 +14,19 @@ import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { AccountHistoryRepository } from './repositories/account-history.repository';
 import type { AccountHistoryType } from '../utils/api/types/account-history.type';
 import type { AccountRewardsHistoryType } from '../utils/api/types/account-rewards-history.type';
-import type { SyncConfigAccounts } from '../sync/types/sync-config.type';
+import type { SyncConfigAccountsType } from '../sync/types/sync-config.type';
 
 @Injectable()
 export class SyncService {
-  private readonly PROVIDER_LIMIT = config.provider.limit;
+  private readonly PROVIDER_LIMIT = config.provider.blockfrost.limit;
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly source: BlockfrostService,
-  ) {
-    this.init();
-  }
+  ) {}
 
   async init(): Promise<void> {
-    const accounts: SyncConfigAccounts = config.accounts;
+    const accounts: SyncConfigAccountsType = config.accounts;
     const accountRepository = this.em.getCustomRepository(AccountRepository);
     const currencyRepository = this.em.getCustomRepository(CurrencyRepository);
 
