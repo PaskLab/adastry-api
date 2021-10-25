@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { CreateEpochDto } from './dto/create-epoch.dto';
+import { EpochDto } from './dto/epoch.dto';
 import { UpdateEpochDto } from './dto/update-epoch.dto';
 
 @Injectable()
 export class EpochService {
-  create(createEpochDto: CreateEpochDto) {
+  create(createEpochDto: EpochDto) {
     return 'This action adds a new epoch';
   }
 

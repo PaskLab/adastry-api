@@ -20,9 +20,9 @@ export class SyncService {
   ) {}
 
   async start(): Promise<void> {
-    this.accountSyncService.init();
+    await this.spotSyncService.init();
     this.poolSyncService.init();
-    this.spotSyncService.init();
+    this.accountSyncService.init();
     this.sync();
   }
 

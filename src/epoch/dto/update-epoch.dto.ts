@@ -1,4 +1,4 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateEpochDto } from './create-epoch.dto';
+import { EpochDto } from './epoch.dto';
 
-export class UpdateEpochDto extends PartialType(CreateEpochDto) {}
+export class UpdateEpochDto extends PartialType(EpochDto) {}

@@ -7,7 +7,15 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
+  // Validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      skipUndefinedProperties: true,
+    }),
+  );
+  // Swagger Support
   const config = new DocumentBuilder()
     .setTitle('Dashboard API')
     .setDescription('Backend API providing data for pools delegators account.')
@@ -15,10 +23,10 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-
+  // Data Sync Worker
   const syncService = app.get(SyncService);
-  syncService.start();
-
+  // syncService.start();
+  // Http Server
   await app.listen(process.env.PORT || 3000);
 }
 
