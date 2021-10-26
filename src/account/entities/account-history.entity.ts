@@ -43,6 +43,6 @@ export class AccountHistory {
   @ManyToOne(() => Pool, { cascade: true })
   pool!: Pool | null;
 
-  @ManyToOne(() => PoolUpdate)
-  own!: PoolUpdate | null;
+  @Column({ default: false })
+  owner!: boolean;
 }

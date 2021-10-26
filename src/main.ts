@@ -12,7 +12,9 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      skipUndefinedProperties: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
   // Swagger Support
@@ -25,7 +27,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   // Data Sync Worker
   const syncService = app.get(SyncService);
-  // syncService.start();
+  syncService.start();
   // Http Server
   await app.listen(process.env.PORT || 3000);
 }

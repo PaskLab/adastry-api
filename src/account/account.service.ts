@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -16,6 +15,9 @@ import { EpochDto } from '../epoch/dto/epoch.dto';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { CurrencyDto } from '../spot/dto/currency.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { HistoryQueryType } from './types/history-query.type';
+import { AccountHistoryRepository } from './repositories/account-history.repository';
+import { AccountHistoryDto } from './dto/account-history.dto';
 
 @Injectable()
 export class AccountService {
@@ -145,5 +147,27 @@ export class AccountService {
     }
 
     await this.em.remove(account);
+  }
+
+  async getAccountHistory(
+    params: HistoryQueryType,
+  ): Promise<AccountHistoryDto[]> {
+    const history = await this.em
+      .getCustomRepository(AccountHistoryRepository)
+      .getHistory(params);
+
+    return history.map((h) => {
+      const dto = new AccountHistoryDto();
+      dto.account = h.account.stakeAddress;
+      dto.epoch = h.epoch.epoch;
+      dto.balance = h.balance;
+      dto.rewards = h.rewards;
+      dto.rewardsBalance = h.rewardsBalance;
+      dto.fullBalance = h.fullBalance;
+      dto.opRewards = h.opRewards;
+      dto.pool = h.pool ? h.pool.poolId : null;
+      dto.owner = h.owner;
+      return dto;
+    });
   }
 }

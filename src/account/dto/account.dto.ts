@@ -1,12 +1,12 @@
-import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { EpochDto } from '../../epoch/dto/epoch.dto';
 import { CurrencyDto } from '../../spot/dto/currency.dto';
 import { PoolDto } from '../../pool/dto/pool.dto';
 
 export class AccountDto {
   @ApiProperty({
-    title: 'Cardano stake address',
-    example: 'stake1ux9r7qjwtczc6g8qvfd2p4fetk30ffemghcwa8h7qm8vacsers3g8',
+    title: 'Account stake address',
+    example: 'stake1ux9r7qjwtczc6g8qvfd2p4fntk30ffemghcwa8h7qm8vacsers3g8',
   })
   stakeAddress!: string;
 

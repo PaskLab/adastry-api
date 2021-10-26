@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -20,6 +21,9 @@ import {
 import { AccountDto } from './dto/account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { ResponseDto } from '../utils/api/dto/response.dto';
+import { AccountHistoryDto } from './dto/account-history.dto';
+import { AccountHistoryParam } from './params/account-history.param';
+import { AccountHistoryQuery } from './params/account-history.query';
 
 @ApiTags('Account')
 @Controller('api/account')
@@ -78,5 +82,21 @@ export class AccountController {
   ): Promise<ResponseDto> {
     await this.accountService.remove(stakeAddress);
     return new ResponseDto(`Account ${stakeAddress} successfully deleted.`);
+  }
+
+  @Get(':stakeAddress/history')
+  @ApiOkResponse({ type: [AccountHistoryDto] })
+  @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
+  async accountHistory(
+    @Param() param: AccountHistoryParam,
+    @Query() query: AccountHistoryQuery,
+  ): Promise<AccountHistoryDto[]> {
+    return this.accountService.getAccountHistory({
+      stakeAddress: param.stakeAddress,
+      page: query.page,
+      limit: query.limit,
+      from: query.from,
+      order: query.order,
+    });
   }
 }

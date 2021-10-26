@@ -5,9 +5,9 @@ export class CreateAccountDto {
   @IsNotEmpty()
   @Matches('^stake[a-z0-9]{54}$')
   @ApiProperty({
-    title: 'Cardano stake address',
+    title: 'Account stake address',
     pattern: '^stake[a-z0-9]{54}$',
-    example: 'stake1ux9r7qjwtczc6g8qvfd2p4fetk30ffemghcwa8h7qm8vacsers3g8',
+    example: 'stake1ux9r7qjwtczc6g8qvfd2p4fntk30ffemghcwa8h7qm8vacsers3g8',
   })
   stakeAddress!: string;
 

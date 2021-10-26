@@ -1,8 +1,15 @@
-import { IsAlpha, IsNotEmpty, Length, Matches } from 'class-validator';
+import {
+  IsAlpha,
+  IsNotEmpty,
+  IsOptional,
+  Length,
+  Matches,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateAccountDto {
   @IsNotEmpty()
+  @IsOptional()
   @ApiPropertyOptional({
     title: 'Account name',
     example: 'Alice primary account',
@@ -11,6 +18,7 @@ export class UpdateAccountDto {
 
   @IsAlpha()
   @Length(3, 3)
+  @IsOptional()
   @ApiPropertyOptional({
     title: 'Preferred conversion currency',
     maximum: 3,
