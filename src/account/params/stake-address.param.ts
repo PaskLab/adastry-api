@@ -1,7 +1,7 @@
 import { IsNotEmpty, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class AccountHistoryParam {
+export class StakeAddressParam {
   @IsNotEmpty()
   @Matches('^stake[a-z0-9]{54}$')
   @ApiProperty({

@@ -22,7 +22,7 @@ import { AccountDto } from './dto/account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { ResponseDto } from '../utils/api/dto/response.dto';
 import { AccountHistoryDto } from './dto/account-history.dto';
-import { AccountHistoryParam } from './params/account-history.param';
+import { StakeAddressParam } from './params/stake-address.param';
 import { AccountHistoryQuery } from './params/account-history.query';
 
 @ApiTags('Account')
@@ -49,10 +49,8 @@ export class AccountController {
   @Get(':stakeAddress')
   @ApiOkResponse({ type: AccountDto })
   @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
-  accountInfo(
-    @Param('stakeAddress') stakeAddress: string,
-  ): Promise<AccountDto> {
-    return this.accountService.getAccountInfo(stakeAddress);
+  accountInfo(@Param() param: StakeAddressParam): Promise<AccountDto> {
+    return this.accountService.getAccountInfo(param.stakeAddress);
   }
 
   @Patch(':stakeAddress')
@@ -63,12 +61,14 @@ export class AccountController {
   @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
   @ApiNotFoundResponse({ description: 'Resource not found.' })
   async update(
-    @Param('stakeAddress') stakeAddress: string,
+    @Param() param: StakeAddressParam,
     @Body() updateAccountDto: UpdateAccountDto,
   ): Promise<ResponseDto> {
-    await this.accountService.update(stakeAddress, updateAccountDto);
+    await this.accountService.update(param.stakeAddress, updateAccountDto);
 
-    return new ResponseDto(`Account ${stakeAddress} successfully updated.`);
+    return new ResponseDto(
+      `Account ${param.stakeAddress} successfully updated.`,
+    );
   }
 
   @Delete(':stakeAddress')
@@ -77,18 +77,20 @@ export class AccountController {
     type: ResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Resource not found.' })
-  async remove(
-    @Param('stakeAddress') stakeAddress: string,
-  ): Promise<ResponseDto> {
-    await this.accountService.remove(stakeAddress);
-    return new ResponseDto(`Account ${stakeAddress} successfully deleted.`);
+  @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
+  @ApiConflictResponse({ description: 'Account cannot be deleted.' })
+  async remove(@Param() param: StakeAddressParam): Promise<ResponseDto> {
+    await this.accountService.remove(param.stakeAddress);
+    return new ResponseDto(
+      `Account ${param.stakeAddress} successfully deleted.`,
+    );
   }
 
   @Get(':stakeAddress/history')
   @ApiOkResponse({ type: [AccountHistoryDto] })
   @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
   async accountHistory(
-    @Param() param: AccountHistoryParam,
+    @Param() param: StakeAddressParam,
     @Query() query: AccountHistoryQuery,
   ): Promise<AccountHistoryDto[]> {
     return this.accountService.getAccountHistory({
