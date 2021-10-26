@@ -32,7 +32,7 @@ export class Account {
   @ManyToOne(() => Epoch)
   epoch!: Epoch | null; // Last updated epoch
 
-  @ManyToOne(() => Pool, (pool) => pool.accounts, { cascade: true })
+  @ManyToOne(() => Pool, (pool) => pool.accounts)
   pool!: Pool | null;
 
   @OneToMany(() => AccountHistory, (history) => history.account)

@@ -39,7 +39,9 @@ export class SyncService {
   private async syncPools(lastEpoch: Epoch): Promise<void> {
     const pools = await this.em.getCustomRepository(PoolRepository).findAll();
     for (const pool of pools) {
-      await this.poolSyncService.syncPool(pool, lastEpoch);
+      if (pool.isMember) {
+        await this.poolSyncService.syncPool(pool, lastEpoch);
+      }
     }
   }
 

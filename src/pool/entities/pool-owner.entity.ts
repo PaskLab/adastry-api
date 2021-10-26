@@ -17,7 +17,6 @@ export class PoolOwner {
   @ManyToOne(() => Account, {
     onDelete: 'CASCADE',
     orphanedRowAction: 'delete',
-    cascade: true,
   })
   account!: Account;
 }

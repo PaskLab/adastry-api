@@ -158,6 +158,7 @@ export class SyncService {
           if (!rewardAccount) {
             rewardAccount = new Account();
             rewardAccount.stakeAddress = poolUpdate.rewardAccount;
+            rewardAccount = await this.em.save(rewardAccount);
           }
 
           newUpdate.rewardAccount = rewardAccount;
@@ -174,6 +175,7 @@ export class SyncService {
             if (!owner) {
               owner = new Account();
               owner.stakeAddress = updateOwner;
+              owner = await this.em.save(owner);
             }
 
             const bindRecord = new PoolOwner();

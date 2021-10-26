@@ -27,6 +27,11 @@
       "name": "Bob",
       "stakeAddress": "stake1ux9r7qjwtczc6g8qvfd2p4fntk30ffemghcwa8h7qm8vacsers3g8",
       "currency": "CAD"
+    },
+    {
+      "name": "Unknown",
+      "stakeAddress": "stake1uxaumx88gu630m27exr3y06kflz5q6rc9q8la69gcvu9m5qtzrqjf",
+      "currency": "USD"
     }
   ],
   "currencies": [

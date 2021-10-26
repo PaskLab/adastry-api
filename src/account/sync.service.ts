@@ -73,11 +73,13 @@ export class SyncService {
   }
 
   async syncAccount(account: Account, lastEpoch: Epoch): Promise<void> {
-    this.syncInfo(account, lastEpoch);
-    this.syncHistory(account, lastEpoch);
+    account = await this.syncInfo(account, lastEpoch);
+    if (account.pool?.isMember) {
+      this.syncHistory(account, lastEpoch);
+    }
   }
 
-  async syncInfo(account: Account, lastEpoch: Epoch): Promise<void> {
+  async syncInfo(account: Account, lastEpoch: Epoch): Promise<Account> {
     if (account.epoch !== lastEpoch) {
       const accountUpdate = await this.source.getAccountInfo(
         account.stakeAddress,
@@ -87,7 +89,7 @@ export class SyncService {
         console.log(
           `ERROR::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress}) returned ${accountUpdate}.`,
         );
-        return;
+        return account;
       }
 
       account.rewardsSum = accountUpdate.rewardsSum;
@@ -104,18 +106,22 @@ export class SyncService {
           pool = new Pool();
           pool.poolId = accountUpdate.poolId;
           pool.isMember = false;
+          pool = await this.em.save(pool);
         }
 
         account.pool = pool;
       }
 
-      this.em.getCustomRepository(AccountRepository).save(account);
+      account = await this.em
+        .getCustomRepository(AccountRepository)
+        .save(account);
       console.log(
         `[${new Date().toUTCString()}] Account Sync - Updating account ${
           account.stakeAddress
         }`,
       );
     }
+    return account;
   }
 
   async syncHistory(account: Account, lastEpoch: Epoch): Promise<void> {
@@ -198,6 +204,8 @@ export class SyncService {
       if (pool === undefined) {
         pool = new Pool();
         pool.poolId = history[i].poolId;
+        pool.isMember = false;
+        pool = await this.em.save(pool);
       }
 
       const newHistory = new AccountHistory();
