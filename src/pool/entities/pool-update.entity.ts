@@ -12,7 +12,7 @@ import { Account } from '../../account/entities/account.entity';
 import { PoolOwner } from './pool-owner.entity';
 
 @Entity()
-@Index(['pool', 'epoch'], { unique: true })
+@Index(['pool', 'epoch', 'txHash'], { unique: true })
 export class PoolUpdate {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -37,6 +37,9 @@ export class PoolUpdate {
 
   @Column({ default: false })
   active!: boolean;
+
+  @Column()
+  block!: number;
 
   /*
     The purpose for recording the transaction hash is to be able to filter

@@ -50,9 +50,13 @@ export class SyncService {
   }
 
   async syncPool(pool: Pool, lastEpoch: Epoch) {
-    await this.syncPoolUpdate(pool);
+    if (pool.isMember) {
+      await this.syncPoolUpdate(pool);
+    }
     this.syncPoolInfo(pool, lastEpoch);
-    this.syncPoolHistory(pool, lastEpoch);
+    if (pool.isMember) {
+      this.syncPoolHistory(pool, lastEpoch);
+    }
   }
 
   async syncPoolInfo(pool: Pool, lastEpoch: Epoch): Promise<void> {
@@ -74,7 +78,6 @@ export class SyncService {
         console.log(
           `ERROR::PoolSync()->syncPoolInfo()->this.poolUpdateRepository.findLastUpdate() returned ${lastRegistration}`,
         );
-        return;
       }
 
       pool.name = `${poolUpdate.name}[${poolUpdate.ticker}]`;
@@ -83,7 +86,7 @@ export class SyncService {
       pool.liveSaturation = poolUpdate.liveSaturation;
       pool.liveDelegators = poolUpdate.liveDelegators;
       pool.epoch = lastEpoch;
-      pool.registration = lastRegistration;
+      pool.registration = lastRegistration ? lastRegistration : null;
       pool.isMember = config.pools.some(
         (memberPool) => memberPool.id === pool.poolId,
       );
@@ -145,6 +148,7 @@ export class SyncService {
         newUpdate.fixed = poolUpdate.fixed;
         newUpdate.active = poolUpdate.active;
         newUpdate.txHash = poolUpdate.txHash;
+        newUpdate.block = poolUpdate.block;
         newUpdate.owners = [];
 
         // Add or create reward account

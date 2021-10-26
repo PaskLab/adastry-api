@@ -20,7 +20,7 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<PoolHistoryType[] | null> {
-    const result = await this.request(
+    const result = await BlockfrostService.request(
       `/pools/${poolId}/history?order=desc&page=${page}&count=${limit}`,
     );
 
@@ -36,8 +36,8 @@ export class BlockfrostService {
   }
 
   async getPoolInfo(poolId): Promise<PoolInfoType | null> {
-    const registration = this.request(`/pools/${poolId}`);
-    const metadata = this.request(`/pools/${poolId}/metadata`);
+    const registration = BlockfrostService.request(`/pools/${poolId}`);
+    const metadata = BlockfrostService.request(`/pools/${poolId}/metadata`);
     return registration
       ? {
           poolId: (await registration).pool_id,
@@ -62,30 +62,35 @@ export class BlockfrostService {
     let result: { tx_hash: string; cert_index: string; action: string }[] = [];
 
     do {
-      result = await this.request(`/pools/${poolId}/updates?page=${page}`);
+      result = await BlockfrostService.request(
+        `/pools/${poolId}/updates?page=${page}`,
+      );
       if (result) updates = updates.concat(result);
       page++;
     } while (result && result.length === PROVIDER_LIMIT);
 
     const infos: PoolUpdateType[] = [];
 
-    for (let i = 0; i < updates.length; i++) {
-      if (updates[i].action === 'registered') {
+    for (const update of updates) {
+      const txInfo = await BlockfrostService.request(`/txs/${update.tx_hash}`);
+      if (update.action === 'registered') {
         const info = await this.getRegistration(
-          updates[i].tx_hash,
-          updates[i].cert_index,
+          update.tx_hash,
+          update.cert_index,
         );
-        if (info) {
-          info.txHash = updates[i].tx_hash;
+        if (info && txInfo) {
+          info.txHash = update.tx_hash;
+          info.block = txInfo.block_height;
           infos.push(info);
         }
       } else {
         const info = await this.getRetirement(
-          updates[i].tx_hash,
-          updates[i].cert_index,
+          update.tx_hash,
+          update.cert_index,
         );
-        if (info) {
-          info.txHash = updates[i].tx_hash;
+        if (info && txInfo) {
+          info.txHash = update.tx_hash;
+          info.block = txInfo.block_height;
           infos.push(info);
         }
       }
@@ -95,7 +100,7 @@ export class BlockfrostService {
   }
 
   async getLastPoolUpdate(poolId): Promise<LastPoolUpdateType | null> {
-    const result = await this.request(
+    const result = await BlockfrostService.request(
       `/pools/${poolId}/updates?order=desc&count=1`,
     );
 
@@ -109,13 +114,14 @@ export class BlockfrostService {
   }
 
   async getRegistration(hash, certIndex): Promise<PoolUpdateType | null> {
-    let result = await this.request(`/txs/${hash}/pool_updates`);
+    let result = await BlockfrostService.request(`/txs/${hash}/pool_updates`);
 
     if (result) {
       result = result.find((el) => el.cert_index === certIndex);
       if (result)
         return {
           txHash: '',
+          block: 0,
           active: true,
           epoch: result.active_epoch,
           margin: result.margin_cost,
@@ -129,13 +135,14 @@ export class BlockfrostService {
   }
 
   async getRetirement(hash, certIndex): Promise<PoolUpdateType | null> {
-    let result = await this.request(`/txs/${hash}/pool_retires`);
+    let result = await BlockfrostService.request(`/txs/${hash}/pool_retires`);
 
     if (result) {
       result = result.find((el) => (el.cert_index = certIndex));
       if (result)
         return {
           txHash: '',
+          block: 0,
           active: false,
           epoch: result.retiring_epoch,
           margin: null,
@@ -149,7 +156,7 @@ export class BlockfrostService {
   }
 
   async getAccountInfo(stakeAddress): Promise<AccountInfoType | null> {
-    const result = await this.request(`/accounts/${stakeAddress}`);
+    const result = await BlockfrostService.request(`/accounts/${stakeAddress}`);
 
     return result
       ? {
@@ -168,7 +175,7 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountHistoryType | null> {
-    const result = await this.request(
+    const result = await BlockfrostService.request(
       `/accounts/${stakeAddr}/history?order=desc&page=${page}&count=${limit}`,
     );
     return result
@@ -187,7 +194,7 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountRewardsHistoryType | null> {
-    const result = await this.request(
+    const result = await BlockfrostService.request(
       `/accounts/${stakeAddr}/rewards?order=desc&page=${page}&count=${limit}`,
     );
     return result
@@ -202,15 +209,15 @@ export class BlockfrostService {
   }
 
   async getAccountAddresses(stakeAddr) {
-    return await this.request(`/accounts/${stakeAddr}/addresses`);
+    return await BlockfrostService.request(`/accounts/${stakeAddr}/addresses`);
   }
 
   async getAddressInfo(addr) {
-    return await this.request(`/addresses/${addr}`);
+    return await BlockfrostService.request(`/addresses/${addr}`);
   }
 
   async lastEpoch(): Promise<EpochType | null> {
-    const result = await this.request(`/epochs/latest`);
+    const result = await BlockfrostService.request(`/epochs/latest`);
     return result
       ? {
           epoch: result.epoch,
@@ -225,7 +232,7 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<EpochType[] | null> {
-    const result = await this.request(
+    const result = await BlockfrostService.request(
       `/epochs/${beforeEpoch}/previous?page=${page}&count=${limit}`,
     );
     return result
@@ -239,7 +246,7 @@ export class BlockfrostService {
       : null;
   }
 
-  private async request(
+  static async request(
     endpoint: string,
     headers?: any,
     body?: any,

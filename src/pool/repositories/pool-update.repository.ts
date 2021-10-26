@@ -13,7 +13,7 @@ export class PoolUpdateRepository extends Repository<PoolUpdate> {
       .leftJoinAndSelect('update.owners', 'owners')
       .leftJoinAndSelect('owners.account', 'ownerAccount')
       .where('pool.poolId = :poolId')
-      .orderBy('epoch.epoch', 'DESC')
+      .orderBy('update.block', 'DESC')
       .limit(1)
       .setParameter('poolId', poolId);
 
