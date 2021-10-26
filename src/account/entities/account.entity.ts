@@ -29,10 +29,10 @@ export class Account {
   @Column({ default: 0 })
   loyalty!: number;
 
-  @ManyToOne(() => Epoch)
+  @ManyToOne(() => Epoch, { onDelete: 'SET NULL' })
   epoch!: Epoch | null; // Last updated epoch
 
-  @ManyToOne(() => Pool, (pool) => pool.accounts)
+  @ManyToOne(() => Pool, (pool) => pool.accounts, { onDelete: 'SET NULL' })
   pool!: Pool | null;
 
   @OneToMany(() => AccountHistory, (history) => history.account)

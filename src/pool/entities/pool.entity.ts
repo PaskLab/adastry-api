@@ -37,14 +37,14 @@ export class Pool {
   @Column({ default: 0 })
   liveDelegators!: number;
 
-  @OneToOne(() => PoolUpdate)
+  @OneToOne(() => PoolUpdate, { onDelete: 'SET NULL' })
   @JoinColumn()
   registration!: PoolUpdate | null;
 
   @Column({ default: false })
   isMember!: boolean;
 
-  @ManyToOne(() => Epoch)
+  @ManyToOne(() => Epoch, { onDelete: 'SET NULL' })
   epoch!: Epoch | null;
 
   @OneToMany(() => Account, (account) => account.pool)

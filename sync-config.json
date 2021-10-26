@@ -32,6 +32,11 @@
       "name": "Unknown",
       "stakeAddress": "stake1uxaumx88gu630m27exr3y06kflz5q6rc9q8la69gcvu9m5qtzrqjf",
       "currency": "USD"
+    },
+    {
+      "name": "IOG",
+      "stakeAddress": "stake1uxttxvhjx099y08jtex85j8cscqg4svz5ar02wjmg45nrasv2634m",
+      "currency": "USD"
     }
   ],
   "currencies": [

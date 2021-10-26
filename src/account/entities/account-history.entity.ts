@@ -40,7 +40,7 @@ export class AccountHistory {
   @Column({ default: 0 })
   opRewards!: number;
 
-  @ManyToOne(() => Pool, { cascade: true })
+  @ManyToOne(() => Pool, { cascade: true, onDelete: 'SET NULL' })
   pool!: Pool | null;
 
   @Column({ default: false })

@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -146,7 +147,13 @@ export class AccountService {
       throw new NotFoundException(`Account ${stakeAddress} not found.`);
     }
 
-    await this.em.remove(account);
+    try {
+      await this.em.remove(account);
+    } catch (e) {
+      throw new UnprocessableEntityException(
+        `Account ${stakeAddress} cannot be deleted.`,
+      );
+    }
   }
 
   async getAccountHistory(
