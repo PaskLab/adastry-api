@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Account } from '../account/entities/account.entity';
 import { Pool } from './entities/pool.entity';
 import { Epoch } from '../epoch/entities/epoch.entity';
-import { ApiModule } from '../utils/api/api.module';
 import { PoolHistory } from './entities/pool-history.entity';
 import { PoolUpdate } from './entities/pool-update.entity';
 import { PoolOwner } from './entities/pool-owner.entity';
@@ -24,6 +23,6 @@ import { PoolService } from './pool.service';
   ],
   controllers: [PoolController],
   providers: [SyncService, PoolService],
-  exports: [SyncService],
+  exports: [SyncService, PoolService],
 })
 export class PoolModule {}

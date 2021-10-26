@@ -10,6 +10,8 @@ export class PoolUpdateRepository extends Repository<PoolUpdate> {
     const query = this.createQueryBuilder('update')
       .innerJoinAndSelect('update.pool', 'pool')
       .innerJoinAndSelect('update.epoch', 'epoch')
+      .leftJoinAndSelect('update.owners', 'owners')
+      .leftJoinAndSelect('owners.account', 'ownerAccount')
       .where('pool.poolId = :poolId')
       .orderBy('epoch.epoch', 'DESC')
       .limit(1)

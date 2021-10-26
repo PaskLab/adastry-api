@@ -1,26 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { CreatePoolDto } from './dto/create-pool.dto';
-import { UpdatePoolDto } from './dto/update-pool.dto';
+import { Epoch } from '../epoch/entities/epoch.entity';
+import { Pool } from './entities/pool.entity';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { PoolUpdateRepository } from './repositories/pool-update.repository';
 
 @Injectable()
 export class PoolService {
-  create(createPoolDto: CreatePoolDto) {
-    return 'This action adds a new pool';
-  }
+  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
 
-  findAll() {
-    return `This action returns all pool`;
-  }
+  async isOwner(
+    stakeAddress: string,
+    pool: Pool,
+    untilEpoch: Epoch,
+  ): Promise<boolean> {
+    const update = await this.em
+      .getCustomRepository(PoolUpdateRepository)
+      .findLastUpdate(pool.poolId, untilEpoch.epoch);
 
-  findOne(id: number) {
-    return `This action returns a #${id} pool`;
-  }
+    if (!update) {
+      return false;
+    }
 
-  update(id: number, updatePoolDto: UpdatePoolDto) {
-    return `This action updates a #${id} pool`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} pool`;
+    return update.owners.some(
+      (owner) => owner.account.stakeAddress === stakeAddress,
+    );
   }
 }

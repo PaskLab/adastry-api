@@ -15,6 +15,7 @@ import { AccountHistoryRepository } from './repositories/account-history.reposit
 import type { AccountHistoryType } from '../utils/api/types/account-history.type';
 import type { AccountRewardsHistoryType } from '../utils/api/types/account-rewards-history.type';
 import type { SyncConfigAccountsType } from '../sync/types/sync-config.type';
+import { PoolService } from '../pool/pool.service';
 
 @Injectable()
 export class SyncService {
@@ -23,6 +24,7 @@ export class SyncService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly source: BlockfrostService,
+    private readonly poolService: PoolService,
   ) {}
 
   async init(): Promise<void> {
@@ -41,7 +43,7 @@ export class SyncService {
         newAccount.name = account.name;
         if (account.currency) {
           const currency = await currencyRepository.findOne({
-            name: account.currency,
+            code: account.currency,
           });
           newAccount.currency = currency ? currency : null;
         }
@@ -56,7 +58,7 @@ export class SyncService {
         accountEntity.name = account.name;
         if (account.currency) {
           const currency = await currencyRepository.findOne({
-            name: account.currency,
+            code: account.currency,
           });
           accountEntity.currency = currency ? currency : null;
         }
@@ -208,6 +210,16 @@ export class SyncService {
 
       // Tracking user loyalty to configured pools
       account.loyalty = account.pool?.isMember ? account.loyalty + 1 : 0;
+
+      if (pool) {
+        newHistory.owner = await this.poolService.isOwner(
+          account.stakeAddress,
+          pool,
+          epoch,
+        );
+      } else {
+        newHistory.owner = false;
+      }
 
       accountHistoryRepository.save(newHistory);
       console.log(

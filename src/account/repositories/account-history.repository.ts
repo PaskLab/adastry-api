@@ -1,10 +1,11 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { AccountHistory } from '../entities/account-history.entity';
 import { HistoryQueryType } from '../types/history-query.type';
+import config from '../../../config.json';
 
 @EntityRepository(AccountHistory)
 export class AccountHistoryRepository extends Repository<AccountHistory> {
-  private readonly MAX_LIMIT = 100;
+  private readonly MAX_LIMIT = config.api.pageLimit;
 
   async findLastEpoch(
     stakeAddress: string,
