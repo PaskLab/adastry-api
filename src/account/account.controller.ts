@@ -24,6 +24,9 @@ import { ResponseDto } from '../utils/dto/response.dto';
 import { AccountHistoryDto } from './dto/account-history.dto';
 import { StakeAddressParam } from '../utils/params/stake-address.param';
 import { HistoryQuery } from '../utils/params/history.query';
+import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
+import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
+import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 
 @ApiTags('Account')
 @Controller('api/account')
@@ -31,12 +34,9 @@ export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   @Post()
-  @ApiCreatedResponse({
-    description: 'Account successfully created.',
-    type: ResponseDto,
-  })
-  @ApiConflictResponse({ description: 'Stake account already exist.' })
-  @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
+  @ApiCreatedResponse({ type: ResponseDto })
+  @ApiConflictResponse({ type: ConflictErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async create(
     @Body() createAccountDto: CreateAccountDto,
   ): Promise<ResponseDto> {
@@ -48,18 +48,15 @@ export class AccountController {
 
   @Get(':stakeAddress')
   @ApiOkResponse({ type: AccountDto })
-  @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
   accountInfo(@Param() param: StakeAddressParam): Promise<AccountDto> {
     return this.accountService.getAccountInfo(param.stakeAddress);
   }
 
   @Patch(':stakeAddress')
-  @ApiOkResponse({
-    description: 'Account successfully updated.',
-    type: ResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
-  @ApiNotFoundResponse({ description: 'Resource not found.' })
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
   async update(
     @Param() param: StakeAddressParam,
     @Body() updateAccountDto: UpdateAccountDto,
@@ -76,9 +73,9 @@ export class AccountController {
     description: 'Account successfully deleted.',
     type: ResponseDto,
   })
-  @ApiNotFoundResponse({ description: 'Resource not found.' })
-  @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
-  @ApiConflictResponse({ description: 'Account cannot be deleted.' })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  @ApiConflictResponse({ type: ConflictErrorDto })
   async remove(@Param() param: StakeAddressParam): Promise<ResponseDto> {
     await this.accountService.remove(param.stakeAddress);
     return new ResponseDto(
@@ -88,7 +85,7 @@ export class AccountController {
 
   @Get(':stakeAddress/history')
   @ApiOkResponse({ type: [AccountHistoryDto] })
-  @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async accountHistory(
     @Param() param: StakeAddressParam,
     @Query() query: HistoryQuery,
