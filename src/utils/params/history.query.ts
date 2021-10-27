@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-export class AccountHistoryQuery {
+export class HistoryQuery {
   @ApiPropertyOptional({
     description: 'Page number (Min: 1)',
     default: 1,

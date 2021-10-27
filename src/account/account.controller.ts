@@ -20,10 +20,10 @@ import {
 } from '@nestjs/swagger';
 import { AccountDto } from './dto/account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { ResponseDto } from '../utils/api/dto/response.dto';
+import { ResponseDto } from '../utils/dto/response.dto';
 import { AccountHistoryDto } from './dto/account-history.dto';
-import { StakeAddressParam } from './params/stake-address.param';
-import { AccountHistoryQuery } from './params/account-history.query';
+import { StakeAddressParam } from '../utils/params/stake-address.param';
+import { HistoryQuery } from '../utils/params/history.query';
 
 @ApiTags('Account')
 @Controller('api/account')
@@ -91,7 +91,7 @@ export class AccountController {
   @ApiBadRequestResponse({ description: 'Bad Request. (validation errors)' })
   async accountHistory(
     @Param() param: StakeAddressParam,
-    @Query() query: AccountHistoryQuery,
+    @Query() query: HistoryQuery,
   ): Promise<AccountHistoryDto[]> {
     return this.accountService.getAccountHistory({
       stakeAddress: param.stakeAddress,
