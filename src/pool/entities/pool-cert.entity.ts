@@ -13,17 +13,17 @@ import { PoolOwner } from './pool-owner.entity';
 
 @Entity()
 @Index(['pool', 'epoch', 'txHash'], { unique: true })
-export class PoolUpdate {
+export class PoolCert {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Pool, (pool) => pool.updates, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Pool, (pool) => pool.certs, { onDelete: 'CASCADE' })
   pool!: Pool;
 
   @ManyToOne(() => Epoch, { onDelete: 'CASCADE' })
   epoch!: Epoch;
 
-  @OneToMany(() => PoolOwner, (poolOwner) => poolOwner.own, { cascade: true })
+  @OneToMany(() => PoolOwner, (poolOwner) => poolOwner.cert, { cascade: true })
   owners!: PoolOwner[];
 
   @ManyToOne(() => Account, { cascade: true })

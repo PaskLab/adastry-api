@@ -5,13 +5,13 @@ import { BlockfrostService } from '../utils/api/blockfrost.service';
 import { Pool } from './entities/pool.entity';
 import { Epoch } from '../epoch/entities/epoch.entity';
 import { PoolHistory } from './entities/pool-history.entity';
-import { PoolUpdate } from './entities/pool-update.entity';
+import { PoolCert } from './entities/pool-cert.entity';
 import { PoolOwner } from './entities/pool-owner.entity';
 import { Account } from '../account/entities/account.entity';
 import { EntityManager } from 'typeorm';
 import { PoolRepository } from './repositories/pool.repository';
 import { PoolHistoryRepository } from './repositories/pool-history.repository';
-import { PoolUpdateRepository } from './repositories/pool-update.repository';
+import { PoolCertRepository } from './repositories/pool-cert.repository';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { AccountRepository } from '../account/repositories/account.repository';
 import type { SyncConfigPoolsType } from '../sync/types/sync-config.type';
@@ -51,7 +51,7 @@ export class SyncService {
 
   async syncPool(pool: Pool, lastEpoch: Epoch) {
     if (pool.isMember) {
-      await this.syncPoolUpdate(pool);
+      await this.syncPoolCert(pool);
     }
     this.syncPoolInfo(pool, lastEpoch);
     if (pool.isMember) {
@@ -60,33 +60,33 @@ export class SyncService {
   }
 
   async syncPoolInfo(pool: Pool, lastEpoch: Epoch): Promise<void> {
-    const poolUpdate = await this.source.getPoolInfo(pool.poolId);
+    const poolCert = await this.source.getPoolInfo(pool.poolId);
 
-    if (!poolUpdate) {
+    if (!poolCert) {
       console.log(
-        `ERROR::PoolSync()->syncPoolInfo()->this.source.getPoolInfo(${pool.poolId}) returned ${poolUpdate}`,
+        `ERROR::PoolSync()->syncPoolInfo()->this.source.getPoolInfo(${pool.poolId}) returned ${poolCert}`,
       );
       return;
     }
 
     if (pool.epoch !== lastEpoch) {
-      const lastRegistration = await this.em
-        .getCustomRepository(PoolUpdateRepository)
-        .findLastUpdate(pool.poolId);
+      const lastCert = await this.em
+        .getCustomRepository(PoolCertRepository)
+        .findLastCert(pool.poolId);
 
-      if (!lastRegistration) {
+      if (!lastCert) {
         console.log(
-          `ERROR::PoolSync()->syncPoolInfo()->this.poolUpdateRepository.findLastUpdate() returned ${lastRegistration}`,
+          `ERROR::PoolSync()->syncPoolInfo()->poolCertRepository.findLastCert() returned ${lastCert}`,
         );
       }
 
-      pool.name = `${poolUpdate.name}[${poolUpdate.ticker}]`;
-      pool.blocksMinted = poolUpdate.blocksMinted;
-      pool.liveStake = poolUpdate.liveStake;
-      pool.liveSaturation = poolUpdate.liveSaturation;
-      pool.liveDelegators = poolUpdate.liveDelegators;
+      pool.name = `${poolCert.name}[${poolCert.ticker}]`;
+      pool.blocksMinted = poolCert.blocksMinted;
+      pool.liveStake = poolCert.liveStake;
+      pool.liveSaturation = poolCert.liveSaturation;
+      pool.liveDelegators = poolCert.liveDelegators;
       pool.epoch = lastEpoch;
-      pool.registration = lastRegistration ? lastRegistration : null;
+      pool.lastCert = lastCert ? lastCert : null;
       pool.isMember = config.pools.some(
         (memberPool) => memberPool.id === pool.poolId,
       );
@@ -100,102 +100,102 @@ export class SyncService {
     }
   }
 
-  async syncPoolUpdate(pool: Pool) {
-    const lastUpdate = await this.source.getLastPoolUpdate(pool.poolId);
+  async syncPoolCert(pool: Pool) {
+    const lastCert = await this.source.getLastPoolCert(pool.poolId);
 
-    if (!lastUpdate) {
+    if (!lastCert) {
       console.log(
-        `ERROR::PoolSync()->syncPoolUpdate()->this.source.getLastPoolUpdate(${pool.poolId}) returned ${lastUpdate}`,
+        `ERROR::PoolSync()->syncPoolUpdate()->this.source.getLastPoolUpdate(${pool.poolId}) returned ${lastCert}`,
       );
       return;
     }
 
-    const lastStoredUpdate = await this.em
-      .getCustomRepository(PoolUpdateRepository)
-      .findLastUpdate(pool.poolId);
+    const lastStoredCert = await this.em
+      .getCustomRepository(PoolCertRepository)
+      .findLastCert(pool.poolId);
 
-    const lastStoredEpoch = lastStoredUpdate ? lastStoredUpdate.epoch : 0;
+    const lastStoredEpoch = lastStoredCert ? lastStoredCert.epoch : 0;
 
     // Check whether a sync is required or not
-    if (lastStoredUpdate && lastUpdate.txHash === lastStoredUpdate.txHash) {
+    if (lastStoredCert && lastCert.txHash === lastStoredCert.txHash) {
       return;
     }
 
-    const poolUpdates = await this.source.getAllPoolUpdate(pool.poolId);
+    const poolCerts = await this.source.getAllPoolCert(pool.poolId);
     const epochRepository = this.em.getCustomRepository(EpochRepository);
     const accountRepository = this.em.getCustomRepository(AccountRepository);
 
-    for (let i = 0; i < poolUpdates.length; i++) {
-      if (poolUpdates[i].epoch > lastStoredEpoch) {
-        const poolUpdate = poolUpdates[i];
+    for (let i = 0; i < poolCerts.length; i++) {
+      if (poolCerts[i].epoch > lastStoredEpoch) {
+        const poolCert = poolCerts[i];
 
-        const epoch = poolUpdate.epoch
-          ? await epochRepository.findOne({ epoch: poolUpdate.epoch })
+        const epoch = poolCert.epoch
+          ? await epochRepository.findOne({ epoch: poolCert.epoch })
           : null;
 
         if (!epoch) {
           console.log(
-            `ERROR::PoolSync()->syncPoolUpdate()->this.epochRepository.findOne(${poolUpdate.epoch}) returned ${epoch}`,
+            `ERROR::PoolSync()->syncPoolUpdate()->this.epochRepository.findOne(${poolCert.epoch}) returned ${epoch}`,
           );
           return;
         }
 
-        const newUpdate = new PoolUpdate();
-        newUpdate.pool = pool;
-        newUpdate.epoch = epoch;
-        newUpdate.active = poolUpdate.active;
-        newUpdate.margin = poolUpdate.margin;
-        newUpdate.fixed = poolUpdate.fixed;
-        newUpdate.active = poolUpdate.active;
-        newUpdate.txHash = poolUpdate.txHash;
-        newUpdate.block = poolUpdate.block;
-        newUpdate.owners = [];
+        const newCert = new PoolCert();
+        newCert.pool = pool;
+        newCert.epoch = epoch;
+        newCert.active = poolCert.active;
+        newCert.margin = poolCert.margin;
+        newCert.fixed = poolCert.fixed;
+        newCert.active = poolCert.active;
+        newCert.txHash = poolCert.txHash;
+        newCert.block = poolCert.block;
+        newCert.owners = [];
 
         // Add or create reward account
-        if (poolUpdate.rewardAccount) {
-          let rewardAccount = poolUpdate.rewardAccount
+        if (poolCert.rewardAccount) {
+          let rewardAccount = poolCert.rewardAccount
             ? await accountRepository.findOne({
-                stakeAddress: poolUpdate.rewardAccount,
+                stakeAddress: poolCert.rewardAccount,
               })
             : null;
 
           if (!rewardAccount) {
             rewardAccount = new Account();
-            rewardAccount.stakeAddress = poolUpdate.rewardAccount;
+            rewardAccount.stakeAddress = poolCert.rewardAccount;
             rewardAccount = await this.em.save(rewardAccount);
           }
 
-          newUpdate.rewardAccount = rewardAccount;
+          newCert.rewardAccount = rewardAccount;
         }
 
         // Add or create owner account
-        if (poolUpdate.owners) {
-          for (let j = 0; j < poolUpdate.owners.length; j++) {
-            const updateOwner = poolUpdate.owners[j];
+        if (poolCert.owners) {
+          for (let j = 0; j < poolCert.owners.length; j++) {
+            const certOwner = poolCert.owners[j];
             let owner = await accountRepository.findOne({
-              stakeAddress: updateOwner,
+              stakeAddress: certOwner,
             });
 
             if (!owner) {
               owner = new Account();
-              owner.stakeAddress = updateOwner;
+              owner.stakeAddress = certOwner;
               owner = await this.em.save(owner);
             }
 
             const bindRecord = new PoolOwner();
-            bindRecord.own = newUpdate;
+            bindRecord.cert = newCert;
             bindRecord.account = owner;
 
-            newUpdate.owners.push(bindRecord);
+            newCert.owners.push(bindRecord);
           }
         }
 
         await this.em.transaction(async (em) => {
-          await em.save(newUpdate);
+          await em.save(newCert);
           console.log(
-            `[${new Date().toUTCString()}] Pool Update Sync - Adding new epoch ${
-              newUpdate.epoch.epoch
-            } registration for Pool ${newUpdate.pool.poolId}`,
+            `[${new Date().toUTCString()}] Pool Cert Sync - Adding new epoch ${
+              newCert.epoch.epoch
+            } certificate for Pool ${newCert.pool.poolId}`,
           );
         });
       }
@@ -240,8 +240,7 @@ export class SyncService {
     }
 
     const epochRepository = this.em.getCustomRepository(EpochRepository);
-    const poolUpdateRepository =
-      this.em.getCustomRepository(PoolUpdateRepository);
+    const poolCertRepository = this.em.getCustomRepository(PoolCertRepository);
 
     for (let i = 0; i < history.length; i++) {
       const epoch = history[i].epoch
@@ -255,14 +254,14 @@ export class SyncService {
         continue;
       }
 
-      const registration = await poolUpdateRepository.findLastUpdate(
+      const lastCert = await poolCertRepository.findLastCert(
         pool.poolId,
         epoch.epoch,
       );
 
-      if (!registration) {
+      if (!lastCert) {
         console.log(
-          `ERROR::PoolSync()->syncPoolHistory()->this.poolUpdateRepository.findLastUpdate(${pool.poolId}, ${epoch.epoch}) returned ${registration}.`,
+          `ERROR::PoolSync()->syncPoolHistory()->poolCertRepository.findLastCert(${pool.poolId}, ${epoch.epoch}) returned ${lastCert}.`,
         );
         continue;
       }
@@ -274,7 +273,7 @@ export class SyncService {
       newHistory.fees = history[i].fees;
       newHistory.blocks = history[i].blocks;
       newHistory.activeStake = history[i].activeStake;
-      newHistory.registration = registration;
+      newHistory.cert = lastCert;
 
       poolHistoryRepository.save(newHistory);
       console.log(

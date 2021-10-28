@@ -8,7 +8,6 @@ import {
 import { Account } from './account.entity';
 import { Epoch } from '../../epoch/entities/epoch.entity';
 import { Pool } from '../../pool/entities/pool.entity';
-import { PoolUpdate } from '../../pool/entities/pool-update.entity';
 
 @Entity()
 @Index(['account', 'epoch'], { unique: true })

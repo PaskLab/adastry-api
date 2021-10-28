@@ -1,4 +1,4 @@
-export type PoolUpdateType = {
+export type PoolCertType = {
   txHash: string;
   block: number;
   active: boolean;

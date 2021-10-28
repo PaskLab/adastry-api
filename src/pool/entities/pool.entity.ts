@@ -11,7 +11,7 @@ import {
 import { Epoch } from '../../epoch/entities/epoch.entity';
 import { Account } from '../../account/entities/account.entity';
 import { PoolHistory } from './pool-history.entity';
-import { PoolUpdate } from './pool-update.entity';
+import { PoolCert } from './pool-cert.entity';
 
 @Entity()
 export class Pool {
@@ -37,9 +37,9 @@ export class Pool {
   @Column({ default: 0 })
   liveDelegators!: number;
 
-  @OneToOne(() => PoolUpdate, { onDelete: 'SET NULL' })
+  @OneToOne(() => PoolCert, { onDelete: 'SET NULL' })
   @JoinColumn()
-  registration!: PoolUpdate | null;
+  lastCert!: PoolCert | null;
 
   @Column({ default: false })
   isMember!: boolean;
@@ -53,6 +53,6 @@ export class Pool {
   @OneToMany(() => PoolHistory, (poolHistory) => poolHistory.pool)
   history!: PoolHistory[];
 
-  @OneToMany(() => PoolUpdate, (update) => update.pool)
-  updates!: PoolUpdate[];
+  @OneToMany(() => PoolCert, (cert) => cert.pool)
+  certs!: PoolCert[];
 }

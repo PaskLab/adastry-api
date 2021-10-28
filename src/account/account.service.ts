@@ -11,7 +11,6 @@ import { AccountRepository } from './repositories/account.repository';
 import { Account } from './entities/account.entity';
 import { CurrencyRepository } from '../spot/repositories/currency.repository';
 import { AccountDto } from './dto/account.dto';
-import { EpochDto } from '../epoch/dto/epoch.dto';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { CurrencyDto } from '../spot/dto/currency.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
@@ -61,41 +60,35 @@ export class AccountService {
       throw new NotFoundException(`Account ${stakeAddress} not found.`);
     }
 
-    let epochDto: EpochDto | null = null;
-
-    if (account.epoch) {
-      let epochDto = new EpochDto();
-      epochDto.epoch = account.epoch.epoch;
-      epochDto.startTime = account.epoch.startTime;
-      epochDto.endTime = account.epoch.endTime;
-    }
-
     let poolDto: PoolDto | null = null;
+    const pool = account.pool;
 
-    if (account.pool) {
-      poolDto = new PoolDto();
-      poolDto.poolId = account.pool.poolId;
-      poolDto.name = account.pool.name;
-      poolDto.blocksMinted = account.pool.blocksMinted;
-      poolDto.liveStake = account.pool.liveStake;
-      poolDto.liveSaturation = account.pool.liveSaturation;
-      poolDto.liveDelegators = account.pool.liveDelegators;
-      poolDto.epoch = account.pool.epoch;
-      poolDto.isMember = account.pool.isMember;
+    if (pool) {
+      poolDto = new PoolDto({
+        poolId: pool.poolId,
+        name: pool.name,
+        blocksMinted: pool.blocksMinted,
+        liveStake: pool.liveStake,
+        liveSaturation: pool.liveSaturation,
+        liveDelegators: pool.liveDelegators,
+        epoch: pool.epoch ? pool.epoch.epoch : null,
+        isMember: pool.isMember,
+      });
     }
 
     let currencyDto: CurrencyDto | null = null;
 
     if (account.currency) {
-      currencyDto = new CurrencyDto();
-      currencyDto.code = account.currency.code;
-      currencyDto.name = account.currency.name;
+      currencyDto = new CurrencyDto({
+        code: account.currency.code,
+        name: account.currency.name,
+      });
     }
 
     const dto = new AccountDto();
     dto.stakeAddress = account.stakeAddress;
     dto.name = account.name;
-    dto.epoch = epochDto;
+    dto.epoch = account.epoch ? account.epoch.epoch : null;
     dto.currency = currencyDto;
     dto.pool = poolDto;
     dto.loyalty = account.loyalty;
@@ -161,17 +154,17 @@ export class AccountService {
       .getHistory(params);
 
     return history.map((h) => {
-      const dto = new AccountHistoryDto();
-      dto.account = h.account.stakeAddress;
-      dto.epoch = h.epoch.epoch;
-      dto.balance = h.balance;
-      dto.rewards = h.rewards;
-      dto.rewardsBalance = h.rewardsBalance;
-      dto.fullBalance = h.fullBalance;
-      dto.opRewards = h.opRewards;
-      dto.pool = h.pool ? h.pool.poolId : null;
-      dto.owner = h.owner;
-      return dto;
+      return new AccountHistoryDto({
+        account: h.account.stakeAddress,
+        epoch: h.epoch.epoch,
+        balance: h.balance,
+        rewards: h.rewards,
+        rewardsBalance: h.rewardsBalance,
+        fullBalance: h.fullBalance,
+        opRewards: h.opRewards,
+        pool: h.pool ? h.pool.poolId : null,
+        owner: h.owner,
+      });
     });
   }
 }

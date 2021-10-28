@@ -26,18 +26,16 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       .innerJoinAndSelect('history.epoch', 'epoch')
       .leftJoinAndSelect('history.pool', 'pool')
       .where('account.stakeAddress = :stakeAddress')
-      .setParameter('stakeAddress', params.stakeAddress);
+      .setParameter('stakeAddress', params.stakeAddress)
+      .limit(this.MAX_LIMIT)
+      .orderBy('epoch', 'DESC');
 
     if (params.order) {
       qb.orderBy('epoch', params.order);
-    } else {
-      qb.orderBy('epoch', 'DESC');
     }
 
     if (params.limit) {
       qb.limit(params.limit);
-    } else {
-      qb.limit(this.MAX_LIMIT);
     }
 
     if (params.page) {

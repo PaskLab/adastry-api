@@ -1,6 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AccountHistoryDto {
+  constructor(props?: AccountHistoryDto) {
+    if (props) {
+      this.account = props.account;
+      this.epoch = props.epoch;
+      this.balance = props.balance;
+      this.rewards = props.rewards;
+      this.rewardsBalance = props.rewardsBalance;
+      this.fullBalance = props.fullBalance;
+      this.opRewards = props.opRewards;
+      this.pool = props.pool;
+      this.owner = props.owner;
+    }
+  }
+
   @ApiProperty({
     title: 'Account stake address',
     example: 'stake1ux9r7qjwtczc6g8qvfd2p4fntk30ffemghcwa8h7qm8vacsers3g8',

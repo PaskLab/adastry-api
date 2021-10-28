@@ -1,18 +1,18 @@
 import { Entity, ManyToOne, PrimaryGeneratedColumn, Index } from 'typeorm';
-import { PoolUpdate } from './pool-update.entity';
+import { PoolCert } from './pool-cert.entity';
 import { Account } from '../../account/entities/account.entity';
 
 @Entity()
-@Index(['own', 'account'], { unique: true })
+@Index(['cert', 'account'], { unique: true })
 export class PoolOwner {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => PoolUpdate, (poolUpdate) => poolUpdate.owners, {
+  @ManyToOne(() => PoolCert, (poolCert) => poolCert.owners, {
     onDelete: 'CASCADE',
     orphanedRowAction: 'delete',
   })
-  own!: PoolUpdate;
+  cert!: PoolCert;
 
   @ManyToOne(() => Account, {
     onDelete: 'CASCADE',

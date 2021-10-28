@@ -1,5 +1,5 @@
 export type HistoryQueryType = {
-  stakeAddress: string;
+  poolId: string;
   page?: number | undefined;
   limit?: number | undefined;
   from?: number | undefined;

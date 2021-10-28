@@ -6,7 +6,7 @@ import { Account } from '../account/entities/account.entity';
 import { Pool } from './entities/pool.entity';
 import { Epoch } from '../epoch/entities/epoch.entity';
 import { PoolHistory } from './entities/pool-history.entity';
-import { PoolUpdate } from './entities/pool-update.entity';
+import { PoolCert } from './entities/pool-cert.entity';
 import { PoolOwner } from './entities/pool-owner.entity';
 import { PoolService } from './pool.service';
 
@@ -16,7 +16,7 @@ import { PoolService } from './pool.service';
       Account,
       Pool,
       PoolHistory,
-      PoolUpdate,
+      PoolCert,
       PoolOwner,
       Epoch,
     ]),

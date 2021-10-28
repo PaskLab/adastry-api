@@ -6,8 +6,8 @@ import type { AccountHistoryType } from './types/account-history.type';
 import type { AccountRewardsHistoryType } from './types/account-rewards-history.type';
 import type { EpochType } from './types/epoch.type';
 import type { PoolInfoType } from './types/pool-info.type';
-import type { PoolUpdateType } from './types/pool-update.type';
-import type { LastPoolUpdateType } from './types/last-pool-update.type';
+import type { PoolCertType } from './types/pool-cert.type';
+import type { LastPoolCertType } from './types/last-pool-cert.type';
 import type { PoolHistoryType } from './types/pool-history.type';
 
 const PROVIDER_LIMIT: number = config.provider.blockfrost.limit;
@@ -36,28 +36,31 @@ export class BlockfrostService {
   }
 
   async getPoolInfo(poolId): Promise<PoolInfoType | null> {
-    const registration = BlockfrostService.request(`/pools/${poolId}`);
-    const metadata = BlockfrostService.request(`/pools/${poolId}/metadata`);
-    return registration
+    const cert = await BlockfrostService.request(`/pools/${poolId}`);
+    const metadata = await BlockfrostService.request(
+      `/pools/${poolId}/metadata`,
+    );
+
+    return cert && metadata
       ? {
-          poolId: (await registration).pool_id,
-          hex: (await registration).hex,
-          name: (await metadata).name,
-          ticker: (await metadata).ticker,
-          blocksMinted: (await registration).blocks_minted,
-          liveStake: (await registration).live_stake,
-          liveSaturation: (await registration).live_saturation,
-          liveDelegators: (await registration).live_delegators,
-          rewardAccount: (await registration).reward_account,
-          owners: (await registration).owners,
-          margin: (await registration).margin_cost,
-          fixed: (await registration).fixed_cost,
+          poolId: cert.pool_id,
+          hex: cert.hex,
+          name: metadata.name,
+          ticker: metadata.ticker,
+          blocksMinted: cert.blocks_minted,
+          liveStake: cert.live_stake,
+          liveSaturation: cert.live_saturation,
+          liveDelegators: cert.live_delegators,
+          rewardAccount: cert.reward_account,
+          owners: cert.owners,
+          margin: cert.margin_cost,
+          fixed: cert.fixed_cost,
         }
       : null;
   }
 
-  async getAllPoolUpdate(poolId): Promise<PoolUpdateType[]> {
-    let updates: { tx_hash: string; cert_index: string; action: string }[] = [];
+  async getAllPoolCert(poolId): Promise<PoolCertType[]> {
+    let certs: { tx_hash: string; cert_index: string; action: string }[] = [];
     let page = 1;
     let result: { tx_hash: string; cert_index: string; action: string }[] = [];
 
@@ -65,31 +68,25 @@ export class BlockfrostService {
       result = await BlockfrostService.request(
         `/pools/${poolId}/updates?page=${page}`,
       );
-      if (result) updates = updates.concat(result);
+      if (result) certs = certs.concat(result);
       page++;
     } while (result && result.length === PROVIDER_LIMIT);
 
-    const infos: PoolUpdateType[] = [];
+    const infos: PoolCertType[] = [];
 
-    for (const update of updates) {
-      const txInfo = await BlockfrostService.request(`/txs/${update.tx_hash}`);
-      if (update.action === 'registered') {
-        const info = await this.getRegistration(
-          update.tx_hash,
-          update.cert_index,
-        );
+    for (const cert of certs) {
+      const txInfo = await BlockfrostService.request(`/txs/${cert.tx_hash}`);
+      if (cert.action === 'registered') {
+        const info = await this.getRegistration(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
-          info.txHash = update.tx_hash;
+          info.txHash = cert.tx_hash;
           info.block = txInfo.block_height;
           infos.push(info);
         }
       } else {
-        const info = await this.getRetirement(
-          update.tx_hash,
-          update.cert_index,
-        );
+        const info = await this.getRetirement(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
-          info.txHash = update.tx_hash;
+          info.txHash = cert.tx_hash;
           info.block = txInfo.block_height;
           infos.push(info);
         }
@@ -99,7 +96,7 @@ export class BlockfrostService {
     return infos;
   }
 
-  async getLastPoolUpdate(poolId): Promise<LastPoolUpdateType | null> {
+  async getLastPoolCert(poolId): Promise<LastPoolCertType | null> {
     const result = await BlockfrostService.request(
       `/pools/${poolId}/updates?order=desc&count=1`,
     );
@@ -113,7 +110,7 @@ export class BlockfrostService {
       : null;
   }
 
-  async getRegistration(hash, certIndex): Promise<PoolUpdateType | null> {
+  async getRegistration(hash, certIndex): Promise<PoolCertType | null> {
     let result = await BlockfrostService.request(`/txs/${hash}/pool_updates`);
 
     if (result) {
@@ -134,7 +131,7 @@ export class BlockfrostService {
     return null;
   }
 
-  async getRetirement(hash, certIndex): Promise<PoolUpdateType | null> {
+  async getRetirement(hash, certIndex): Promise<PoolCertType | null> {
     let result = await BlockfrostService.request(`/txs/${hash}/pool_retires`);
 
     if (result) {
@@ -251,7 +248,7 @@ export class BlockfrostService {
     headers?: any,
     body?: any,
   ): Promise<any | null> {
-    return await apiRequest(
+    return apiRequest(
       PROVIDER_URL,
       endpoint,
       {

@@ -25,7 +25,8 @@ export class HistoryQuery {
   limit?: number;
 
   @ApiPropertyOptional({
-    description: 'From Epoch (Min: 208, Default: 208(ASC), LastEpoch(DESC))',
+    description:
+      'From Epoch (Min: 208, Default: ASC == 208, DESC == lastEpoch)',
     minimum: 208,
   })
   @IsInt()

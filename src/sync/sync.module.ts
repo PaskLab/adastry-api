@@ -13,8 +13,8 @@ import { SpotModule } from '../spot/spot.module';
   imports: [
     TypeOrmModule.forFeature([Account, Pool, Epoch]),
     AccountModule,
-    PoolModule,
     EpochModule,
+    PoolModule,
     SpotModule,
   ],
   providers: [SyncService],

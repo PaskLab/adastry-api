@@ -5,7 +5,7 @@ import { Account } from './account/entities/account.entity';
 import { AccountHistory } from './account/entities/account-history.entity';
 import { Pool } from './pool/entities/pool.entity';
 import { PoolHistory } from './pool/entities/pool-history.entity';
-import { PoolUpdate } from './pool/entities/pool-update.entity';
+import { PoolCert } from './pool/entities/pool-cert.entity';
 import { Currency } from './spot/entities/currency.entity';
 import { Spot } from './spot/entities/spot.entity';
 import { SyncModule } from './sync/sync.module';
@@ -26,7 +26,7 @@ import { Rate } from './spot/entities/rate.entity';
         AccountHistory,
         Pool,
         PoolHistory,
-        PoolUpdate,
+        PoolCert,
         PoolOwner,
         Currency,
         Spot,

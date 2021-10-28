@@ -1,42 +1,43 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { PoolService } from './pool.service';
-import { CreatePoolDto } from './dto/create-pool.dto';
-import { UpdatePoolDto } from './dto/update-pool.dto';
+import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { PoolDto } from './dto/pool.dto';
+import { PageQuery } from '../utils/params/page.query';
+import { PoolIdParam } from '../utils/params/pool-id.param';
+import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
+import { HistoryQuery } from '../utils/params/history.query';
+import { PoolHistoryDto } from './dto/pool-history.dto';
 
-@Controller('pool')
+@ApiTags('Pool')
+@Controller('api/pool')
 export class PoolController {
-  constructor(private readonly poolService: PoolService) {}
+  constructor(
+    @InjectEntityManager() private readonly em: EntityManager,
+    private readonly poolService: PoolService,
+  ) {}
 
-  // @Post()
-  // create(@Body() createPoolDto: CreatePoolDto) {
-  //   return this.poolService.create(createPoolDto);
-  // }
-  //
-  // @Get()
-  // findAll() {
-  //   return this.poolService.findAll();
-  // }
-  //
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.poolService.findOne(+id);
-  // }
-  //
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updatePoolDto: UpdatePoolDto) {
-  //   return this.poolService.update(+id, updatePoolDto);
-  // }
-  //
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.poolService.remove(+id);
-  // }
+  @Get()
+  @ApiOkResponse({ type: [PoolDto] })
+  list(@Query() query: PageQuery): Promise<PoolDto[]> {
+    return this.poolService.getMemberPools(query);
+  }
+
+  @Get(':poolId')
+  @ApiOkResponse({ type: PoolDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  poolInfo(@Param() param: PoolIdParam): Promise<PoolDto> {
+    return this.poolService.getPoolInfo(param.poolId);
+  }
+
+  @Get(':poolId/history')
+  @ApiOkResponse({ type: [PoolHistoryDto] })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  poolHistory(
+    @Param() param: PoolIdParam,
+    @Query() query: HistoryQuery,
+  ): Promise<PoolHistoryDto[]> {
+    return this.poolService.getPoolHistory({ ...param, ...query });
+  }
 }

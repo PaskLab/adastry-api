@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CurrencyDto {
+  constructor(props?: CurrencyDto) {
+    if (props) {
+      this.code = props.code;
+      this.name = props.name;
+    }
+  }
+
   @ApiProperty({
     title: 'Currency Symbol',
     minLength: 3,

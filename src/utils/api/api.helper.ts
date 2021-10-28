@@ -6,7 +6,7 @@ export async function request(
   headers?: any,
   body?: any,
 ): Promise<any | null> {
-  return await fetch(providerUrl + endpoint, {
+  return fetch(providerUrl + endpoint, {
     headers: {
       ...headers,
       'User-Agent': 'rewards-tracker',

@@ -1,9 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { EpochDto } from '../../epoch/dto/epoch.dto';
 import { CurrencyDto } from '../../spot/dto/currency.dto';
 import { PoolDto } from '../../pool/dto/pool.dto';
 
 export class AccountDto {
+  constructor(props?: AccountDto) {
+    if (props) {
+      this.stakeAddress = props.stakeAddress;
+      this.name = props.name;
+      this.rewardsSum = props.rewardsSum;
+      this.loyalty = props.loyalty;
+      this.epoch = props.epoch;
+      this.pool = props.pool;
+      this.currency = props.currency;
+    }
+  }
   @ApiProperty({
     title: 'Account stake address',
     example: 'stake1ux9r7qjwtczc6g8qvfd2p4fntk30ffemghcwa8h7qm8vacsers3g8',
@@ -30,10 +40,10 @@ export class AccountDto {
 
   @ApiProperty({
     title: 'Last updated epoch',
-    type: EpochDto,
+    type: 'number',
     nullable: true,
   })
-  epoch!: EpochDto | null;
+  epoch!: number | null;
 
   @ApiProperty({
     type: PoolDto,

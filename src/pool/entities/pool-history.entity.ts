@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { Epoch } from '../../epoch/entities/epoch.entity';
 import { Pool } from './pool.entity';
-import { PoolUpdate } from './pool-update.entity';
+import { PoolCert } from './pool-cert.entity';
 
 @Entity()
 @Index(['pool', 'epoch'], { unique: true })
@@ -33,6 +33,6 @@ export class PoolHistory {
   @Column({ default: 0 })
   activeStake!: number;
 
-  @ManyToOne(() => PoolUpdate)
-  registration!: PoolUpdate;
+  @ManyToOne(() => PoolCert)
+  cert!: PoolCert;
 }

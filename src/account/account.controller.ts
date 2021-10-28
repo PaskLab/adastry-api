@@ -90,12 +90,6 @@ export class AccountController {
     @Param() param: StakeAddressParam,
     @Query() query: HistoryQuery,
   ): Promise<AccountHistoryDto[]> {
-    return this.accountService.getAccountHistory({
-      stakeAddress: param.stakeAddress,
-      page: query.page,
-      limit: query.limit,
-      from: query.from,
-      order: query.order,
-    });
+    return this.accountService.getAccountHistory({ ...param, ...query });
   }
 }

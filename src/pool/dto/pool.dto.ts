@@ -1,19 +1,20 @@
-import {
-  Column,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
-import { PoolUpdate } from '../entities/pool-update.entity';
-import { Epoch } from '../../epoch/entities/epoch.entity';
-import { Account } from '../../account/entities/account.entity';
-import { PoolHistory } from '../entities/pool-history.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { EpochDto } from '../../epoch/dto/epoch.dto';
 
 export class PoolDto {
+  constructor(props?: PoolDto) {
+    if (props) {
+      this.poolId = props.poolId;
+      this.name = props.name;
+      this.blocksMinted = props.blocksMinted;
+      this.liveStake = props.liveStake;
+      this.liveSaturation = props.liveSaturation;
+      this.liveDelegators = props.liveDelegators;
+      this.epoch = props.epoch;
+      this.isMember = props.isMember;
+    }
+  }
+
   @ApiProperty({
     title: 'Stake Pool ID',
     example: 'pool19f6guwy97mmnxg9dz65rxyj8hq07qxud886hamyu4fgfz7dj9gl',
@@ -61,5 +62,5 @@ export class PoolDto {
     title: 'Last updated epoch',
     nullable: true,
   })
-  epoch!: Epoch | null;
+  epoch!: number | null;
 }
