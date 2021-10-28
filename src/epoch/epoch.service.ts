@@ -1,26 +1,61 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EpochDto } from './dto/epoch.dto';
-import { UpdateEpochDto } from './dto/update-epoch.dto';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { EpochRepository } from './repositories/epoch.repository';
+import { HistoryQuery } from '../utils/params/history.query';
 
 @Injectable()
 export class EpochService {
-  create(createEpochDto: EpochDto) {
-    return 'This action adds a new epoch';
+  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+
+  async getLastEpoch(): Promise<EpochDto> {
+    const lastEpoch = await this.em
+      .getCustomRepository(EpochRepository)
+      .findLastEpoch();
+
+    if (!lastEpoch) {
+      throw new NotFoundException('Last epoch not found.');
+    }
+
+    const epochDto = new EpochDto();
+    epochDto.epoch = lastEpoch.epoch;
+    epochDto.startTime = lastEpoch.startTime;
+    epochDto.endTime = lastEpoch.endTime;
+
+    return epochDto;
   }
 
-  findAll() {
-    return `This action returns all epoch`;
+  async getEpoch(epochNumber: number): Promise<EpochDto> {
+    const epoch = await this.em
+      .getCustomRepository(EpochRepository)
+      .findOne({ epoch: epochNumber });
+
+    if (!epoch) {
+      throw new NotFoundException('Epoch not found.');
+    }
+
+    const epochDto = new EpochDto();
+    epochDto.epoch = epoch.epoch;
+    epochDto.startTime = epoch.startTime;
+    epochDto.endTime = epoch.endTime;
+
+    return epochDto;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} epoch`;
-  }
+  async getHistory(query: HistoryQuery): Promise<EpochDto[]> {
+    const history = await this.em
+      .getCustomRepository(EpochRepository)
+      .getHistory(query);
 
-  update(id: number, updateEpochDto: UpdateEpochDto) {
-    return `This action updates a #${id} epoch`;
-  }
+    return history.map((h) => {
+      const dto = new EpochDto();
 
-  remove(id: number) {
-    return `This action removes a #${id} epoch`;
+      dto.epoch = h.epoch;
+      dto.startTime = h.startTime;
+      dto.endTime = h.endTime;
+
+      return dto;
+    });
   }
 }
