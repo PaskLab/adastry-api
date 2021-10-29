@@ -4,7 +4,7 @@ module.exports = {
       name: 'api.pasklab.com',
       script: 'npm',
       // Options reference: https://pm2.keymetrics.io/docs/usage/application-declaration/
-      args: 'start',
+      args: 'start:prod',
       interpreter: '/bin/bash',
       instances: 1,
       autorestart: true,
