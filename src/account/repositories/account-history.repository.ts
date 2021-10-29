@@ -20,7 +20,9 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       .getOne();
   }
 
-  async getHistory(params: HistoryQueryType): Promise<AccountHistory[]> {
+  async findAccountHistory(
+    params: HistoryQueryType,
+  ): Promise<AccountHistory[]> {
     const qb = this.createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')

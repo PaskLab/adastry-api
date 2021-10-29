@@ -46,7 +46,7 @@ export class EpochService {
   async getHistory(query: HistoryQuery): Promise<EpochDto[]> {
     const history = await this.em
       .getCustomRepository(EpochRepository)
-      .getHistory(query);
+      .findEpochHistory(query);
 
     return history.map((h) => {
       const dto = new EpochDto();

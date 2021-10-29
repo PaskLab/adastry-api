@@ -19,7 +19,7 @@ export class PoolController {
   ) {}
 
   @Get()
-  @ApiOkResponse({ type: [PoolDto] })
+  @ApiOkResponse({ type: [PoolDto], description: 'Return member pools' })
   list(@Query() query: PageQuery): Promise<PoolDto[]> {
     return this.poolService.getMemberPools(query);
   }

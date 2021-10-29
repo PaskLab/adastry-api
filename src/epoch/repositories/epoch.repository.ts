@@ -14,7 +14,7 @@ export class EpochRepository extends Repository<Epoch> {
       .getOne();
   }
 
-  async getHistory(params: HistoryQuery): Promise<Epoch[]> {
+  async findEpochHistory(params: HistoryQuery): Promise<Epoch[]> {
     const qb = this.createQueryBuilder('epoch');
 
     if (params.order) {

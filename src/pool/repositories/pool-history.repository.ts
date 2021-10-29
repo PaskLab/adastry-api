@@ -18,7 +18,7 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
       .getOne();
   }
 
-  async getHistory(params: HistoryQueryType): Promise<PoolHistory[]> {
+  async findPoolHistory(params: HistoryQueryType): Promise<PoolHistory[]> {
     const qb = this.createQueryBuilder('history')
       .innerJoinAndSelect('history.pool', 'pool')
       .innerJoinAndSelect('history.epoch', 'epoch')

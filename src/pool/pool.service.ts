@@ -76,7 +76,7 @@ export class PoolService {
   async getPoolHistory(params: HistoryQueryType): Promise<PoolHistoryDto[]> {
     const history = await this.em
       .getCustomRepository(PoolHistoryRepository)
-      .getHistory(params);
+      .findPoolHistory(params);
 
     return history.map((h) => {
       return new PoolHistoryDto({

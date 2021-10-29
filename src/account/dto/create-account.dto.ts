@@ -1,4 +1,4 @@
-import { IsAlpha, IsNotEmpty, Length, Matches } from 'class-validator';
+import { IsAlpha, IsNotEmpty, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAccountDto {
@@ -19,11 +19,10 @@ export class CreateAccountDto {
   name!: string;
 
   @IsAlpha()
-  @Length(3, 3)
+  @Matches('^[A-Z]{3}$')
   @ApiPropertyOptional({
     title: 'Preferred conversion currency',
-    maximum: 3,
-    minimum: 3,
+    pattern: '^[A-Z]{3}$',
     example: 'EUR',
     default: 'USD',
   })

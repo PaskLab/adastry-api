@@ -151,7 +151,7 @@ export class AccountService {
   ): Promise<AccountHistoryDto[]> {
     const history = await this.em
       .getCustomRepository(AccountHistoryRepository)
-      .getHistory(params);
+      .findAccountHistory(params);
 
     return history.map((h) => {
       return new AccountHistoryDto({
