@@ -74,12 +74,6 @@ export class SyncService {
         .getCustomRepository(PoolCertRepository)
         .findLastCert(pool.poolId);
 
-      if (!lastCert) {
-        console.log(
-          `ERROR::PoolSync()->syncPoolInfo()->poolCertRepository.findLastCert() returned ${lastCert}`,
-        );
-      }
-
       pool.name = `${poolCert.name}[${poolCert.ticker}]`;
       pool.blocksMinted = poolCert.blocksMinted;
       pool.liveStake = poolCert.liveStake;
