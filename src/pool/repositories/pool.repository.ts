@@ -17,6 +17,7 @@ export class PoolRepository extends Repository<Pool> {
   async findAllMembers(query: PageQuery): Promise<Pool[]> {
     const qb = this.createQueryBuilder('pool')
       .leftJoinAndSelect('pool.epoch', 'epoch')
+      .where('pool.isMember = TRUE')
       .limit(this.MAX_LIMIT)
       .orderBy('pool.name', 'ASC');
 
