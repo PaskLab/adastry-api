@@ -2,13 +2,11 @@ module.exports = {
   apps: [
     {
       name: 'api.pasklab.com',
-      script: 'npm',
+      script: 'node dist/src/main.js',
       // Options reference: https://pm2.keymetrics.io/docs/usage/application-declaration/
-      args: 'run start:prod',
-      interpreter: '/bin/bash',
       instances: 1,
       autorestart: true,
-      watch: false,
+      watch: true,
       max_memory_restart: '200M',
       env: {
         NODE_ENV: 'production',
