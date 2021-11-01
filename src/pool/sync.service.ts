@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import config from '../../sync-config.json';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
@@ -20,6 +20,7 @@ import type { PoolHistoryType } from '../utils/api/types/pool-history.type';
 @Injectable()
 export class SyncService {
   private readonly PROVIDER_LIMIT = config.provider.blockfrost.limit;
+  private readonly logger = new Logger(SyncService.name);
 
   constructor(
     @InjectEntityManager()
@@ -40,11 +41,7 @@ export class SyncService {
         poolEntity.isMember = true;
 
         poolRepository.save(poolEntity);
-        console.log(
-          `[${new Date().toUTCString()}] Pool Init - Creating Pool ${
-            poolEntity.poolId
-          }`,
-        );
+        this.logger.log(`Pool Init - Creating Pool ${poolEntity.poolId}`);
       }
     });
   }
@@ -63,7 +60,7 @@ export class SyncService {
     const poolCert = await this.source.getPoolInfo(pool.poolId);
 
     if (!poolCert) {
-      console.log(
+      this.logger.log(
         `ERROR::PoolSync()->syncPoolInfo()->this.source.getPoolInfo(${pool.poolId}) returned ${poolCert}`,
       );
       return;
@@ -86,11 +83,7 @@ export class SyncService {
       );
 
       this.em.getCustomRepository(PoolRepository).save(pool);
-      console.log(
-        `[${new Date().toUTCString()}] Pool Sync - Updating Pool ${
-          pool.poolId
-        }`,
-      );
+      this.logger.log(`Pool Sync - Updating Pool ${pool.poolId}`);
     }
   }
 
@@ -98,7 +91,7 @@ export class SyncService {
     const lastCert = await this.source.getLastPoolCert(pool.poolId);
 
     if (!lastCert) {
-      console.log(
+      this.logger.log(
         `ERROR::PoolSync()->syncPoolUpdate()->this.source.getLastPoolUpdate(${pool.poolId}) returned ${lastCert}`,
       );
       return;
@@ -128,7 +121,7 @@ export class SyncService {
           : null;
 
         if (!epoch) {
-          console.log(
+          this.logger.log(
             `ERROR::PoolSync()->syncPoolUpdate()->this.epochRepository.findOne(${poolCert.epoch}) returned ${epoch}`,
           );
           return;
@@ -186,10 +179,8 @@ export class SyncService {
 
         await this.em.transaction(async (em) => {
           await em.save(newCert);
-          console.log(
-            `[${new Date().toUTCString()}] Pool Cert Sync - Adding new epoch ${
-              newCert.epoch.epoch
-            } certificate for Pool ${newCert.pool.poolId}`,
+          this.logger.log(
+            `Pool Cert Sync - Adding new epoch ${newCert.epoch.epoch} certificate for Pool ${newCert.pool.poolId}`,
           );
         });
       }
@@ -221,7 +212,7 @@ export class SyncService {
       );
 
       if (!upstreamHistory) {
-        console.log(
+        this.logger.log(
           `ERROR::PoolSync()->syncPoolHistory()->this.source.getPoolHistory(${pool.poolId},${i},${this.PROVIDER_LIMIT},) returned ${upstreamHistory}`,
         );
         continue;
@@ -242,7 +233,7 @@ export class SyncService {
         : null;
 
       if (!epoch) {
-        console.log(
+        this.logger.log(
           `ERROR::PoolSync()->syncPoolHistory()->this.epochRepository.findOne(${history[i].epoch}) returned ${epoch}.`,
         );
         continue;
@@ -254,7 +245,7 @@ export class SyncService {
       );
 
       if (!lastCert) {
-        console.log(
+        this.logger.log(
           `ERROR::PoolSync()->syncPoolHistory()->poolCertRepository.findLastCert(${pool.poolId}, ${epoch.epoch}) returned ${lastCert}.`,
         );
         continue;
@@ -270,10 +261,8 @@ export class SyncService {
       newHistory.cert = lastCert;
 
       poolHistoryRepository.save(newHistory);
-      console.log(
-        `[${new Date().toUTCString()}] Pool Update Sync - Creating Epoch ${
-          newHistory.epoch.epoch
-        } history record for Pool ${newHistory.pool.poolId}`,
+      this.logger.log(
+        `Pool Update Sync - Creating Epoch ${newHistory.epoch.epoch} history record for Pool ${newHistory.pool.poolId}`,
       );
     }
   }

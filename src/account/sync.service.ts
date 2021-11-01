@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import config from '../../sync-config.json';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -20,6 +20,7 @@ import { PoolService } from '../pool/pool.service';
 @Injectable()
 export class SyncService {
   private readonly PROVIDER_LIMIT = config.provider.blockfrost.limit;
+  private readonly logger = new Logger(SyncService.name);
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
@@ -49,10 +50,8 @@ export class SyncService {
         }
 
         accountRepository.save(newAccount);
-        console.log(
-          `[${new Date().toUTCString()}] Account Init - Creating account ${
-            newAccount.stakeAddress
-          }`,
+        this.logger.log(
+          `Account Init - Creating account ${newAccount.stakeAddress}`,
         );
       } else {
         accountEntity.name = account.name;
@@ -63,10 +62,8 @@ export class SyncService {
           accountEntity.currency = currency ? currency : null;
         }
         await accountRepository.save(accountEntity);
-        console.log(
-          `[${new Date().toUTCString()}] Account Init - Updating account ${
-            accountEntity.stakeAddress
-          }`,
+        this.logger.log(
+          `Account Init - Updating account ${accountEntity.stakeAddress}`,
         );
       }
     }
@@ -86,7 +83,7 @@ export class SyncService {
       );
 
       if (!accountUpdate) {
-        console.log(
+        this.logger.log(
           `ERROR::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress}) returned ${accountUpdate}.`,
         );
         return account;
@@ -115,10 +112,8 @@ export class SyncService {
       account = await this.em
         .getCustomRepository(AccountRepository)
         .save(account);
-      console.log(
-        `[${new Date().toUTCString()}] Account Sync - Updating account ${
-          account.stakeAddress
-        }`,
+      this.logger.log(
+        `Account Sync - Updating account ${account.stakeAddress}`,
       );
     }
     return account;
@@ -157,7 +152,7 @@ export class SyncService {
       let upstreamHistory = await fetchUpstreamHistory;
 
       if (!upstreamHistory) {
-        console.log(
+        this.logger.log(
           `ERROR::AccountSync()->syncHistory()->this.source.getAccountHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamHistory}.`,
         );
         return;
@@ -166,7 +161,7 @@ export class SyncService {
       let upstreamRewardsHistory = await fetchUpstreamRewardsHistory;
 
       if (!upstreamRewardsHistory) {
-        console.log(
+        this.logger.log(
           `ERROR::AccountSync()->syncHistory()->this.source.getAccountRewardsHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamRewardsHistory}`,
         );
         return;
@@ -195,7 +190,7 @@ export class SyncService {
         : null;
 
       if (!epoch) {
-        console.log(
+        this.logger.log(
           `ERROR::AccountSync()->syncHistory()->this.epochRepository.findOne(${history[i].epoch})`,
         );
         continue;
@@ -230,10 +225,8 @@ export class SyncService {
       }
 
       accountHistoryRepository.save(newHistory);
-      console.log(
-        `[${new Date().toUTCString()}] Account History Sync - Creating Epoch ${
-          newHistory.epoch.epoch
-        } history record for account ${account.stakeAddress}`,
+      this.logger.log(
+        `Account History Sync - Creating Epoch ${newHistory.epoch.epoch} history record for account ${account.stakeAddress}`,
       );
     }
   }

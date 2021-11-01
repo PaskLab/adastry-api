@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import config from '../../sync-config.json';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -17,6 +17,7 @@ import { Spot } from './entities/spot.entity';
 @Injectable()
 export class SyncService {
   private readonly SYMBOLS: SyncConfigCurrenciesType = config.currencies;
+  private readonly logger = new Logger(SyncService.name);
 
   constructor(
     @InjectEntityManager()
@@ -41,10 +42,8 @@ export class SyncService {
       if (currencyEntity.name !== currency.name) {
         currencyEntity.name = currency.name;
         await currencyRepository.save(currencyEntity);
-        console.log(
-          `[${new Date().toUTCString()}] Spot Init - Creating/Updating Currency ${
-            currency.name
-          }`,
+        this.logger.log(
+          `Spot Init - Creating/Updating Currency ${currency.name}`,
         );
       }
     }
@@ -64,7 +63,7 @@ export class SyncService {
         .findOne({ epoch: i });
 
       if (!epoch) {
-        console.log(
+        this.logger.log(
           `ERROR::SpotSync()->syncRates()->this.em.getCustomRepository(EpochRepository).find({epoch: ${i}) returned ${epoch}`,
         );
         continue;
@@ -74,7 +73,7 @@ export class SyncService {
       const rates = await this.rateSource.getRate(date);
 
       if (!rates) {
-        console.log(
+        this.logger.log(
           `ERROR::SpotSync()->syncRates()->this.source.getRate(date) returned ${rates}`,
         );
         return;
@@ -98,10 +97,8 @@ export class SyncService {
         newRate.rate = rate.rate;
 
         this.em.save(newRate);
-        console.log(
-          `[${new Date().toUTCString()}] Rate Sync - Creating Epoch ${
-            epoch.epoch
-          } history record for ${currency.name}[${currency.code}] currency`,
+        this.logger.log(
+          `Rate Sync - Creating Epoch ${epoch.epoch} history record for ${currency.name}[${currency.code}] currency`,
         );
       }
     }
@@ -121,7 +118,7 @@ export class SyncService {
         .findOne({ epoch: i });
 
       if (!epoch) {
-        console.log(
+        this.logger.log(
           `ERROR::SpotSync()->syncSpotPrices()->this.em.getCustomRepository(EpochRepository).find({epoch: ${i}) returned ${epoch}`,
         );
         continue;
@@ -133,7 +130,7 @@ export class SyncService {
       });
 
       if (!spotPrice) {
-        console.log(
+        this.logger.log(
           `ERROR::SpotSync()->syncSpotPrices()->this.spotSource.getSpotPrice(date) returned ${spotPrice}`,
         );
         continue;
@@ -144,10 +141,8 @@ export class SyncService {
       newSpot.price = spotPrice;
 
       this.em.save(newSpot);
-      console.log(
-        `[${new Date().toUTCString()}] Spot Sync - Creating Epoch ${
-          epoch.epoch
-        } spot price history record`,
+      this.logger.log(
+        `Spot Sync - Creating Epoch ${epoch.epoch} spot price history record`,
       );
     }
   }

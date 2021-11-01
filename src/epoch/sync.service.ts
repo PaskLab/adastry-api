@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import config from '../../sync-config.json';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -10,6 +10,7 @@ import type { EpochType } from '../utils/api/types/epoch.type';
 @Injectable()
 export class SyncService {
   private readonly PROVIDER_LIMIT = config.provider.blockfrost.limit;
+  private readonly logger = new Logger(SyncService.name);
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
@@ -20,7 +21,7 @@ export class SyncService {
     const lastEpoch = await this.source.lastEpoch();
 
     if (!lastEpoch) {
-      console.log(
+      this.logger.log(
         `ERROR::EpochSync()->syncEpoch()->source.lastEpoch() returned null`,
       );
       return null;
@@ -48,7 +49,7 @@ export class SyncService {
         );
 
         if (!upstreamHistory) {
-          console.log(
+          this.logger.log(
             `ERROR::EpochSync()->syncEpoch()
               ->this.source.getEpochHistory(${lastEpoch.epoch}, ${i}, ${this.PROVIDER_LIMIT}) returned null`,
           );
@@ -65,11 +66,7 @@ export class SyncService {
         epoch.startTime = history[i].startTime;
         epoch.endTime = history[i].endTime;
         epochRepository.save(epoch);
-        console.log(
-          `[${new Date().toUTCString()}] Epoch Sync - Saving Epoch ${
-            epoch.epoch
-          }`,
-        );
+        this.logger.log(`Epoch Sync - Saving Epoch ${epoch.epoch}`);
       }
 
       const epoch = new Epoch();
@@ -77,11 +74,7 @@ export class SyncService {
       epoch.startTime = lastEpoch.startTime;
       epoch.endTime = lastEpoch.endTime;
       lastStoredEpoch = await epochRepository.save(epoch);
-      console.log(
-        `[${new Date().toUTCString()}] Epoch Sync - Saving Epoch ${
-          epoch.epoch
-        }`,
-      );
+      this.logger.log(`Epoch Sync - Saving Epoch ${epoch.epoch}`);
     }
 
     return lastStoredEpoch ? lastStoredEpoch : null;

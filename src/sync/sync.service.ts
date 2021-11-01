@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { AccountRepository } from '../account/repositories/account.repository';
@@ -8,9 +8,12 @@ import { SyncService as PoolSyncService } from '../pool/sync.service';
 import { SyncService as EpochSyncService } from '../epoch/sync.service';
 import { SyncService as SpotSyncService } from '../spot/sync.service';
 import { Epoch } from '../epoch/entities/epoch.entity';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class SyncService {
+  private readonly logger = new Logger(SyncService.name);
+
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly accountSyncService: AccountSyncService,
@@ -19,7 +22,9 @@ export class SyncService {
     private readonly spotSyncService: SpotSyncService,
   ) {}
 
+  @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
   async start(): Promise<void> {
+    this.logger.log('Starting daily sync ...');
     await this.spotSyncService.init();
     this.poolSyncService.init();
     this.accountSyncService.init();

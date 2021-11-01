@@ -13,9 +13,11 @@ import { ApiModule } from './utils/api/api.module';
 import { ConfigModule } from '@nestjs/config';
 import { PoolOwner } from './pool/entities/pool-owner.entity';
 import { Rate } from './spot/entities/rate.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
