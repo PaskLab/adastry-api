@@ -10,7 +10,7 @@ import { RateDto } from './dto/rate.dto';
 import { HistoryQuery } from '../utils/params/history.query';
 
 @ApiTags('Curreny')
-@Controller('api/currency')
+@Controller('currency')
 export class CurrencyController {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,

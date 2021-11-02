@@ -9,7 +9,7 @@ import { HistoryQuery } from '../utils/params/history.query';
 import { SpotDto } from './dto/spot.dto';
 
 @ApiTags('Spot Price')
-@Controller('api/spot')
+@Controller('spot')
 export class SpotController {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,

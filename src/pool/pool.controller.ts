@@ -11,7 +11,7 @@ import { HistoryQuery } from '../utils/params/history.query';
 import { PoolHistoryDto } from './dto/pool-history.dto';
 
 @ApiTags('Pool')
-@Controller('api/pool')
+@Controller('pool')
 export class PoolController {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,

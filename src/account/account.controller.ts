@@ -29,7 +29,7 @@ import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 
 @ApiTags('Account')
-@Controller('api/account')
+@Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 

@@ -7,7 +7,7 @@ import { EpochParam } from './params/epoch.param';
 import { HistoryQuery } from '../utils/params/history.query';
 
 @ApiTags('Epoch')
-@Controller('api/epoch')
+@Controller('epoch')
 export class EpochController {
   constructor(private readonly epochService: EpochService) {}
 
