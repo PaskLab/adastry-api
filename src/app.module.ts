@@ -14,6 +14,8 @@ import { ConfigModule } from '@nestjs/config';
 import { PoolOwner } from './pool/entities/pool-owner.entity';
 import { Rate } from './spot/entities/rate.entity';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     }),
     ApiModule,
     SyncModule,
+    AuthModule,
+    UserModule,
   ],
 })
 export class AppModule {}
