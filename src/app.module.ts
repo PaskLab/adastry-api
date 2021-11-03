@@ -16,6 +16,7 @@ import { Rate } from './spot/entities/rate.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { User } from './user/entities/user.entity';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { UserModule } from './user/user.module';
         Currency,
         Spot,
         Rate,
+        User,
       ],
       synchronize: true,
     }),

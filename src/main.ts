@@ -21,6 +21,7 @@ async function bootstrap() {
     .setTitle('Dashboard API')
     .setDescription('Backend API providing data for pools delegators account.')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('', app, document);
