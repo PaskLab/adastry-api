@@ -14,4 +14,7 @@ export class User {
 
   @Column({ default: '' })
   password!: string;
+
+  @Column({ default: '' })
+  expHash!: string;
 }
