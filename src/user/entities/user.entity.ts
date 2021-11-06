@@ -15,6 +15,6 @@ export class User {
   @Column({ default: '' })
   password!: string;
 
-  @Column({ default: '' })
+  @Column({ default: 'Not verified' })
   expHash!: string;
 }

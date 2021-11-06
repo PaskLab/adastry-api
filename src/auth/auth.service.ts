@@ -12,7 +12,7 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<UserDto | null> {
-    const user = await this.userService.getUserEntity(email);
+    const user = await this.userService.getActiveUser(email);
     if (user && (await this.userService.validatePWD(user, password))) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
