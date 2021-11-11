@@ -16,6 +16,7 @@ import * as crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
 import ejs = require('ejs');
+import { UpdateEmailDto } from './dto/update-email.dto';
 
 @Injectable()
 export class UserService {
@@ -26,19 +27,12 @@ export class UserService {
   async createUser(createUserDto: CreateUserDto): Promise<UserDto> {
     let user = await this.em
       .getCustomRepository(UserRepository)
-      .findOne({ email: createUserDto.email });
+      .findOne({ username: createUserDto.username });
 
     if (user) {
-      if (user.expHash === '') {
-        throw new ConflictException(
-          `User with email ${createUserDto.email} already exist.`,
-        );
-      }
-      const timestamp = new Date(parseInt(user.expHash.slice(0, 13)));
-      if (timestamp.valueOf() < Date.now()) {
-        await this.em.delete(User, user.id);
-        user = undefined;
-      }
+      throw new ConflictException(
+        `User with username "${createUserDto.username}" already exist.`,
+      );
     }
 
     const saltRounds = 10;
@@ -46,9 +40,29 @@ export class UserService {
 
     if (!user) {
       user = new User();
-      user.email = createUserDto.email;
+      user.username = createUserDto.username;
       user.name = createUserDto.name;
       user.password = pwdHash;
+    }
+
+    user = await this.em.save(user);
+
+    return new UserDto({
+      id: user.id,
+      username: user.username,
+      email: '',
+      name: user.name,
+    });
+  }
+
+  async addEmail(userId: number, addEmailDto: UpdateEmailDto) {
+    // todo: method to be completed, code moved from other method
+    let user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOne({ id: userId });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
     }
 
     const exp = new Date();
@@ -59,15 +73,13 @@ export class UserService {
     user = await this.em.save(user);
 
     this.sendVerifyEmail(user.email, user.expHash);
-
-    return new UserDto({ id: user.id, email: user.email, name: user.name });
   }
 
   async validatePWD(user: User, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.password);
   }
 
-  async verifyAccount(code: string): Promise<User> {
+  async verifyEmail(code: string): Promise<User> {
     const user = await this.em
       .getCustomRepository(UserRepository)
       .findOne({ expHash: code });
@@ -111,13 +123,13 @@ export class UserService {
     transporter.close();
   }
 
-  async getActiveUser(email: string): Promise<User> {
+  async getActiveUser(username: string): Promise<User> {
     const user = await this.em
       .getCustomRepository(UserRepository)
-      .findActiveUser(email);
+      .findActiveUser(username);
 
     if (!user) {
-      throw new NotFoundException(`User ${email} not found.`);
+      throw new NotFoundException(`User ${username} not found.`);
     }
 
     return user;

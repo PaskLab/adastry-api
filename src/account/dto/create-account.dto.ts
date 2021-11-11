@@ -1,4 +1,4 @@
-import { IsAlpha, IsNotEmpty, Matches } from 'class-validator';
+import { IsAlpha, IsNotEmpty, IsOptional, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAccountDto {
@@ -18,6 +18,7 @@ export class CreateAccountDto {
   })
   name!: string;
 
+  @IsOptional()
   @IsAlpha()
   @Matches('^[A-Z]{3}$')
   @ApiPropertyOptional({

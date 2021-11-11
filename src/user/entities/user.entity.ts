@@ -7,6 +7,13 @@ export class User {
 
   @Column()
   @Index({ unique: true })
+  username!: string;
+
+  @Column({ default: true })
+  active!: boolean;
+
+  @Column({ default: '' })
+  @Index({ unique: true })
   email!: string;
 
   @Column({ default: '' })
