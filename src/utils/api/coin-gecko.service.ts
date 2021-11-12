@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import config from '../../../sync-config.json';
+import config from '../../../config.json';
 import { request as apiRequest } from './api.helper';
 
 @Injectable()

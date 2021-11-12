@@ -1,4 +1,5 @@
-export type SyncConfigType = {
+export type ConfigType = {
+  api: { pageLimit: number };
   provider: SyncConfigProviderType;
   pools: SyncConfigPoolsType;
   accounts: SyncConfigAccountsType;

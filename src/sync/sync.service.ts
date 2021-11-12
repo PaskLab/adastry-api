@@ -20,18 +20,20 @@ export class SyncService {
     private readonly poolSyncService: PoolSyncService,
     private readonly epochSyncService: EpochSyncService,
     private readonly spotSyncService: SpotSyncService,
-  ) {}
+  ) {
+    this.init();
+  }
 
-  @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
-  async start(): Promise<void> {
-    this.logger.log('Starting daily sync ...');
+  async init(): Promise<void> {
+    this.logger.log('Init sync data ...');
     await this.spotSyncService.init();
-    this.poolSyncService.init();
-    this.accountSyncService.init();
+    await this.poolSyncService.init();
     this.sync();
   }
 
+  @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
   private async sync(): Promise<void> {
+    this.logger.log('Starting daily sync ...');
     const lastEpoch = await this.epochSyncService.syncEpoch();
 
     if (lastEpoch) {

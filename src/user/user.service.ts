@@ -17,6 +17,8 @@ import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
 import ejs = require('ejs');
 import { UpdateEmailDto } from './dto/update-email.dto';
+import { CurrencyRepository } from '../spot/repositories/currency.repository';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -38,12 +40,23 @@ export class UserService {
     const saltRounds = 10;
     const pwdHash = await bcrypt.hash(createUserDto.password, saltRounds);
 
-    if (!user) {
-      user = new User();
-      user.username = createUserDto.username;
-      user.name = createUserDto.name;
-      user.password = pwdHash;
+    const currency = await this.em
+      .getCustomRepository(CurrencyRepository)
+      .findOne({
+        code: createUserDto.currency ? createUserDto.currency : 'USD',
+      });
+
+    if (!currency) {
+      throw new BadRequestException(
+        `Currency code [${createUserDto.currency}] not supported.`,
+      );
     }
+
+    user = new User();
+    user.username = createUserDto.username;
+    user.name = createUserDto.name;
+    user.password = pwdHash;
+    user.currency = currency;
 
     user = await this.em.save(user);
 
@@ -52,7 +65,38 @@ export class UserService {
       username: user.username,
       email: '',
       name: user.name,
+      currency: user.currency.code,
     });
+  }
+
+  async updateUser(userId: number, updateDto: UpdateUserDto): Promise<User> {
+    const user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOne({ id: userId });
+
+    if (!user) {
+      throw new NotFoundException(`User not found.`);
+    }
+
+    if (updateDto.name) {
+      user.name = updateDto.name;
+    }
+
+    if (updateDto.currency) {
+      const currency = await this.em
+        .getCustomRepository(CurrencyRepository)
+        .findOne({ code: updateDto.currency });
+
+      if (!currency) {
+        throw new BadRequestException(
+          `Currency code [${updateDto.currency}] not supported.`,
+        );
+      }
+
+      user.currency = currency;
+    }
+
+    return this.em.save(user);
   }
 
   async addEmail(userId: number, addEmailDto: UpdateEmailDto) {
@@ -98,9 +142,7 @@ export class UserService {
   }
 
   async sendVerifyEmail(email: string, code: string): Promise<void> {
-    const ejsTemplate = await readFileSync(
-      './views/user/verif-email.ejs',
-    ).toString();
+    const ejsTemplate = readFileSync('./views/user/verif-email.ejs').toString();
 
     const transporter = nodemailer.createTransport(process.env.MAILER_URL);
     const message = {

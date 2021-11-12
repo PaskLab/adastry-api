@@ -9,6 +9,7 @@ import { AccountHistory } from './entities/account-history.entity';
 import { Pool } from '../pool/entities/pool.entity';
 import { Epoch } from '../epoch/entities/epoch.entity';
 import { PoolModule } from '../pool/pool.module';
+import { UserAccountService } from './user-account.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { PoolModule } from '../pool/pool.module';
     PoolModule,
   ],
   controllers: [AccountController],
-  providers: [AccountService, SyncService],
+  providers: [AccountService, UserAccountService, SyncService],
   exports: [AccountService, SyncService],
 })
 export class AccountModule {}

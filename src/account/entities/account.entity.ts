@@ -5,11 +5,12 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Index,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { AccountHistory } from './account-history.entity';
 import { Pool } from '../../pool/entities/pool.entity';
 import { Epoch } from '../../epoch/entities/epoch.entity';
-import { Currency } from '../../spot/entities/currency.entity';
 
 @Entity()
 export class Account {
@@ -19,9 +20,6 @@ export class Account {
   @Column()
   @Index({ unique: true })
   stakeAddress!: string;
-
-  @Column({ default: '' })
-  name!: string;
 
   @Column({ default: 0 })
   rewardsSum!: number;
@@ -38,6 +36,10 @@ export class Account {
   @OneToMany(() => AccountHistory, (history) => history.account)
   history!: AccountHistory[];
 
-  @ManyToOne(() => Currency)
-  currency!: Currency | null;
+  // Special columns
+  @CreateDateColumn()
+  createdAt!: string;
+
+  @UpdateDateColumn()
+  updatedAd!: string;
 }

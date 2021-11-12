@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import config from '../../sync-config.json';
+import config from '../../config.json';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
 import { Pool } from './entities/pool.entity';
@@ -14,8 +14,8 @@ import { PoolHistoryRepository } from './repositories/pool-history.repository';
 import { PoolCertRepository } from './repositories/pool-cert.repository';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { AccountRepository } from '../account/repositories/account.repository';
-import type { SyncConfigPoolsType } from '../sync/types/sync-config.type';
 import type { PoolHistoryType } from '../utils/api/types/pool-history.type';
+import { ArmadaService } from '../utils/api/armada.service';
 
 @Injectable()
 export class SyncService {
@@ -26,13 +26,22 @@ export class SyncService {
     @InjectEntityManager()
     private readonly em: EntityManager,
     private readonly source: BlockfrostService,
+    private readonly armadaService: ArmadaService,
   ) {}
 
   async init(): Promise<void> {
-    const pools: SyncConfigPoolsType = config.pools;
+    const pools = await this.armadaService.getPools();
+
+    if (!pools) {
+      this.logger.log(
+        `ERROR::PoolSync()->init()->this.armadaService.getPools()`,
+      );
+      return;
+    }
+
     const poolRepository = this.em.getCustomRepository(PoolRepository);
 
-    pools.forEach(async (pool) => {
+    for (const pool of pools) {
       let poolEntity = await poolRepository.findOne({ poolId: pool.id });
       if (!poolEntity) {
         poolEntity = new Pool();
@@ -40,10 +49,10 @@ export class SyncService {
         poolEntity.name = pool.name;
         poolEntity.isMember = true;
 
-        poolRepository.save(poolEntity);
+        await poolRepository.save(poolEntity);
         this.logger.log(`Pool Init - Creating Pool ${poolEntity.poolId}`);
       }
-    });
+    }
   }
 
   async syncPool(pool: Pool, lastEpoch: Epoch) {
@@ -234,7 +243,19 @@ export class SyncService {
 
       if (!epoch) {
         this.logger.log(
-          `ERROR::PoolSync()->syncPoolHistory()->this.epochRepository.findOne(${history[i].epoch}) returned ${epoch}.`,
+          `NOT FOUND::PoolSync()->syncPoolHistory()->this.epochRepository.findOne(${history[i].epoch}) returned ${epoch}.`,
+        );
+        continue;
+      }
+
+      let newHistory = await poolHistoryRepository.findOneRecord(
+        pool.poolId,
+        epoch.epoch,
+      );
+
+      if (newHistory) {
+        this.logger.log(
+          `DUPLICATE::PoolSync()->syncPoolHistory()->poolHistoryRepository.findOneRecord(${pool.poolId}, ${epoch.epoch}).`,
         );
         continue;
       }
@@ -246,12 +267,12 @@ export class SyncService {
 
       if (!lastCert) {
         this.logger.log(
-          `ERROR::PoolSync()->syncPoolHistory()->poolCertRepository.findLastCert(${pool.poolId}, ${epoch.epoch}) returned ${lastCert}.`,
+          `NOT FOUND::PoolSync()->syncPoolHistory()->poolCertRepository.findLastCert(${pool.poolId}, ${epoch.epoch}) returned ${lastCert}.`,
         );
         continue;
       }
 
-      const newHistory = new PoolHistory();
+      newHistory = new PoolHistory();
       newHistory.epoch = epoch;
       newHistory.pool = pool;
       newHistory.rewards = history[i].rewards;

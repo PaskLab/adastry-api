@@ -1,4 +1,4 @@
-import config from '../../../sync-config.json';
+import config from '../../../config.json';
 import { Injectable } from '@nestjs/common';
 import { request as apiRequest } from './api.helper';
 import type { AccountInfoType } from './types/account-info.type';
