@@ -1,8 +1,8 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import { AddUserAccountDto } from './dto/add-user-account.dto';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -93,8 +93,8 @@ export class UserAccountService {
       );
 
       if (!addressInfo) {
-        throw new ServiceUnavailableException(
-          'Could not fetch the required resource.',
+        throw new BadRequestException(
+          'Address invalid or service unavailable.',
         );
       }
 

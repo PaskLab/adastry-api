@@ -48,6 +48,7 @@ export class AccountController {
   @ApiCreatedResponse({ type: ResponseDto })
   @ApiConflictResponse({ type: ConflictErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
   async addUserAccount(
     @Request() req,
     @Body() addUserAccountDto: AddUserAccountDto,
