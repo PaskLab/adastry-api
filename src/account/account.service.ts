@@ -7,8 +7,6 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { AccountRepository } from './repositories/account.repository';
 import { Account } from './entities/account.entity';
-import { AccountDto } from './dto/account.dto';
-import { PoolDto } from '../pool/dto/pool.dto';
 import { HistoryQueryType } from './types/history-query.type';
 import { AccountHistoryRepository } from './repositories/account-history.repository';
 import { AccountHistoryDto } from './dto/account-history.dto';
@@ -61,41 +59,6 @@ export class AccountService {
     } catch (e) {
       throw new ConflictException(`Account ${stakeAddress} cannot be deleted.`);
     }
-  }
-
-  async getAccountInfo(stakeAddress: string): Promise<AccountDto> {
-    const account = await this.em
-      .getCustomRepository(AccountRepository)
-      .findOneWithJoin(stakeAddress);
-
-    if (!account) {
-      throw new NotFoundException(`Account ${stakeAddress} not found.`);
-    }
-
-    let poolDto: PoolDto | null = null;
-    const pool = account.pool;
-
-    if (pool) {
-      poolDto = new PoolDto({
-        poolId: pool.poolId,
-        name: pool.name,
-        blocksMinted: pool.blocksMinted,
-        liveStake: pool.liveStake,
-        liveSaturation: pool.liveSaturation,
-        liveDelegators: pool.liveDelegators,
-        epoch: pool.epoch ? pool.epoch.epoch : null,
-        isMember: pool.isMember,
-      });
-    }
-
-    const dto = new AccountDto();
-    dto.stakeAddress = account.stakeAddress;
-    dto.epoch = account.epoch ? account.epoch.epoch : null;
-    dto.pool = poolDto;
-    dto.loyalty = account.loyalty;
-    dto.rewardsSum = account.rewardsSum;
-
-    return dto;
   }
 
   async getHistory(params: HistoryQueryType): Promise<AccountHistoryDto[]> {

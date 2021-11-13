@@ -12,6 +12,9 @@ import { UserAccountRepository } from './repositories/user-account.repository';
 import { UserAccount } from './entities/user-account.entity';
 import { SyncService } from './sync.service';
 import { AccountService } from './account.service';
+import { UserAccountDto } from './dto/user-account.dto';
+import { PoolDto } from '../pool/dto/pool.dto';
+import { AccountDto } from './dto/account.dto';
 
 @Injectable()
 export class UserAccountService {
@@ -20,6 +23,59 @@ export class UserAccountService {
     private readonly syncService: SyncService,
     private readonly accountService: AccountService,
   ) {}
+
+  async getAll(userId: number): Promise<UserAccountDto[]> {
+    const userAccounts = await this.em
+      .getCustomRepository(UserAccountRepository)
+      .findAllUserAccount(userId);
+
+    return userAccounts.map(
+      (a) =>
+        new UserAccountDto({
+          stakeAddress: a.account.stakeAddress,
+          name: a.name,
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+        }),
+    );
+  }
+
+  async getAccountInfo(userId, stakeAddress: string): Promise<AccountDto> {
+    const userAccount = await this.em
+      .getCustomRepository(UserAccountRepository)
+      .findUserAccountWithJoin(userId, stakeAddress);
+
+    if (!userAccount) {
+      throw new NotFoundException(`Account ${stakeAddress} not found.`);
+    }
+
+    const account = userAccount.account;
+
+    let poolDto: PoolDto | null = null;
+    const pool = account.pool;
+
+    if (pool) {
+      poolDto = new PoolDto({
+        poolId: pool.poolId,
+        name: pool.name,
+        blocksMinted: pool.blocksMinted,
+        liveStake: pool.liveStake,
+        liveSaturation: pool.liveSaturation,
+        liveDelegators: pool.liveDelegators,
+        epoch: pool.epoch ? pool.epoch.epoch : null,
+        isMember: pool.isMember,
+      });
+    }
+
+    return new AccountDto({
+      name: userAccount.name,
+      stakeAddress: account.stakeAddress,
+      rewardsSum: account.rewardsSum,
+      loyalty: account.loyalty,
+      epoch: account.epoch ? account.epoch.epoch : null,
+      pool: poolDto,
+    });
+  }
 
   async create(
     userId: number,

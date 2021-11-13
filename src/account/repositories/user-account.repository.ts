@@ -10,10 +10,33 @@ export class UserAccountRepository extends Repository<UserAccount> {
     return this.createQueryBuilder('userAccount')
       .innerJoinAndSelect('userAccount.account', 'account')
       .innerJoinAndSelect('userAccount.user', 'user')
-      .leftJoinAndSelect('account.currency', 'currency')
       .where('user.id = :userId')
       .andWhere('account.stakeAddress = :stakeAddress')
       .setParameters({ userId: userId, stakeAddress: stakeAddress })
       .getOne();
+  }
+
+  async findUserAccountWithJoin(
+    userId: number,
+    stakeAddress: string,
+  ): Promise<UserAccount | undefined> {
+    return this.createQueryBuilder('userAccount')
+      .innerJoinAndSelect('userAccount.account', 'account')
+      .innerJoinAndSelect('userAccount.user', 'user')
+      .innerJoinAndSelect('account.pool', 'pool')
+      .innerJoinAndSelect('account.epoch', 'epoch')
+      .where('user.id = :userId')
+      .andWhere('account.stakeAddress = :stakeAddress')
+      .setParameters({ userId: userId, stakeAddress: stakeAddress })
+      .getOne();
+  }
+
+  async findAllUserAccount(userId: number): Promise<UserAccount[]> {
+    return this.createQueryBuilder('userAccount')
+      .innerJoinAndSelect('userAccount.account', 'account')
+      .innerJoinAndSelect('userAccount.user', 'user')
+      .where('user.id = :userId')
+      .setParameter('userId', userId)
+      .getMany();
   }
 }

@@ -32,6 +32,7 @@ import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserAccountService } from './user-account.service';
+import { UserAccountDto } from './dto/user-account.dto';
 
 @ApiTags('Account')
 @Controller('account')
@@ -40,6 +41,14 @@ export class AccountController {
     private readonly accountService: AccountService,
     private readonly userAccountService: UserAccountService,
   ) {}
+
+  @Get()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiCreatedResponse({ type: [UserAccountDto] })
+  async list(@Request() req): Promise<UserAccountDto[]> {
+    return this.userAccountService.getAll(req.user.id);
+  }
 
   @Post()
   @ApiBearerAuth()
@@ -82,8 +91,14 @@ export class AccountController {
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: AccountDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
-  accountInfo(@Param() param: StakeAddressParam): Promise<AccountDto> {
-    return this.accountService.getAccountInfo(param.stakeAddress);
+  accountInfo(
+    @Request() req,
+    @Param() param: StakeAddressParam,
+  ): Promise<AccountDto> {
+    return this.userAccountService.getAccountInfo(
+      req.user.id,
+      param.stakeAddress,
+    );
   }
 
   @Delete(':stakeAddress')
