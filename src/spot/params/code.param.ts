@@ -5,10 +5,10 @@ export class CodeParam {
   @IsAlpha()
   @Matches('^[A-Z]{3}$')
   @ApiProperty({
-    title: 'Preferred conversion currency',
+    title: 'Currency Code',
     pattern: '^[A-Z]{3}$',
-    example: 'EUR',
-    default: 'USD',
+    example: 'USD',
+    description: 'Base currency: EUR',
   })
   code!: string;
 }

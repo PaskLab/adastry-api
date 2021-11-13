@@ -19,9 +19,17 @@ export class RateRepository extends Repository<Rate> {
     return this.createQueryBuilder('rate')
       .innerJoinAndSelect('rate.currency', 'currency')
       .innerJoinAndSelect('rate.epoch', 'epoch')
-      .where('currency.code = :code')
-      .setParameter('code', code)
+      .where('currency.code = :code', { code: code })
       .orderBy('epoch.epoch', 'DESC')
+      .getOne();
+  }
+
+  async findRateEpoch(code: string, epoch: number): Promise<Rate | undefined> {
+    return this.createQueryBuilder('rate')
+      .innerJoinAndSelect('rate.currency', 'currency')
+      .innerJoinAndSelect('rate.epoch', 'epoch')
+      .where('currency.code = :code', { code: code })
+      .andWhere('epoch.epoch = :epoch', { epoch: epoch })
       .getOne();
   }
 
@@ -29,8 +37,7 @@ export class RateRepository extends Repository<Rate> {
     const qb = this.createQueryBuilder('rate')
       .innerJoinAndSelect('rate.currency', 'currency')
       .innerJoinAndSelect('rate.epoch', 'epoch')
-      .where('currency.code = :code')
-      .setParameter('code', params.code)
+      .where('currency.code = :code', { code: params.code })
       .limit(this.MAX_LIMIT)
       .orderBy('epoch', 'DESC');
 

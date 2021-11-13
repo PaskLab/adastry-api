@@ -58,7 +58,7 @@ export class SpotService {
     );
   }
 
-  async getLastPrice(): Promise<SpotDto> {
+  async getLastPrice(code?: string): Promise<SpotDto> {
     const price = await this.em
       .getCustomRepository(SpotRepository)
       .findLastEpoch();
@@ -67,13 +67,53 @@ export class SpotService {
       throw new NotFoundException('Last price not found.');
     }
 
+    if (code) {
+      const rate = await this.em
+        .getCustomRepository(RateRepository)
+        .findRateEpoch(code, price.epoch.epoch);
+
+      if (!rate) {
+        throw new NotFoundException(
+          `Epoch ${price.epoch.epoch} rate not found for ${code}.`,
+        );
+      }
+
+      price.price = rate.rate * price.price;
+    }
+
     return new SpotDto({ epoch: price.epoch.epoch, price: price.price });
   }
 
-  async getPriceHistory(params: HistoryQuery): Promise<SpotDto[]> {
+  async getPriceHistory(
+    params: HistoryQuery,
+    code?: string,
+  ): Promise<SpotDto[]> {
     const prices = await this.em
       .getCustomRepository(SpotRepository)
       .findPriceHistory(params);
+
+    if (code) {
+      const rates = await this.em
+        .getCustomRepository(RateRepository)
+        .findRateHistory({
+          code: code,
+          ...params,
+        });
+
+      for (const price of prices) {
+        const rate = rates.find(
+          (rate) => rate.epoch.epoch === price.epoch.epoch,
+        );
+
+        if (!rate) {
+          throw new NotFoundException(
+            `Missing epoch ${price.epoch.epoch} rate for ${code}.`,
+          );
+        }
+
+        price.price = price.price * rate.rate;
+      }
+    }
 
     return prices.map(
       (p) => new SpotDto({ epoch: p.epoch.epoch, price: p.price }),
