@@ -176,7 +176,7 @@ export class SyncService {
 
       newHistory.account = account;
       newHistory.epoch = epoch;
-      newHistory.balance = history[i].balance;
+      newHistory.fullBalance = history[i].balance;
       newHistory.rewards = rh ? rh.rewards : 0;
       newHistory.pool = pool;
 
