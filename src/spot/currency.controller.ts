@@ -1,6 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { SpotService } from './spot.service';
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { CurrencyDto } from './dto/currency.dto';
@@ -8,6 +13,7 @@ import { CodeParam } from './params/code.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { RateDto } from './dto/rate.dto';
 import { HistoryQuery } from '../utils/params/history.query';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Curreny')
 @Controller('currency')
@@ -18,6 +24,8 @@ export class CurrencyController {
   ) {}
 
   @Get()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({
     type: [CurrencyDto],
     description: 'Return supported Currencies',
@@ -27,6 +35,8 @@ export class CurrencyController {
   }
 
   @Get(':code')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: CurrencyDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   currencyInfo(@Param() param: CodeParam): Promise<CurrencyDto> {
@@ -34,6 +44,8 @@ export class CurrencyController {
   }
 
   @Get(':code/rate')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({
     type: RateDto,
     description: 'Last epoch rate for currency.',
@@ -44,6 +56,8 @@ export class CurrencyController {
   }
 
   @Get(':code/rate-history')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: [RateDto], description: 'Currency rate history' })
   rateHistory(
     @Param() param: CodeParam,
