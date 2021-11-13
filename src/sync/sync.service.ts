@@ -27,13 +27,13 @@ export class SyncService {
   async init(): Promise<void> {
     this.logger.log('Init sync data ...');
     await this.spotSyncService.init();
-    await this.poolSyncService.init();
     this.sync();
   }
 
   @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
   private async sync(): Promise<void> {
     this.logger.log('Starting daily sync ...');
+    await this.poolSyncService.syncMember();
     const lastEpoch = await this.epochSyncService.syncEpoch();
 
     if (lastEpoch) {

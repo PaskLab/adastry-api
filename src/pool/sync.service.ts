@@ -16,11 +16,13 @@ import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { AccountRepository } from '../account/repositories/account.repository';
 import type { PoolHistoryType } from '../utils/api/types/pool-history.type';
 import { ArmadaService } from '../utils/api/armada.service';
+import { SyncConfigPoolsType } from '../utils/api/types/config.type';
 
 @Injectable()
 export class SyncService {
   private readonly PROVIDER_LIMIT = config.provider.blockfrost.limit;
   private readonly logger = new Logger(SyncService.name);
+  private memberPools: SyncConfigPoolsType = [];
 
   constructor(
     @InjectEntityManager()
@@ -29,7 +31,7 @@ export class SyncService {
     private readonly armadaService: ArmadaService,
   ) {}
 
-  async init(): Promise<void> {
+  async syncMember(): Promise<void> {
     const pools = await this.armadaService.getPools();
 
     if (!pools) {
@@ -39,19 +41,43 @@ export class SyncService {
       return;
     }
 
+    this.memberPools = pools;
+
+    this.processNonMember(pools);
+
     const poolRepository = this.em.getCustomRepository(PoolRepository);
 
     for (const pool of pools) {
+      let action = 'Updating';
       let poolEntity = await poolRepository.findOne({ poolId: pool.id });
       if (!poolEntity) {
+        action = 'Creating';
         poolEntity = new Pool();
         poolEntity.poolId = pool.id;
         poolEntity.name = pool.name;
-        poolEntity.isMember = true;
-
-        await poolRepository.save(poolEntity);
-        this.logger.log(`Pool Init - Creating Pool ${poolEntity.poolId}`);
       }
+
+      poolEntity.isMember = true;
+      await poolRepository.save(poolEntity);
+      this.logger.log(`Pool Init - ${action} Pool ${poolEntity.poolId}`);
+    }
+  }
+
+  async processNonMember(pools: SyncConfigPoolsType) {
+    const memberIds: string[] = [];
+
+    for (const pool of pools) {
+      memberIds.push(pool.id);
+    }
+
+    const optOutMembers = await this.em
+      .getCustomRepository(PoolRepository)
+      .findOptOutMembers(memberIds);
+
+    for (const pool of optOutMembers) {
+      pool.isMember = false;
+      this.em.save(pool);
+      this.logger.log(`Removing membership for pool ID: ${pool.poolId}`);
     }
   }
 
@@ -87,7 +113,7 @@ export class SyncService {
       pool.liveDelegators = poolCert.liveDelegators;
       pool.epoch = lastEpoch;
       pool.lastCert = lastCert ? lastCert : null;
-      pool.isMember = config.pools.some(
+      pool.isMember = this.memberPools.some(
         (memberPool) => memberPool.id === pool.poolId,
       );
 
