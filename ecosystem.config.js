@@ -14,8 +14,8 @@ module.exports = {
       env_dev: {
         NODE_ENV: 'development',
       },
-      output: './output.log',
-      error: './error.log',
+      out_file: './output.log',
+      error_file: './error.log',
       time: true, //prefix logs with standard formated timestamp
     },
   ],
