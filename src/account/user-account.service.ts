@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { AddUserAccountDto } from './dto/add-user-account.dto';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -15,6 +16,8 @@ import { AccountService } from './account.service';
 import { UserAccountDto } from './dto/user-account.dto';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountDto } from './dto/account.dto';
+import { UserRepository } from '../user/repositories/user.repository';
+import { BlockfrostService } from '../utils/api/blockfrost.service';
 
 @Injectable()
 export class UserAccountService {
@@ -22,6 +25,7 @@ export class UserAccountService {
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
     private readonly accountService: AccountService,
+    private readonly source: BlockfrostService,
   ) {}
 
   async getAll(userId: number): Promise<UserAccountDto[]> {
@@ -81,27 +85,52 @@ export class UserAccountService {
     userId: number,
     userAccountDto: AddUserAccountDto,
   ): Promise<UserAccount> {
+    const isStakeAddr = new RegExp('^stake[a-z0-9]{54}$');
+
+    if (!isStakeAddr.test(userAccountDto.address)) {
+      const addressInfo = await this.source.getAddressInfo(
+        userAccountDto.address,
+      );
+
+      if (!addressInfo) {
+        throw new ServiceUnavailableException(
+          'Could not fetch the required resource.',
+        );
+      }
+
+      userAccountDto.address = addressInfo.stakeAddress;
+    }
+
     let userAccount = await this.em
       .getCustomRepository(UserAccountRepository)
-      .findUserAccount(userId, userAccountDto.stakeAddress);
+      .findUserAccount(userId, userAccountDto.address);
 
     if (userAccount) {
       throw new ConflictException(
-        `Account ${userAccountDto.stakeAddress} already linked.`,
+        `Account ${userAccountDto.address} already linked.`,
       );
+    }
+
+    let user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOne({ id: userId, active: true });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
     }
 
     let account = await this.em
       .getCustomRepository(AccountRepository)
-      .findOne({ stakeAddress: userAccountDto.stakeAddress });
+      .findOne({ stakeAddress: userAccountDto.address });
 
     if (!account) {
-      account = await this.accountService.create(userAccountDto.stakeAddress);
+      account = await this.accountService.create(userAccountDto.address);
     }
 
     userAccount = new UserAccount();
     userAccount.account = account;
     userAccount.name = userAccountDto.name;
+    userAccount.user = user;
 
     return this.em.save(userAccount);
   }

@@ -42,14 +42,6 @@ export class AccountController {
     private readonly userAccountService: UserAccountService,
   ) {}
 
-  @Get()
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @ApiCreatedResponse({ type: [UserAccountDto] })
-  async list(@Request() req): Promise<UserAccountDto[]> {
-    return this.userAccountService.getAll(req.user.id);
-  }
-
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -84,6 +76,14 @@ export class AccountController {
     return new ResponseDto(
       `Account ${updateAccountDto.stakeAddress} successfully updated.`,
     );
+  }
+
+  @Get('list')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiCreatedResponse({ type: [UserAccountDto] })
+  async list(@Request() req): Promise<UserAccountDto[]> {
+    return this.userAccountService.getAll(req.user.id);
   }
 
   @Get(':stakeAddress')

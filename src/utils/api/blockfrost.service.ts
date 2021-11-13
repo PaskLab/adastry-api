@@ -9,6 +9,7 @@ import type { PoolInfoType } from './types/pool-info.type';
 import type { PoolCertType } from './types/pool-cert.type';
 import type { LastPoolCertType } from './types/last-pool-cert.type';
 import type { PoolHistoryType } from './types/pool-history.type';
+import { AddressInfoType } from './types/address-info.type';
 
 @Injectable()
 export class BlockfrostService {
@@ -206,8 +207,18 @@ export class BlockfrostService {
     return await this.request(`/accounts/${stakeAddr}/addresses`);
   }
 
-  async getAddressInfo(addr) {
-    return await this.request(`/addresses/${addr}`);
+  async getAddressInfo(addr): Promise<AddressInfoType | null> {
+    const result = await this.request(`/addresses/${addr}`);
+
+    return result
+      ? {
+          address: result.address,
+          amount: result.amount,
+          stakeAddress: result.stake_address,
+          type: result.type,
+          script: result.script,
+        }
+      : null;
   }
 
   async lastEpoch(): Promise<EpochType | null> {

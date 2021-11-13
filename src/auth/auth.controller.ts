@@ -1,9 +1,7 @@
-import { Controller, Request, Post, UseGuards, Get } from '@nestjs/common';
+import { Controller, Request, Post, UseGuards } from '@nestjs/common';
 import { LocalAuthGuard } from './local-auth.guard';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt-auth.guard';
 import {
-  ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
   ApiTags,
@@ -25,12 +23,5 @@ export class AuthController {
   @ApiUnauthorizedResponse({ type: UnauthorizedErrorDto })
   async login(@Request() req) {
     return this.authService.login(req.user);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  getProfile(@Request() req) {
-    return req.user;
   }
 }

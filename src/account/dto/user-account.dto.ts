@@ -24,13 +24,13 @@ export class UserAccountDto {
 
   @ApiProperty({
     title: 'Created at',
-    example: '2021-11-12 18:53:35',
+    example: '2021-11-13T01:50:15.000Z',
   })
   createdAt!: string;
 
   @ApiProperty({
     title: 'Last update',
-    example: '2021-11-12 18:53:35',
+    example: '2021-11-13T01:50:15.000Z',
   })
   updatedAt!: string;
 }
