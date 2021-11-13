@@ -5,46 +5,20 @@
   "provider": {
     "blockfrost": {
       "url": "https://cardano-mainnet.blockfrost.io/api/v0",
-      "limit": 100
+      "limit": 100,
+      "rate": 500
     },
     "fixerio": {
       "url": "http://data.fixer.io/api"
     },
     "coingecko": {
-      "url": "https://api.coingecko.com/api/v3"
+      "url": "https://api.coingecko.com/api/v3",
+      "rate": 1200
     },
     "armada": {
       "url": "https://armada-alliance.com"
     }
   },
-  "pools": [
-    {
-      "name": "BERRY",
-      "id": "pool19f6guwy97mmnxg9dz65rxyj8hq07qxud886hamyu4fgfz7dj9gl"
-    }
-  ],
-  "accounts": [
-    {
-      "name": "Alice",
-      "stakeAddress": "stake1u8qmz8r5ycz96yd3gcq9m7kwzfr9yhekc6kwhxup6clx23cwv63g2",
-      "currency": "EUR"
-    },
-    {
-      "name": "Bob",
-      "stakeAddress": "stake1ux9r7qjwtczc6g8qvfd2p4fntk30ffemghcwa8h7qm8vacsers3g8",
-      "currency": "CAD"
-    },
-    {
-      "name": "Unknown",
-      "stakeAddress": "stake1uxaumx88gu630m27exr3y06kflz5q6rc9q8la69gcvu9m5qtzrqjf",
-      "currency": "USD"
-    },
-    {
-      "name": "IOG",
-      "stakeAddress": "stake1uxttxvhjx099y08jtex85j8cscqg4svz5ar02wjmg45nrasv2634m",
-      "currency": "USD"
-    }
-  ],
   "currencies": [
     { "code": "AED", "name": "United Arab Emirates Dirham" },
     { "code": "AFN", "name": "Afghan Afghani" },

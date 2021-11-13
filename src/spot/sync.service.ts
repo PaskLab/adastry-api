@@ -125,9 +125,7 @@ export class SyncService {
       }
 
       const date = SyncService.dateFromUnix(epoch.startTime);
-      const spotPrice = await new Promise<number | null>((resolve) => {
-        setTimeout(() => resolve(this.spotSource.getSpotPrice(date)), 1200);
-      });
+      const spotPrice = await this.spotSource.getSpotPrice(date);
 
       if (!spotPrice) {
         this.logger.log(
