@@ -1,7 +1,7 @@
-import { IsAlpha, IsNotEmpty, Matches } from 'class-validator';
+import { IsNotEmpty, IsOptional, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateAccountDto {
+export class UpdateUserAccountDto {
   @IsNotEmpty()
   @Matches('^stake[a-z0-9]{54}$')
   @ApiProperty({
@@ -12,19 +12,10 @@ export class CreateAccountDto {
   stakeAddress!: string;
 
   @IsNotEmpty()
-  @ApiProperty({
+  @IsOptional()
+  @ApiPropertyOptional({
     title: 'Account name',
     example: 'Alice primary account',
   })
-  name!: string;
-
-  @IsAlpha()
-  @Matches('^[A-Z]{3}$')
-  @ApiPropertyOptional({
-    title: 'Preferred conversion currency',
-    pattern: '^[A-Z]{3}$',
-    example: 'EUR',
-    default: 'USD',
-  })
-  currency?: string = 'USD';
+  name?: string;
 }

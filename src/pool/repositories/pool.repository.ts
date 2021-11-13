@@ -34,6 +34,14 @@ export class PoolRepository extends Repository<Pool> {
     return qb.getMany();
   }
 
+  async findOptOutMembers(poolIds: string[]): Promise<Pool[]> {
+    return this.createQueryBuilder('pool')
+      .where('pool.poolId NOT IN (:...poolIds)')
+      .andWhere('pool.isMember = TRUE')
+      .setParameter('poolIds', poolIds)
+      .getMany();
+  }
+
   async findOneMember(poolId: string): Promise<Pool | undefined> {
     return this.createQueryBuilder('pool')
       .leftJoinAndSelect('pool.epoch', 'epoch')

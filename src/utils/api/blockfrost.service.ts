@@ -1,4 +1,4 @@
-import config from '../../../sync-config.json';
+import config from '../../../config.json';
 import { Injectable } from '@nestjs/common';
 import { request as apiRequest } from './api.helper';
 import type { AccountInfoType } from './types/account-info.type';
@@ -9,18 +9,20 @@ import type { PoolInfoType } from './types/pool-info.type';
 import type { PoolCertType } from './types/pool-cert.type';
 import type { LastPoolCertType } from './types/last-pool-cert.type';
 import type { PoolHistoryType } from './types/pool-history.type';
-
-const PROVIDER_LIMIT: number = config.provider.blockfrost.limit;
-const PROVIDER_URL: string = config.provider.blockfrost.url;
+import { AddressInfoType } from './types/address-info.type';
 
 @Injectable()
 export class BlockfrostService {
+  private readonly PROVIDER_LIMIT: number = config.provider.blockfrost.limit;
+  private readonly PROVIDER_URL: string = config.provider.blockfrost.url;
+  private readonly PROVIDER_RATE: number = config.provider.blockfrost.rate;
+
   async getPoolHistory(
     poolId,
     page = 1,
     limit = 100,
   ): Promise<PoolHistoryType[] | null> {
-    const result = await BlockfrostService.request(
+    const result = await this.request(
       `/pools/${poolId}/history?order=desc&page=${page}&count=${limit}`,
     );
 
@@ -36,10 +38,8 @@ export class BlockfrostService {
   }
 
   async getPoolInfo(poolId): Promise<PoolInfoType | null> {
-    const cert = await BlockfrostService.request(`/pools/${poolId}`);
-    const metadata = await BlockfrostService.request(
-      `/pools/${poolId}/metadata`,
-    );
+    const cert = await this.request(`/pools/${poolId}`);
+    const metadata = await this.request(`/pools/${poolId}/metadata`);
 
     return cert && metadata
       ? {
@@ -65,17 +65,15 @@ export class BlockfrostService {
     let result: { tx_hash: string; cert_index: string; action: string }[] = [];
 
     do {
-      result = await BlockfrostService.request(
-        `/pools/${poolId}/updates?page=${page}`,
-      );
+      result = await this.request(`/pools/${poolId}/updates?page=${page}`);
       if (result) certs = certs.concat(result);
       page++;
-    } while (result && result.length === PROVIDER_LIMIT);
+    } while (result && result.length === this.PROVIDER_LIMIT);
 
     const infos: PoolCertType[] = [];
 
     for (const cert of certs) {
-      const txInfo = await BlockfrostService.request(`/txs/${cert.tx_hash}`);
+      const txInfo = await this.request(`/txs/${cert.tx_hash}`);
       if (cert.action === 'registered') {
         const info = await this.getRegistration(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
@@ -97,7 +95,7 @@ export class BlockfrostService {
   }
 
   async getLastPoolCert(poolId): Promise<LastPoolCertType | null> {
-    const result = await BlockfrostService.request(
+    const result = await this.request(
       `/pools/${poolId}/updates?order=desc&count=1`,
     );
 
@@ -111,7 +109,7 @@ export class BlockfrostService {
   }
 
   async getRegistration(hash, certIndex): Promise<PoolCertType | null> {
-    let result = await BlockfrostService.request(`/txs/${hash}/pool_updates`);
+    let result = await this.request(`/txs/${hash}/pool_updates`);
 
     if (result) {
       result = result.find((el) => el.cert_index === certIndex);
@@ -132,7 +130,7 @@ export class BlockfrostService {
   }
 
   async getRetirement(hash, certIndex): Promise<PoolCertType | null> {
-    let result = await BlockfrostService.request(`/txs/${hash}/pool_retires`);
+    let result = await this.request(`/txs/${hash}/pool_retires`);
 
     if (result) {
       result = result.find((el) => (el.cert_index = certIndex));
@@ -153,7 +151,7 @@ export class BlockfrostService {
   }
 
   async getAccountInfo(stakeAddress): Promise<AccountInfoType | null> {
-    const result = await BlockfrostService.request(`/accounts/${stakeAddress}`);
+    const result = await this.request(`/accounts/${stakeAddress}`);
 
     return result
       ? {
@@ -172,7 +170,7 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountHistoryType | null> {
-    const result = await BlockfrostService.request(
+    const result = await this.request(
       `/accounts/${stakeAddr}/history?order=desc&page=${page}&count=${limit}`,
     );
     return result
@@ -191,7 +189,7 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountRewardsHistoryType | null> {
-    const result = await BlockfrostService.request(
+    const result = await this.request(
       `/accounts/${stakeAddr}/rewards?order=desc&page=${page}&count=${limit}`,
     );
     return result
@@ -206,15 +204,25 @@ export class BlockfrostService {
   }
 
   async getAccountAddresses(stakeAddr) {
-    return await BlockfrostService.request(`/accounts/${stakeAddr}/addresses`);
+    return await this.request(`/accounts/${stakeAddr}/addresses`);
   }
 
-  async getAddressInfo(addr) {
-    return await BlockfrostService.request(`/addresses/${addr}`);
+  async getAddressInfo(addr): Promise<AddressInfoType | null> {
+    const result = await this.request(`/addresses/${addr}`);
+
+    return result
+      ? {
+          address: result.address,
+          amount: result.amount,
+          stakeAddress: result.stake_address,
+          type: result.type,
+          script: result.script,
+        }
+      : null;
   }
 
   async lastEpoch(): Promise<EpochType | null> {
-    const result = await BlockfrostService.request(`/epochs/latest`);
+    const result = await this.request(`/epochs/latest`);
     return result
       ? {
           epoch: result.epoch,
@@ -229,7 +237,7 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<EpochType[] | null> {
-    const result = await BlockfrostService.request(
+    const result = await this.request(
       `/epochs/${beforeEpoch}/previous?page=${page}&count=${limit}`,
     );
     return result
@@ -243,19 +251,27 @@ export class BlockfrostService {
       : null;
   }
 
-  static async request(
+  async request(
     endpoint: string,
     headers?: any,
     body?: any,
   ): Promise<any | null> {
-    return apiRequest(
-      PROVIDER_URL,
-      endpoint,
-      {
-        project_id: process.env.BLOCKFROST_API_KEY,
-        ...headers,
-      },
-      body,
-    );
+    return new Promise<any>((resolve) => {
+      setTimeout(
+        () =>
+          resolve(
+            apiRequest(
+              this.PROVIDER_URL,
+              endpoint,
+              {
+                project_id: process.env.BLOCKFROST_API_KEY,
+                ...headers,
+              },
+              body,
+            ),
+          ),
+        this.PROVIDER_RATE,
+      );
+    });
   }
 }

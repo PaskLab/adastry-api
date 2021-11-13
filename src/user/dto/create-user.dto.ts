@@ -1,16 +1,22 @@
-import { IsEmail, IsNotEmpty, Length, Matches } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsAlpha,
+  IsNotEmpty,
+  IsOptional,
+  Length,
+  Matches,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({
-    title: 'User email',
-    example: 'my-email@gmail.com',
+    title: 'Username',
+    example: 'alice',
   })
-  @IsEmail()
-  email!: string;
+  @IsNotEmpty()
+  username!: string;
 
   @ApiProperty({
-    title: 'Username',
+    title: 'Full name',
     example: 'Alice',
   })
   @IsNotEmpty()
@@ -29,4 +35,15 @@ export class CreateUserDto {
     },
   )
   password!: string;
+
+  @IsOptional()
+  @IsAlpha()
+  @Matches('^[A-Z]{3}$')
+  @ApiPropertyOptional({
+    title: 'Preferred conversion currency',
+    pattern: '^[A-Z]{3}$',
+    example: 'EUR',
+    default: 'USD',
+  })
+  currency?: string = 'USD';
 }

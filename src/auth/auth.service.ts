@@ -11,12 +11,19 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<UserDto | null> {
-    const user = await this.userService.getActiveUser(email);
+  async validateUser(
+    username: string,
+    password: string,
+  ): Promise<UserDto | null> {
+    const user = await this.userService.getActiveUser(username);
     if (user && (await this.userService.validatePWD(user, password))) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
-      return new UserDto(result);
+      return new UserDto({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        currency: user.currency.code,
+      });
     }
     return null;
   }

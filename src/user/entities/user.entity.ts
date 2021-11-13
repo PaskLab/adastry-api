@@ -1,4 +1,11 @@
-import { Entity, Column, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  Index,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+} from 'typeorm';
+import { Currency } from '../../spot/entities/currency.entity';
 
 @Entity()
 export class User {
@@ -6,6 +13,13 @@ export class User {
   id!: number;
 
   @Column()
+  @Index({ unique: true })
+  username!: string;
+
+  @Column({ default: true })
+  active!: boolean;
+
+  @Column({ default: '' })
   @Index({ unique: true })
   email!: string;
 
@@ -17,4 +31,7 @@ export class User {
 
   @Column({ default: 'Not verified' })
   expHash!: string;
+
+  @ManyToOne(() => Currency)
+  currency!: Currency;
 }

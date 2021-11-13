@@ -1,8 +1,17 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { ResponseDto } from '../utils/dto/response.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiConflictResponse,
   ApiOkResponse,
   ApiTags,
@@ -11,6 +20,7 @@ import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
 import { UserService } from './user.service';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { VerifyCodeParam } from './params/verify-code.param';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('User')
 @Controller('user')
@@ -21,22 +31,27 @@ export class UserController {
   @ApiOkResponse({ type: ResponseDto })
   @ApiConflictResponse({
     type: ConflictErrorDto,
-    description: 'User email already exist',
+    description: 'User already exist',
   })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async create(@Body() createUserDto: CreateUserDto): Promise<ResponseDto> {
     const user = await this.userService.createUser(createUserDto);
-    return new ResponseDto(
-      `User ${user.email} created. Verification email sent.`,
-    );
+    return new ResponseDto(`User ${user.username} created.`);
   }
 
   @Get('verify/:code')
   @ApiOkResponse({ type: ResponseDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async verify(@Param() params: VerifyCodeParam) {
-    const user = await this.userService.verifyAccount(params.code);
+    const user = await this.userService.verifyEmail(params.code);
 
-    return new ResponseDto(`User ${user.email} successfully verified.`);
+    return new ResponseDto(`Email ${user.email} successfully verified.`);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  getProfile(@Request() req) {
+    return req.user;
   }
 }

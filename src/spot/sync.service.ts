@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import config from '../../sync-config.json';
+import config from '../../config.json';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { Currency } from './entities/currency.entity';
-import type { SyncConfigCurrenciesType } from '../sync/types/sync-config.type';
+import type { SyncConfigCurrenciesType } from '../utils/api/types/config.type';
 import { FixerioService } from '../utils/api/fixerio.service';
 import { CurrencyRepository } from './repositories/currency.repository';
 import { Epoch } from '../epoch/entities/epoch.entity';
@@ -125,9 +125,7 @@ export class SyncService {
       }
 
       const date = SyncService.dateFromUnix(epoch.startTime);
-      const spotPrice = await new Promise<number | null>((resolve) => {
-        setTimeout(() => resolve(this.spotSource.getSpotPrice(date)), 1200);
-      });
+      const spotPrice = await this.spotSource.getSpotPrice(date);
 
       if (!spotPrice) {
         this.logger.log(

@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CurrencyDto } from '../../spot/dto/currency.dto';
 import { PoolDto } from '../../pool/dto/pool.dto';
 
 export class AccountDto {
@@ -11,7 +10,6 @@ export class AccountDto {
       this.loyalty = props.loyalty;
       this.epoch = props.epoch;
       this.pool = props.pool;
-      this.currency = props.currency;
     }
   }
   @ApiProperty({
@@ -50,10 +48,4 @@ export class AccountDto {
     nullable: true,
   })
   pool!: PoolDto | null;
-
-  @ApiProperty({
-    type: CurrencyDto,
-    nullable: true,
-  })
-  currency!: CurrencyDto | null;
 }

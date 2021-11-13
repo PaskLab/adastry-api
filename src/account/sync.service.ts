@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import config from '../../sync-config.json';
+import config from '../../config.json';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -8,13 +8,11 @@ import { AccountHistory } from './entities/account-history.entity';
 import { Epoch } from '../epoch/entities/epoch.entity';
 import { Pool } from '../pool/entities/pool.entity';
 import { AccountRepository } from './repositories/account.repository';
-import { CurrencyRepository } from '../spot/repositories/currency.repository';
 import { PoolRepository } from '../pool/repositories/pool.repository';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { AccountHistoryRepository } from './repositories/account-history.repository';
 import type { AccountHistoryType } from '../utils/api/types/account-history.type';
 import type { AccountRewardsHistoryType } from '../utils/api/types/account-rewards-history.type';
-import type { SyncConfigAccountsType } from '../sync/types/sync-config.type';
 import { PoolService } from '../pool/pool.service';
 
 @Injectable()
@@ -27,47 +25,6 @@ export class SyncService {
     private readonly source: BlockfrostService,
     private readonly poolService: PoolService,
   ) {}
-
-  async init(): Promise<void> {
-    const accounts: SyncConfigAccountsType = config.accounts;
-    const accountRepository = this.em.getCustomRepository(AccountRepository);
-    const currencyRepository = this.em.getCustomRepository(CurrencyRepository);
-
-    for (const account of accounts) {
-      const accountEntity = await accountRepository.findOne({
-        stakeAddress: account.stakeAddress,
-      });
-      if (!accountEntity) {
-        const newAccount = new Account();
-
-        newAccount.stakeAddress = account.stakeAddress;
-        newAccount.name = account.name;
-        if (account.currency) {
-          const currency = await currencyRepository.findOne({
-            code: account.currency,
-          });
-          newAccount.currency = currency ? currency : null;
-        }
-
-        accountRepository.save(newAccount);
-        this.logger.log(
-          `Account Init - Creating account ${newAccount.stakeAddress}`,
-        );
-      } else {
-        accountEntity.name = account.name;
-        if (account.currency) {
-          const currency = await currencyRepository.findOne({
-            code: account.currency,
-          });
-          accountEntity.currency = currency ? currency : null;
-        }
-        await accountRepository.save(accountEntity);
-        this.logger.log(
-          `Account Init - Updating account ${accountEntity.stakeAddress}`,
-        );
-      }
-    }
-  }
 
   async syncAccount(account: Account, lastEpoch: Epoch): Promise<void> {
     account = await this.syncInfo(account, lastEpoch);
@@ -84,7 +41,7 @@ export class SyncService {
 
       if (!accountUpdate) {
         this.logger.log(
-          `ERROR::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress}) returned ${accountUpdate}.`,
+          `NOT FOUND::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress}) returned ${accountUpdate}.`,
         );
         return account;
       }
@@ -191,7 +148,19 @@ export class SyncService {
 
       if (!epoch) {
         this.logger.log(
-          `ERROR::AccountSync()->syncHistory()->this.epochRepository.findOne(${history[i].epoch})`,
+          `NOT FOUND::AccountSync()->syncHistory()->this.epochRepository.findOne(${history[i].epoch})`,
+        );
+        continue;
+      }
+
+      let newHistory = await accountHistoryRepository.findOneRecord(
+        account.stakeAddress,
+        epoch.epoch,
+      );
+
+      if (newHistory) {
+        this.logger.log(
+          `DUPLICATE::AccountSync()->syncHistory()->accountHistoryRepository.findOneRecord(${account.stakeAddress}, ${epoch.epoch})`,
         );
         continue;
       }
@@ -203,11 +172,11 @@ export class SyncService {
         pool = await this.em.save(pool);
       }
 
-      const newHistory = new AccountHistory();
+      newHistory = new AccountHistory();
 
       newHistory.account = account;
       newHistory.epoch = epoch;
-      newHistory.balance = history[i].balance;
+      newHistory.fullBalance = history[i].balance;
       newHistory.rewards = rh ? rh.rewards : 0;
       newHistory.pool = pool;
 

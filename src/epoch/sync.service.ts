@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import config from '../../sync-config.json';
+import config from '../../config.json';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Epoch } from './entities/epoch.entity';

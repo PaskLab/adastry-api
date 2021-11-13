@@ -1,11 +1,17 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { SpotService } from './spot.service';
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { HistoryQuery } from '../utils/params/history.query';
 import { SpotDto } from './dto/spot.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Spot Price')
 @Controller('spot')
@@ -16,6 +22,8 @@ export class SpotController {
   ) {}
 
   @Get('last')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({
     type: SpotDto,
     description: 'Last epoch price for ADA.',
@@ -26,6 +34,8 @@ export class SpotController {
   }
 
   @Get('history')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: [SpotDto], description: 'ADA price history' })
   priceHistory(@Query() query: HistoryQuery): Promise<SpotDto[]> {
     return this.spotService.getPriceHistory({ ...query });

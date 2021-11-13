@@ -15,8 +15,20 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       .innerJoinAndSelect('history.epoch', 'epoch')
       .where('account.stakeAddress = :stakeAddress')
       .orderBy('epoch.epoch', 'DESC')
-      .limit(1)
       .setParameter('stakeAddress', stakeAddress)
+      .getOne();
+  }
+
+  async findOneRecord(
+    stakeAddress: string,
+    epoch: number,
+  ): Promise<AccountHistory | undefined> {
+    return this.createQueryBuilder('history')
+      .innerJoinAndSelect('history.account', 'account')
+      .innerJoinAndSelect('history.epoch', 'epoch')
+      .where('account.stakeAddress = :stakeAddress')
+      .andWhere('epoch.epoch = :epoch')
+      .setParameters({ stakeAddress: stakeAddress, epoch: epoch })
       .getOne();
   }
 

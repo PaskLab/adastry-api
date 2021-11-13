@@ -18,6 +18,19 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
       .getOne();
   }
 
+  async findOneRecord(
+    poolId: string,
+    epoch: number,
+  ): Promise<PoolHistory | undefined> {
+    return this.createQueryBuilder('history')
+      .innerJoinAndSelect('history.pool', 'pool')
+      .innerJoinAndSelect('history.epoch', 'epoch')
+      .where('pool.poolId = :poolId')
+      .andWhere('epoch.epoch = :epoch')
+      .setParameters({ poolId: poolId, epoch: epoch })
+      .getOne();
+  }
+
   async findPoolHistory(params: HistoryQueryType): Promise<PoolHistory[]> {
     const qb = this.createQueryBuilder('history')
       .innerJoinAndSelect('history.pool', 'pool')

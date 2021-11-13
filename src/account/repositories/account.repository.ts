@@ -7,7 +7,6 @@ export class AccountRepository extends Repository<Account> {
     return this.createQueryBuilder('account')
       .leftJoinAndSelect('account.epoch', 'epoch')
       .leftJoinAndSelect('account.pool', 'pool')
-      .leftJoinAndSelect('account.currency', 'currency')
       .getMany();
   }
 
@@ -16,7 +15,6 @@ export class AccountRepository extends Repository<Account> {
       .leftJoinAndSelect('account.epoch', 'epoch')
       .leftJoinAndSelect('account.pool', 'pool')
       .leftJoinAndSelect('pool.epoch', 'poolEpoch')
-      .leftJoinAndSelect('account.currency', 'currency')
       .where('account.stakeAddress = :stakeAddress')
       .setParameter('stakeAddress', stakeAddress)
       .getOne();
