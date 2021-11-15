@@ -20,7 +20,6 @@ export class User {
   active!: boolean;
 
   @Column({ default: '' })
-  @Index({ unique: true })
   email!: string;
 
   @Column({ default: '' })
