@@ -70,9 +70,7 @@ export class AccountService {
       return new AccountHistoryDto({
         account: h.account.stakeAddress,
         epoch: h.epoch.epoch,
-        balance: h.balance,
         rewards: h.rewards,
-        rewardsBalance: h.rewardsBalance,
         fullBalance: h.fullBalance,
         opRewards: h.opRewards,
         pool: h.pool ? h.pool.poolId : null,

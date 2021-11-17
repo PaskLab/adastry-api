@@ -5,9 +5,7 @@ export class AccountHistoryDto {
     if (props) {
       this.account = props.account;
       this.epoch = props.epoch;
-      this.balance = props.balance;
       this.rewards = props.rewards;
-      this.rewardsBalance = props.rewardsBalance;
       this.fullBalance = props.fullBalance;
       this.opRewards = props.opRewards;
       this.pool = props.pool;
@@ -28,22 +26,10 @@ export class AccountHistoryDto {
   epoch!: number;
 
   @ApiProperty({
-    title: 'Epoch account balance',
-    example: 208,
-  })
-  balance!: number;
-
-  @ApiProperty({
     title: 'Epoch received rewards',
     example: 15000000,
   })
   rewards!: number;
-
-  @ApiProperty({
-    title: 'Epoch reward balance',
-    example: 355000000,
-  })
-  rewardsBalance!: number;
 
   @ApiProperty({
     title: 'Epoch account combined balance',

@@ -25,13 +25,7 @@ export class AccountHistory {
   epoch!: Epoch;
 
   @Column({ default: 0 })
-  balance!: number;
-
-  @Column({ default: 0 })
   rewards!: number;
-
-  @Column({ default: 0 })
-  rewardsBalance!: number;
 
   @Column({ default: 0 })
   fullBalance!: number;
