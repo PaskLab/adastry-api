@@ -38,6 +38,7 @@
     "better-sqlite3": "^7.4.4",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
+    "csv-writer": "^1.6.0",
     "ejs": "^3.1.6",
     "nodemailer": "^6.7.0",
     "passport": "^0.4.1",

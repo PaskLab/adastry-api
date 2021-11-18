@@ -12,6 +12,7 @@ import { AccountHistoryRepository } from './repositories/account-history.reposit
 import { AccountHistoryDto } from './dto/account-history.dto';
 import { SyncService } from './sync.service';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
+import csvWriter = require('csv-writer');
 
 @Injectable()
 export class AccountService {
@@ -77,5 +78,47 @@ export class AccountService {
         owner: h.owner,
       });
     });
+  }
+
+  async getRewardsCSV(stakeAddress: string, year: number) {
+    const filename = `${year}-${stakeAddress.slice(0, 15)}.csv`;
+    const writer = csvWriter.createObjectCsvWriter({
+      path: '/tmp/' + filename,
+      header: [
+        { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
+        { id: 'sentAmount', title: 'Sent Amount' }, // 0.00
+        { id: 'sentCurrency', title: 'Sent Currency' },
+        { id: 'receivedAmount', title: 'Received Amount' },
+        { id: 'receivedCurrency', title: 'Received Currency' }, // ADA
+        { id: 'label', title: 'Label' }, // reward
+        { id: 'description', title: 'Description' },
+        { id: 'txHash', title: 'TxHash' },
+      ],
+    });
+
+    const data = [
+      {
+        name: 'John',
+        surname: 'Snow',
+        age: 26,
+        gender: 'M',
+      },
+      {
+        name: 'Clair',
+        surname: 'White',
+        age: 33,
+        gender: 'F',
+      },
+      {
+        name: 'Fancy',
+        surname: 'Brown',
+        age: 78,
+        gender: 'F',
+      },
+    ];
+
+    writer
+      .writeRecords(data)
+      .then(() => console.log('The CSV file was written successfully'));
   }
 }
