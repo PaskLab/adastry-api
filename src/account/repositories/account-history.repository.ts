@@ -2,6 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { AccountHistory } from '../entities/account-history.entity';
 import { HistoryQueryType } from '../types/history-query.type';
 import config from '../../../config.json';
+import { dateToUnix } from '../../utils/utils';
 
 @EntityRepository(AccountHistory)
 export class AccountHistoryRepository extends Repository<AccountHistory> {
@@ -68,5 +69,22 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
     }
 
     return qb.getMany();
+  }
+
+  findByYear(stakeAddress: string, year: number): Promise<AccountHistory[]> {
+    const firstDay = dateToUnix(new Date(`${year}-01-01T00:00:00Z`));
+    const lastDay = dateToUnix(new Date(`${year}-12-31T23:59:59Z`));
+
+    return this.createQueryBuilder('history')
+      .innerJoinAndSelect('history.account', 'account')
+      .innerJoinAndSelect('history.epoch', 'epoch')
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .andWhere(
+        'epoch.startTime >= :startTime AND epoch.startTime <= :endTime',
+        { startTime: firstDay, endTime: lastDay },
+      )
+      .getMany();
   }
 }

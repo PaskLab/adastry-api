@@ -1,66 +1,10 @@
-import path, { resolve } from 'path';
-import fs from 'fs';
+import { Request } from 'express';
+import * as fs from 'fs';
+import { Cron } from '@nestjs/schedule';
+import { ensureProgram } from 'ts-loader/dist/utils';
 
-export function generateUrl(request, ...args) {
-  return `${request.protocol}://${request.get('host')}${args.join('/')}`;
-}
-
-export function createSymlink(filePath, symlinkName) {
-  const { resolve } = require('path');
-  const fs = require('fs');
-  const absBasePath = resolve(config.cli.dir);
-  const absFilePath = resolve(filePath);
-
-  // Security: Allow only download from 'config.cli.dir'
-  if (
-    0 === absFilePath.indexOf(absBasePath) &&
-    fs.existsSync(absFilePath) &&
-    fs.statSync(absFilePath).isFile()
-  ) {
-    fs.symlink(
-      absFilePath,
-      `${ABSOLUTE_TMP}/${symlinkName}`,
-      (err) => err && console.log(err),
-    );
-  } else {
-    throw new Error('Access denied!');
-  }
-}
-
-export function cleanTMPFiles() {
-  const cron = require('node-cron');
-  const tmpFileTTL = config.helper.tmpFileTTL;
-
-  cron.schedule('*/2 * * * *', () => {
-    let files = fs.readdirSync(ABSOLUTE_TMP);
-    let result = [];
-
-    files.forEach((fileName) => {
-      if ('.gitkeep' !== fileName) {
-        let filePath = `${ABSOLUTE_TMP}/${fileName}`;
-        let fileStat = fs.lstatSync(filePath);
-        let now = new Date(Date.now());
-        let expireAt = new Date(
-          new Date(fileStat.mtime).getTime() + tmpFileTTL * 1000,
-        );
-
-        if (expireAt < now) {
-          fs.unlinkSync(filePath);
-          result.push(fileName);
-        }
-      }
-    });
-
-    let count = result.length;
-
-    if (count) {
-      let timestamp = new Date(Date.now());
-      console.log(
-        `[${timestamp.toISOString()}] Deleted ${count} expired file(s) in /public${PUBLIC_TMP} :`,
-      );
-      console.log(result);
-    }
-  });
+export function generateUrl(request: Request, ...args: string[]) {
+  return `${request.protocol}://${request.get('host')}/${args.join('/')}`;
 }
 
 /**
@@ -86,3 +30,21 @@ export function cleanTMPFiles() {
 //   res.setHeader('content-type', 'text/plain');
 //   res.send(initDownload(req));
 // });
+
+export function dateFromUnix(unixTimestamp): Date {
+  return new Date(unixTimestamp * 1000);
+}
+
+export function dateToUnix(date: Date): number {
+  return Math.floor(date.valueOf() / 1000);
+}
+
+export function createTimestamp(date): string {
+  const zeroLead = (str) => ('0' + str).slice(-2);
+
+  return `${date.getFullYear()}-${zeroLead(date.getMonth() + 1)}-${zeroLead(
+    date.getDate(),
+  )} ${zeroLead(date.getHours())}:${zeroLead(date.getMinutes())}:${zeroLead(
+    date.getSeconds(),
+  )}`;
+}

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PoolController } from './pool.controller';
-import { PoolService } from './pool.service';
+import { PoolController } from '../pool.controller';
+import { PoolService } from '../pool.service';
 
 describe('PoolController', () => {
   let controller: PoolController;

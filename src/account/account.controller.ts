@@ -33,6 +33,8 @@ import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserAccountService } from './user-account.service';
 import { UserAccountDto } from './dto/user-account.dto';
+import { YearParam } from './params/year.param';
+import { generateUrl } from '../utils/utils';
 
 @ApiTags('Account')
 @Controller('account')
@@ -132,5 +134,23 @@ export class AccountController {
     @Query() query: HistoryQuery,
   ): Promise<AccountHistoryDto[]> {
     return this.accountService.getHistory({ ...param, ...query });
+  }
+
+  @Get(':stakeAddress/export-rewards/:year')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async exportRewards(
+    @Request() req,
+    @Param() stakeAddressParam: StakeAddressParam,
+    @Param() yearParam: YearParam,
+  ): Promise<ResponseDto> {
+    const filename = await this.accountService.getRewardsCSV(
+      stakeAddressParam.stakeAddress,
+      yearParam.year,
+    );
+    return new ResponseDto(generateUrl(req, 'public/tmp', filename));
   }
 }

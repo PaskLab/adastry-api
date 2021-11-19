@@ -1,4 +1,5 @@
 export type ConfigType = {
+  app: { minLoyalty: number };
   api: { pageLimit: number };
   provider: SyncConfigProviderType;
   currencies: SyncConfigCurrenciesType;

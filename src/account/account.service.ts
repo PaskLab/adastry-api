@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -13,9 +15,16 @@ import { AccountHistoryDto } from './dto/account-history.dto';
 import { SyncService } from './sync.service';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import csvWriter = require('csv-writer');
+import config from '../../config.json';
+import path from 'path';
+import { createTimestamp, dateFromUnix } from '../utils/utils';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AccountService {
+  private readonly logger = new Logger(SyncService.name);
+  private readonly MIN_LOYALTY = config.app.minLoyalty;
+
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
@@ -80,10 +89,30 @@ export class AccountService {
     });
   }
 
-  async getRewardsCSV(stakeAddress: string, year: number) {
+  async getRewardsCSV(stakeAddress: string, year: number): Promise<string> {
+    const account = await this.em
+      .getCustomRepository(AccountRepository)
+      .findOne({ stakeAddress: stakeAddress });
+
+    if (account && account.loyalty < this.MIN_LOYALTY) {
+      throw new BadRequestException(
+        `Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
+      );
+    }
+
+    const history = await this.em
+      .getCustomRepository(AccountHistoryRepository)
+      .findByYear(stakeAddress, year);
+
+    if (!history.length) {
+      throw new NotFoundException(
+        `No reward history found for ${stakeAddress} in year ${year}`,
+      );
+    }
+
     const filename = `${year}-${stakeAddress.slice(0, 15)}.csv`;
     const writer = csvWriter.createObjectCsvWriter({
-      path: '/tmp/' + filename,
+      path: path.join(__dirname, '../../..', 'public/tmp', filename),
       header: [
         { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
         { id: 'sentAmount', title: 'Sent Amount' }, // 0.00
@@ -96,29 +125,31 @@ export class AccountService {
       ],
     });
 
-    const data = [
-      {
-        name: 'John',
-        surname: 'Snow',
-        age: 26,
-        gender: 'M',
-      },
-      {
-        name: 'Clair',
-        surname: 'White',
-        age: 33,
-        gender: 'F',
-      },
-      {
-        name: 'Fancy',
-        surname: 'Brown',
-        age: 78,
-        gender: 'F',
-      },
-    ];
+    const records: any = [];
 
-    writer
-      .writeRecords(data)
-      .then(() => console.log('The CSV file was written successfully'));
+    for (const record of history) {
+      if (record.rewards < 1) continue;
+
+      const line = {
+        date: createTimestamp(dateFromUnix(record.epoch.startTime)),
+        sentAmount: '',
+        sentCurrency: '',
+        receivedAmount: record.rewards.toString(),
+        receivedCurrency: 'ADA',
+        label: 'reward',
+        description: `Epoch ${record.epoch.epoch} for ${stakeAddress}`,
+        txHash: crypto
+          .createHash('sha256')
+          .update(record.epoch.epoch + stakeAddress)
+          .digest('hex'),
+      };
+      records.push(line);
+    }
+
+    await writer
+      .writeRecords(records)
+      .then(() => this.logger.log(`Rewards CSV ${filename} generated`));
+
+    return filename;
   }
 }

@@ -21,7 +21,9 @@ export class SyncService {
     private readonly epochSyncService: EpochSyncService,
     private readonly spotSyncService: SpotSyncService,
   ) {
-    this.init();
+    if (!process.env.SKIP_SYNC) {
+      this.init();
+    }
   }
 
   async init(): Promise<void> {

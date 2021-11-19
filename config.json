@@ -1,4 +1,7 @@
 {
+  "app": {
+    "minLoyalty": 3
+  },
   "api": {
     "pageLimit": 100
   },

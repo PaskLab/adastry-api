@@ -16,7 +16,7 @@ import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { AccountRepository } from '../account/repositories/account.repository';
 import type { PoolHistoryType } from '../utils/api/types/pool-history.type';
 import { ArmadaService } from '../utils/api/armada.service';
-import { SyncConfigPoolsType } from '../utils/api/types/config.type';
+import { SyncConfigPoolsType } from '../utils/types/config.type';
 
 @Injectable()
 export class SyncService {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import config from '../../../config.json';
 import { request as apiRequest } from './api.helper';
-import { SyncConfigPoolsType } from './types/config.type';
+import { SyncConfigPoolsType } from '../types/config.type';
 
 @Injectable()
 export class ArmadaService {
