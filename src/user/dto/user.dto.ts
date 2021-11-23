@@ -1,21 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CurrencyDto } from '../../spot/dto/currency.dto';
 
 export class UserDto {
   constructor(props?: UserDto) {
     if (props) {
-      this.id = props.id;
       this.username = props.username;
       this.email = props.email;
       this.name = props.name;
       this.currency = props.currency;
     }
   }
-  @ApiProperty({
-    title: 'User ID',
-    example: 1,
-  })
-  id!: number;
 
   @ApiProperty({
     title: 'Username',
@@ -36,7 +29,8 @@ export class UserDto {
   name!: string;
 
   @ApiProperty({
-    type: CurrencyDto,
+    title: 'Preferred currency',
+    example: 'USD',
   })
   currency!: string;
 }

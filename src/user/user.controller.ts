@@ -13,6 +13,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -21,6 +22,8 @@ import { UserService } from './user.service';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { VerifyCodeParam } from './params/verify-code.param';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UserDto } from './dto/user.dto';
+import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -51,7 +54,9 @@ export class UserController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req) {
-    return req.user;
+  @ApiOkResponse({ type: UserDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  getProfile(@Request() request) {
+    return this.userService.getUserInfo(request.user.id);
   }
 }

@@ -61,7 +61,6 @@ export class UserService {
     user = await this.em.save(user);
 
     return new UserDto({
-      id: user.id,
       username: user.username,
       email: '',
       name: user.name,
@@ -175,5 +174,22 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async getUserInfo(userId: number): Promise<UserDto> {
+    const user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOne(userId, { relations: ['currency'] });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return new UserDto({
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      currency: user.currency.code,
+    });
   }
 }
