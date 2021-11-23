@@ -4,6 +4,7 @@ export class CsvFileDto {
   constructor(props: CsvFileDto) {
     if (props) {
       this.filename = props.filename;
+      this.fileExpireAt = props.fileExpireAt;
       this.url = props.url;
       this.format = props.format;
       this.stakeAddress = props.stakeAddress;
@@ -16,6 +17,12 @@ export class CsvFileDto {
     example: '2021-stake3ux9r4qjwt.csv',
   })
   filename!: string;
+
+  @ApiProperty({
+    title: 'File expire time',
+    example: 'Tue, 23 Nov 2021 19:46:41 GMT',
+  })
+  fileExpireAt!: string;
 
   @ApiProperty({
     title: 'Filename',

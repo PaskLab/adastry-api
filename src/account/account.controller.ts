@@ -34,7 +34,6 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserAccountService } from './user-account.service';
 import { UserAccountDto } from './dto/user-account.dto';
 import { YearParam } from './params/year.param';
-import { generateUrl } from '../utils/utils';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { CsvFormatParam } from './params/csv-format.param';
 
@@ -139,29 +138,22 @@ export class AccountController {
   }
 
   @Get(':stakeAddress/export-rewards/:year')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: CsvFileDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async exportRewards(
-    @Request() req,
+    @Request() request,
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
     @Query() formatParam: CsvFormatParam,
   ): Promise<CsvFileDto> {
-    const filename = await this.accountService.getRewardsCSV(
+    return this.accountService.getRewardsCSV(
+      request,
       stakeAddressParam.stakeAddress,
       yearParam.year,
       formatParam.format,
     );
-
-    return new CsvFileDto({
-      filename: filename,
-      url: generateUrl(req, 'public/tmp', filename),
-      format: formatParam.format ? formatParam.format : 'koinly',
-      stakeAddress: stakeAddressParam.stakeAddress,
-      year: yearParam.year.toString(),
-    });
   }
 }

@@ -17,14 +17,17 @@ import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import csvWriter = require('csv-writer');
 import config from '../../config.json';
 import path from 'path';
-import { createTimestamp, dateFromUnix } from '../utils/utils';
+import { createTimestamp, dateFromUnix, generateUrl } from '../utils/utils';
 import * as crypto from 'crypto';
+import { CsvFileDto } from './dto/csv-file.dto';
+import { Request } from 'express';
 
 @Injectable()
 export class AccountService {
   private readonly logger = new Logger(SyncService.name);
   private readonly MIN_LOYALTY = config.app.minLoyalty;
   private readonly TMP_PATH = config.app.tmpPath;
+  private readonly TMP_TTL = config.app.tmpFileTTL;
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
@@ -91,10 +94,11 @@ export class AccountService {
   }
 
   async getRewardsCSV(
+    request: Request,
     stakeAddress: string,
     year: number,
     format?: string,
-  ): Promise<string> {
+  ): Promise<CsvFileDto> {
     const account = await this.em
       .getCustomRepository(AccountRepository)
       .findOne({ stakeAddress: stakeAddress });
@@ -155,6 +159,16 @@ export class AccountService {
       .writeRecords(records)
       .then(() => this.logger.log(`Rewards CSV ${filename} generated`));
 
-    return filename;
+    const expireAt = new Date();
+    expireAt.setTime(expireAt.valueOf() + this.TMP_TTL * 1000);
+
+    return new CsvFileDto({
+      filename: filename,
+      fileExpireAt: expireAt.toUTCString(),
+      url: generateUrl(request, 'public/tmp', filename),
+      format: format ? format : 'koinly',
+      stakeAddress: stakeAddress,
+      year: year.toString(),
+    });
   }
 }
