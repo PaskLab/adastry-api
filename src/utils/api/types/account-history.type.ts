@@ -1,5 +1,5 @@
 export type AccountHistoryType = {
   epoch: number;
-  balance: number;
+  amount: number;
   poolId: string;
 }[];

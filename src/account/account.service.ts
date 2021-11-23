@@ -85,7 +85,7 @@ export class AccountService {
         account: h.account.stakeAddress,
         epoch: h.epoch.epoch,
         rewards: h.rewards,
-        fullBalance: h.fullBalance,
+        activeStake: h.activeStake,
         opRewards: h.opRewards,
         pool: h.pool ? h.pool.poolId : null,
         owner: h.owner,

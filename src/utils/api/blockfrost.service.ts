@@ -177,7 +177,7 @@ export class BlockfrostService {
       ? result.map((r) => {
           return {
             epoch: r.active_epoch,
-            balance: r.amount,
+            amount: r.amount,
             poolId: r.pool_id,
           };
         })

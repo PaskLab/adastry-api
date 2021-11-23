@@ -175,7 +175,7 @@ export class SyncService {
 
       newHistory.account = account;
       newHistory.epoch = epoch;
-      newHistory.fullBalance = history[i].balance;
+      newHistory.activeStake = history[i].amount;
       newHistory.rewards = rh ? rh.rewards : 0;
       newHistory.pool = pool;
 

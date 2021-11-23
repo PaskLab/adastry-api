@@ -28,7 +28,7 @@ export class AccountHistory {
   rewards!: number;
 
   @Column({ default: 0 })
-  fullBalance!: number;
+  activeStake!: number;
 
   @Column({ default: 0 })
   opRewards!: number;
