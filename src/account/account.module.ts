@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccountService } from './account.service';
-import { AccountController } from './account.controller';
+import { UserAccountController } from './user-account.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Account } from './entities/account.entity';
 import { SyncService } from './sync.service';
@@ -14,7 +14,7 @@ import { UserAccount } from './entities/user-account.entity';
     TypeOrmModule.forFeature([Account, AccountHistory, UserAccount]),
     PoolModule,
   ],
-  controllers: [AccountController],
+  controllers: [UserAccountController],
   providers: [AccountService, UserAccountService, SyncService],
   exports: [AccountService, SyncService],
 })

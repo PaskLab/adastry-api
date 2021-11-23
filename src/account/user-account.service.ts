@@ -111,7 +111,7 @@ export class UserAccountService {
       );
     }
 
-    let user = await this.em
+    const user = await this.em
       .getCustomRepository(UserRepository)
       .findOne({ id: userId, active: true });
 

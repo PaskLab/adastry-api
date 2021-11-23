@@ -37,9 +37,9 @@ import { YearParam } from './params/year.param';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { CsvFormatParam } from './params/csv-format.param';
 
-@ApiTags('Account')
+@ApiTags('User Account')
 @Controller('account')
-export class AccountController {
+export class UserAccountController {
   constructor(
     private readonly accountService: AccountService,
     private readonly userAccountService: UserAccountService,
