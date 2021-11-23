@@ -18,7 +18,7 @@ export class PoolCertRepository extends Repository<PoolCert> {
 
     if (untilEpoch) {
       query
-        .where('epoch.epoch <= :untilEpoch')
+        .andWhere('epoch.epoch <= :untilEpoch')
         .setParameter('untilEpoch', untilEpoch);
     }
 
