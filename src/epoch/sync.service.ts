@@ -42,10 +42,10 @@ export class SyncService {
       for (let i = pages; i >= 1; i--) {
         const limit =
           i === pages ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
-        let upstreamHistory = await this.source.getEpochHistory(
+        const upstreamHistory = await this.source.getEpochHistory(
           lastEpoch.epoch,
           i,
-          this.PROVIDER_LIMIT,
+          pages === 1 ? limit : this.PROVIDER_LIMIT,
         );
 
         if (!upstreamHistory) {
@@ -56,7 +56,6 @@ export class SyncService {
           continue;
         }
 
-        upstreamHistory = upstreamHistory.slice(-limit);
         history = history.concat(upstreamHistory);
       }
 

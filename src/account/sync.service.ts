@@ -98,12 +98,12 @@ export class SyncService {
       const fetchUpstreamHistory = this.source.getAccountHistory(
         account.stakeAddress,
         i,
-        this.PROVIDER_LIMIT,
+        pages === 1 ? limit : this.PROVIDER_LIMIT,
       );
       const fetchUpstreamRewardsHistory = this.source.getAccountRewardsHistory(
         account.stakeAddress,
         i,
-        this.PROVIDER_LIMIT,
+        pages === 1 ? limit : this.PROVIDER_LIMIT,
       );
 
       let upstreamHistory = await fetchUpstreamHistory;
@@ -115,7 +115,7 @@ export class SyncService {
         return;
       }
 
-      let upstreamRewardsHistory = await fetchUpstreamRewardsHistory;
+      const upstreamRewardsHistory = await fetchUpstreamRewardsHistory;
 
       if (!upstreamRewardsHistory) {
         this.logger.log(
@@ -125,11 +125,10 @@ export class SyncService {
       }
 
       // Rewards are 2 epoch backwards, ignore 2 last history records
-      upstreamHistory = upstreamHistory.slice(i === 1 ? 2 : 0, limit);
+      upstreamHistory = upstreamHistory.slice(i === 1 ? 2 : 0);
       upstreamHistory.reverse();
       history = history.concat(upstreamHistory);
 
-      upstreamRewardsHistory = upstreamRewardsHistory.slice(0, limit);
       upstreamRewardsHistory.reverse();
       rewardsHistory = rewardsHistory.concat(upstreamRewardsHistory);
     }

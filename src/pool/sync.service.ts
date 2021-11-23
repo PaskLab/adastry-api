@@ -243,7 +243,7 @@ export class SyncService {
       let upstreamHistory = await this.source.getPoolHistory(
         pool.poolId,
         i,
-        this.PROVIDER_LIMIT,
+        pages === 1 ? limit : this.PROVIDER_LIMIT,
       );
 
       if (!upstreamHistory) {
@@ -254,7 +254,7 @@ export class SyncService {
       }
 
       // Rewards are 2 epoch backwards, ignore 2 last history records
-      upstreamHistory = upstreamHistory.slice(i === 1 ? 2 : 0, limit);
+      upstreamHistory = upstreamHistory.slice(i === 1 ? 2 : 0);
       upstreamHistory.reverse();
       history = history.concat(upstreamHistory);
     }
