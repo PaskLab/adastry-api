@@ -6,7 +6,7 @@ import { EntityManager } from 'typeorm';
 import { PoolCertRepository } from './repositories/pool-cert.repository';
 import { PoolRepository } from './repositories/pool.repository';
 import { PoolDto } from './dto/pool.dto';
-import { PageQuery } from '../utils/params/page.query';
+import { PageParam } from '../utils/params/page.param';
 import { HistoryQueryType } from './types/history-query.type';
 import { PoolHistoryRepository } from './repositories/pool-history.repository';
 import { PoolHistoryDto } from './dto/pool-history.dto';
@@ -33,7 +33,7 @@ export class PoolService {
     );
   }
 
-  async getMemberPools(query: PageQuery): Promise<PoolDto[]> {
+  async getMemberPools(query: PageParam): Promise<PoolDto[]> {
     const pools = await this.em
       .getCustomRepository(PoolRepository)
       .findAllMembers(query);

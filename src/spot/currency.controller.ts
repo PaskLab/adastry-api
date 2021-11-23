@@ -12,7 +12,7 @@ import { CurrencyDto } from './dto/currency.dto';
 import { CodeParam } from './params/code.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { RateDto } from './dto/rate.dto';
-import { HistoryQuery } from '../utils/params/history.query';
+import { HistoryParam } from '../utils/params/history.param';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Curreny')
@@ -61,7 +61,7 @@ export class CurrencyController {
   @ApiOkResponse({ type: [RateDto], description: 'Currency rate history' })
   rateHistory(
     @Param() param: CodeParam,
-    @Query() query: HistoryQuery,
+    @Query() query: HistoryParam,
   ): Promise<RateDto[]> {
     return this.spotService.getRateHistory({ ...param, ...query });
   }

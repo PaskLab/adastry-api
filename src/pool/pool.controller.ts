@@ -9,10 +9,10 @@ import {
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { PoolDto } from './dto/pool.dto';
-import { PageQuery } from '../utils/params/page.query';
+import { PageParam } from '../utils/params/page.param';
 import { PoolIdParam } from '../utils/params/pool-id.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
-import { HistoryQuery } from '../utils/params/history.query';
+import { HistoryParam } from '../utils/params/history.param';
 import { PoolHistoryDto } from './dto/pool-history.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -28,7 +28,7 @@ export class PoolController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: [PoolDto], description: 'Return member pools' })
-  list(@Query() query: PageQuery): Promise<PoolDto[]> {
+  list(@Query() query: PageParam): Promise<PoolDto[]> {
     return this.poolService.getMemberPools(query);
   }
 
@@ -48,7 +48,7 @@ export class PoolController {
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   poolHistory(
     @Param() param: PoolIdParam,
-    @Query() query: HistoryQuery,
+    @Query() query: HistoryParam,
   ): Promise<PoolHistoryDto[]> {
     return this.poolService.getPoolHistory({ ...param, ...query });
   }

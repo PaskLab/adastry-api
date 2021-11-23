@@ -24,6 +24,7 @@ import * as crypto from 'crypto';
 export class AccountService {
   private readonly logger = new Logger(SyncService.name);
   private readonly MIN_LOYALTY = config.app.minLoyalty;
+  private readonly TMP_PATH = config.app.tmpPath;
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
@@ -89,7 +90,11 @@ export class AccountService {
     });
   }
 
-  async getRewardsCSV(stakeAddress: string, year: number): Promise<string> {
+  async getRewardsCSV(
+    stakeAddress: string,
+    year: number,
+    format?: string,
+  ): Promise<string> {
     const account = await this.em
       .getCustomRepository(AccountRepository)
       .findOne({ stakeAddress: stakeAddress });
@@ -112,7 +117,7 @@ export class AccountService {
 
     const filename = `${year}-${stakeAddress.slice(0, 15)}.csv`;
     const writer = csvWriter.createObjectCsvWriter({
-      path: path.join(__dirname, '../../..', 'public/tmp', filename),
+      path: path.join(__dirname, '../../..', this.TMP_PATH, filename),
       header: [
         { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
         { id: 'sentAmount', title: 'Sent Amount' }, // 0.00

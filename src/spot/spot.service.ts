@@ -8,7 +8,7 @@ import { RateDto } from './dto/rate.dto';
 import { RateHistoryType } from './types/rate-history.type';
 import { SpotRepository } from './repositories/spot.repository';
 import { SpotDto } from './dto/spot.dto';
-import { HistoryQuery } from '../utils/params/history.query';
+import { HistoryParam } from '../utils/params/history.param';
 
 @Injectable()
 export class SpotService {
@@ -85,7 +85,7 @@ export class SpotService {
   }
 
   async getPriceHistory(
-    params: HistoryQuery,
+    params: HistoryParam,
     code?: string,
   ): Promise<SpotDto[]> {
     const prices = await this.em

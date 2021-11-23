@@ -1,6 +1,6 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { Spot } from '../entities/spot.entity';
-import { HistoryQuery } from '../../utils/params/history.query';
+import { HistoryParam } from '../../utils/params/history.param';
 import config from '../../../config.json';
 
 @EntityRepository(Spot)
@@ -14,7 +14,7 @@ export class SpotRepository extends Repository<Spot> {
       .getOne();
   }
 
-  async findPriceHistory(params: HistoryQuery): Promise<Spot[]> {
+  async findPriceHistory(params: HistoryParam): Promise<Spot[]> {
     const qb = this.createQueryBuilder('spot')
       .innerJoinAndSelect('spot.epoch', 'epoch')
       .limit(this.MAX_LIMIT)

@@ -9,10 +9,10 @@ import {
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
-import { HistoryQuery } from '../utils/params/history.query';
+import { HistoryParam } from '../utils/params/history.param';
 import { SpotDto } from './dto/spot.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PreferredCodeQuery } from './params/preferred-code.query';
+import { PreferredCodeParam } from './params/preferred-code.param';
 
 @ApiTags('Spot Price')
 @Controller('spot')
@@ -30,7 +30,7 @@ export class SpotController {
     description: 'Last epoch price for ADA.',
   })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
-  lastPrice(@Query() query: PreferredCodeQuery): Promise<SpotDto> {
+  lastPrice(@Query() query: PreferredCodeParam): Promise<SpotDto> {
     return this.spotService.getLastPrice(query.code);
   }
 
@@ -39,8 +39,8 @@ export class SpotController {
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: [SpotDto], description: 'ADA price history' })
   priceHistory(
-    @Query() code: PreferredCodeQuery,
-    @Query() query: HistoryQuery,
+    @Query() code: PreferredCodeParam,
+    @Query() query: HistoryParam,
   ): Promise<SpotDto[]> {
     return this.spotService.getPriceHistory({ ...query }, code.code);
   }

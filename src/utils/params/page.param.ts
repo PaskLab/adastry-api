@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
-export class PageQuery {
+export class PageParam {
   @ApiPropertyOptional({
     description: 'Page number (Min: 1)',
     default: 1,

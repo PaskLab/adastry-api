@@ -1,6 +1,6 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { Pool } from '../entities/pool.entity';
-import { PageQuery } from '../../utils/params/page.query';
+import { PageParam } from '../../utils/params/page.param';
 import config from '../../../config.json';
 
 @EntityRepository(Pool)
@@ -14,7 +14,7 @@ export class PoolRepository extends Repository<Pool> {
       .getMany();
   }
 
-  async findAllMembers(query: PageQuery): Promise<Pool[]> {
+  async findAllMembers(query: PageParam): Promise<Pool[]> {
     const qb = this.createQueryBuilder('pool')
       .leftJoinAndSelect('pool.epoch', 'epoch')
       .where('pool.isMember = TRUE')

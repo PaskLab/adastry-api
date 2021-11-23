@@ -3,7 +3,7 @@ import { EpochDto } from './dto/epoch.dto';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { EpochRepository } from './repositories/epoch.repository';
-import { HistoryQuery } from '../utils/params/history.query';
+import { HistoryParam } from '../utils/params/history.param';
 
 @Injectable()
 export class EpochService {
@@ -43,7 +43,7 @@ export class EpochService {
     return epochDto;
   }
 
-  async getHistory(query: HistoryQuery): Promise<EpochDto[]> {
+  async getHistory(query: HistoryParam): Promise<EpochDto[]> {
     const history = await this.em
       .getCustomRepository(EpochRepository)
       .findEpochHistory(query);

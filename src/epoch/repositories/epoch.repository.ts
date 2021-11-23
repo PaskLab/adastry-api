@@ -1,6 +1,6 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { Epoch } from '../entities/epoch.entity';
-import { HistoryQuery } from '../../utils/params/history.query';
+import { HistoryParam } from '../../utils/params/history.param';
 import config from '../../../config.json';
 
 @EntityRepository(Epoch)
@@ -14,7 +14,7 @@ export class EpochRepository extends Repository<Epoch> {
       .getOne();
   }
 
-  async findEpochHistory(params: HistoryQuery): Promise<Epoch[]> {
+  async findEpochHistory(params: HistoryParam): Promise<Epoch[]> {
     const qb = this.createQueryBuilder('epoch');
 
     if (params.order) {

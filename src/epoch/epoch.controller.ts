@@ -9,7 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { EpochParam } from './params/epoch.param';
-import { HistoryQuery } from '../utils/params/history.query';
+import { HistoryParam } from '../utils/params/history.param';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Epoch')
@@ -30,7 +30,7 @@ export class EpochController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: [EpochDto] })
-  epochHistory(@Query() query: HistoryQuery): Promise<EpochDto[]> {
+  epochHistory(@Query() query: HistoryParam): Promise<EpochDto[]> {
     return this.epochService.getHistory(query);
   }
 

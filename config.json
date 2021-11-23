@@ -1,6 +1,8 @@
 {
   "app": {
-    "minLoyalty": 3
+    "minLoyalty": 3,
+    "tmpFileTTL": 600,
+    "tmpPath": "public/tmp"
   },
   "api": {
     "pageLimit": 100

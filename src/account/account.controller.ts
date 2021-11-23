@@ -26,7 +26,7 @@ import { UpdateUserAccountDto } from './dto/update-user-account.dto';
 import { ResponseDto } from '../utils/dto/response.dto';
 import { AccountHistoryDto } from './dto/account-history.dto';
 import { StakeAddressParam } from '../utils/params/stake-address.param';
-import { HistoryQuery } from '../utils/params/history.query';
+import { HistoryParam } from '../utils/params/history.param';
 import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
@@ -35,6 +35,8 @@ import { UserAccountService } from './user-account.service';
 import { UserAccountDto } from './dto/user-account.dto';
 import { YearParam } from './params/year.param';
 import { generateUrl } from '../utils/utils';
+import { CsvFileDto } from './dto/csv-file.dto';
+import { CsvFormatParam } from './params/csv-format.param';
 
 @ApiTags('Account')
 @Controller('account')
@@ -131,26 +133,35 @@ export class AccountController {
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async accountHistory(
     @Param() param: StakeAddressParam,
-    @Query() query: HistoryQuery,
+    @Query() query: HistoryParam,
   ): Promise<AccountHistoryDto[]> {
     return this.accountService.getHistory({ ...param, ...query });
   }
 
   @Get(':stakeAddress/export-rewards/:year')
-  // @ApiBearerAuth()
-  // @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: ResponseDto })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: CsvFileDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async exportRewards(
     @Request() req,
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
-  ): Promise<ResponseDto> {
+    @Query() formatParam: CsvFormatParam,
+  ): Promise<CsvFileDto> {
     const filename = await this.accountService.getRewardsCSV(
       stakeAddressParam.stakeAddress,
       yearParam.year,
+      formatParam.format,
     );
-    return new ResponseDto(generateUrl(req, 'public/tmp', filename));
+
+    return new CsvFileDto({
+      filename: filename,
+      url: generateUrl(req, 'public/tmp', filename),
+      format: formatParam.format ? formatParam.format : 'koinly',
+      stakeAddress: stakeAddressParam.stakeAddress,
+      year: yearParam.year.toString(),
+    });
   }
 }

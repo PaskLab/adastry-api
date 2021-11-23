@@ -9,7 +9,7 @@ export class YearParam {
   @ApiProperty({
     title: 'Year',
     minimum: 2020,
-    example: '2020',
+    example: '2021',
   })
   year!: number;
 }
