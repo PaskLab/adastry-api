@@ -138,8 +138,8 @@ export class AccountController {
   }
 
   @Get(':stakeAddress/export-rewards/:year')
-  // @ApiBearerAuth()
-  // @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: CsvFileDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
