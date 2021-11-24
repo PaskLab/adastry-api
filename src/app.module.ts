@@ -8,7 +8,6 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { UtilsModule } from './utils/utils.module';
 
 @Module({
   imports: [
@@ -31,7 +30,6 @@ import { UtilsModule } from './utils/utils.module';
     SyncModule,
     AuthModule,
     UserModule,
-    UtilsModule,
   ],
 })
 export class AppModule {}

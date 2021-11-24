@@ -21,6 +21,8 @@ import { createTimestamp, dateFromUnix, generateUrl } from '../utils/utils';
 import * as crypto from 'crypto';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { Request } from 'express';
+import { Cron } from '@nestjs/schedule';
+import fs from 'fs';
 
 @Injectable()
 export class AccountService {
@@ -85,6 +87,7 @@ export class AccountService {
         account: h.account.stakeAddress,
         epoch: h.epoch.epoch,
         rewards: h.rewards,
+        revisedRewards: h.revisedRewards,
         activeStake: h.activeStake,
         opRewards: h.opRewards,
         pool: h.pool ? h.pool.poolId : null,
@@ -170,5 +173,37 @@ export class AccountService {
       stakeAddress: stakeAddress,
       year: year.toString(),
     });
+  }
+
+  @Cron('*/2 * * * *', { name: 'Temporary folder cleanup' })
+  private async cleanTMPFiles(): Promise<void> {
+    const tmpFileTTL = config.app.tmpFileTTL;
+    const absolutePath = path.join(__dirname, '../../..', this.TMP_PATH);
+
+    const files = fs.readdirSync(absolutePath);
+    const result: string[] = [];
+
+    files.forEach((fileName) => {
+      if ('.gitignore' !== fileName) {
+        const filePath = `${absolutePath}/${fileName}`;
+        const fileStat = fs.lstatSync(filePath);
+        const now = new Date(Date.now());
+        const expireAt = new Date(
+          new Date(fileStat.mtime).getTime() + tmpFileTTL * 1000,
+        );
+
+        if (expireAt < now) {
+          fs.unlinkSync(filePath);
+          result.push(fileName);
+        }
+      }
+    });
+
+    const count = result.length;
+
+    if (count) {
+      this.logger.log(`Deleted ${count} expired file(s) in /${this.TMP_PATH}`);
+      this.logger.log(result);
+    }
   }
 }
