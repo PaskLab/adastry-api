@@ -35,4 +35,7 @@ export class PoolHistory {
 
   @ManyToOne(() => PoolCert)
   cert!: PoolCert;
+
+  @Column({ default: false })
+  rewardsRevised!: boolean;
 }

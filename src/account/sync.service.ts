@@ -14,6 +14,8 @@ import { AccountHistoryRepository } from './repositories/account-history.reposit
 import type { AccountHistoryType } from '../utils/api/types/account-history.type';
 import type { AccountRewardsHistoryType } from '../utils/api/types/account-rewards-history.type';
 import { PoolService } from '../pool/pool.service';
+import { AccountWithdrawRepository } from './repositories/account-withdraw.repository';
+import { AccountWithdraw } from './entities/account-withdraw.entity';
 
 @Injectable()
 export class SyncService {
@@ -29,6 +31,7 @@ export class SyncService {
   async syncAccount(account: Account, lastEpoch: Epoch): Promise<void> {
     account = await this.syncInfo(account, lastEpoch);
     if (account.pool?.isMember) {
+      await this.syncAccountWithdrawal(account);
       this.syncHistory(account, lastEpoch);
     }
   }
@@ -176,6 +179,7 @@ export class SyncService {
       newHistory.account = account;
       newHistory.epoch = epoch;
       newHistory.activeStake = history[i].amount;
+      newHistory.revisedRewards = 0;
       newHistory.rewards = rh ? rh.rewards : 0;
       newHistory.pool = pool;
 
@@ -195,6 +199,46 @@ export class SyncService {
       accountHistoryRepository.save(newHistory);
       this.logger.log(
         `Account History Sync - Creating Epoch ${newHistory.epoch.epoch} history record for account ${account.stakeAddress}`,
+      );
+    }
+  }
+
+  async syncAccountWithdrawal(account: Account): Promise<void> {
+    const withdrawals = await this.source.getAllAccountWithdrawal(
+      account.stakeAddress,
+    );
+
+    for (const withdraw of withdrawals) {
+      const storedWithdrawal = await this.em
+        .getCustomRepository(AccountWithdrawRepository)
+        .findOne({ txHash: withdraw.txHash });
+
+      if (storedWithdrawal) {
+        continue;
+      }
+
+      const epoch = await this.em
+        .getCustomRepository(EpochRepository)
+        .findFromTime(withdraw.blockTime);
+
+      if (!epoch) {
+        this.logger.error(
+          `Could not find Epoch for time ${withdraw.blockTime}`,
+          'AccountSync()->syncAccountWithdrawal()',
+        );
+        continue;
+      }
+
+      const newWithdrawal = new AccountWithdraw();
+      newWithdrawal.account = account;
+      newWithdrawal.epoch = epoch;
+      newWithdrawal.txHash = withdraw.txHash;
+      newWithdrawal.block = withdraw.block;
+      newWithdrawal.amount = withdraw.amount;
+
+      this.em.save(newWithdrawal);
+      this.logger.log(
+        `Account Withdrawal Sync - Adding epoch ${newWithdrawal.epoch.epoch} withdrawal record for account ${account.stakeAddress}`,
       );
     }
   }

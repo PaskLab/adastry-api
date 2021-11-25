@@ -36,7 +36,7 @@ export class PoolService {
   async getMemberPools(query: PageParam): Promise<PoolDto[]> {
     const pools = await this.em
       .getCustomRepository(PoolRepository)
-      .findAllMembers(query);
+      .findMembers(query);
 
     return pools.map((p) => {
       return new PoolDto({

@@ -87,4 +87,18 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       )
       .getMany();
   }
+
+  async findAccountSelection(
+    stakeAddresses: string[],
+    epoch: number,
+  ): Promise<AccountHistory[]> {
+    return this.createQueryBuilder('history')
+      .innerJoinAndSelect('history.account', 'account')
+      .innerJoinAndSelect('history.epoch', 'epoch')
+      .where('account.stakeAddress IN (:...stakeAddresses)', {
+        stakeAddresses: stakeAddresses,
+      })
+      .andWhere('epoch.epoch = :epoch', { epoch: epoch })
+      .getMany();
+  }
 }

@@ -17,6 +17,7 @@ import { AccountRepository } from '../account/repositories/account.repository';
 import type { PoolHistoryType } from '../utils/api/types/pool-history.type';
 import { ArmadaService } from '../utils/api/armada.service';
 import { SyncConfigPoolsType } from '../utils/types/config.type';
+import { AccountHistoryRepository } from '../account/repositories/account-history.repository';
 
 @Injectable()
 export class SyncService {
@@ -311,6 +312,100 @@ export class SyncService {
       this.logger.log(
         `Pool Update Sync - Creating Epoch ${newHistory.epoch.epoch} history record for Pool ${newHistory.pool.poolId}`,
       );
+    }
+  }
+
+  async processMultiOwner() {
+    const accountHistoryRepository = this.em.getCustomRepository(
+      AccountHistoryRepository,
+    );
+
+    const memberPools = await this.em
+      .getCustomRepository(PoolRepository)
+      .findAllMembers();
+
+    for (const member of memberPools) {
+      const unprocessed = await this.em
+        .getCustomRepository(PoolHistoryRepository)
+        .findUnprocessed(member.poolId);
+
+      for (const record of unprocessed) {
+        const cert = record.cert;
+
+        // if (cert.epoch.epoch + 1 > record.epoch.epoch) {
+        //   const previousCert = await this.em
+        //     .getCustomRepository(PoolCertRepository)
+        //     .findLastCert(record.pool.poolId, cert.epoch.epoch - 1);
+        //
+        //   if (!previousCert) {
+        //     this.logger.error(
+        //       `Certificate of epoch ${
+        //         record.epoch.epoch - 1
+        //       } not found for pool ${record.pool.poolId}`,
+        //       'PoolSyncService.processMultiOwner()',
+        //     );
+        //     continue;
+        //   }
+        //   cert = previousCert;
+        // }
+
+        const ownersStakeAddr = cert.owners.map(
+          (owner) => owner.account.stakeAddress,
+        );
+
+        const ownersAccountHistory =
+          await accountHistoryRepository.findAccountSelection(
+            ownersStakeAddr,
+            record.epoch.epoch,
+          );
+
+        let totalStake = 0;
+
+        for (const accountHistory of ownersAccountHistory) {
+          totalStake += accountHistory.activeStake;
+        }
+
+        const rewardAccountHistory =
+          await accountHistoryRepository.findOneRecord(
+            cert.rewardAccount.stakeAddress,
+            record.epoch.epoch,
+          );
+
+        if (!rewardAccountHistory) {
+          this.logger.warn(
+            `Epoch ${record.epoch.epoch} Reward account history not found for pool cert ID: ${cert.id}`,
+            'PoolSyncService.processMultiOwner()',
+          );
+          continue;
+        }
+
+        const netRewards = rewardAccountHistory.rewards - record.fees;
+
+        for (const accountHistory of ownersAccountHistory) {
+          accountHistory.stakeShare = totalStake
+            ? accountHistory.activeStake / totalStake
+            : 0;
+          accountHistory.opRewards = Math.floor(
+            record.fees / ownersAccountHistory.length,
+          );
+          accountHistory.revisedRewards = Math.floor(
+            accountHistory.stakeShare * netRewards,
+          );
+          accountHistory.owner = true;
+
+          this.em.save(accountHistory);
+          this.logger.log(
+            `Epoch ${record.epoch.epoch} Rewards revised for owner account ${accountHistory.account.stakeAddress}`,
+          );
+        }
+
+        record.rewardsRevised = true;
+
+        this.em.save(record);
+        this.logger.log(
+          `Epoch ${record.epoch.epoch} Owners Rewards revised for pool ${record.pool.poolId}`,
+        );
+      }
     }
   }
 }

@@ -8,10 +8,16 @@ import { AccountHistory } from './entities/account-history.entity';
 import { PoolModule } from '../pool/pool.module';
 import { UserAccountService } from './user-account.service';
 import { UserAccount } from './entities/user-account.entity';
+import { AccountWithdraw } from './entities/account-withdraw.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Account, AccountHistory, UserAccount]),
+    TypeOrmModule.forFeature([
+      Account,
+      AccountHistory,
+      UserAccount,
+      AccountWithdraw,
+    ]),
     PoolModule,
   ],
   controllers: [UserAccountController],

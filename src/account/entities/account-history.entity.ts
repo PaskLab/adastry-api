@@ -31,7 +31,16 @@ export class AccountHistory {
   activeStake!: number;
 
   @Column({ default: 0 })
+  withdrawable!: number;
+
+  @Column({ default: 0 })
   opRewards!: number;
+
+  @Column({ default: 0 })
+  revisedRewards!: number;
+
+  @Column({ type: 'float', default: 0 })
+  stakeShare!: number;
 
   @ManyToOne(() => Pool, { cascade: true, onDelete: 'SET NULL' })
   pool!: Pool | null;

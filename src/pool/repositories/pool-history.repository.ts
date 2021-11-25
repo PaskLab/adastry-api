@@ -69,4 +69,19 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
 
     return qb.getMany();
   }
+
+  async findUnprocessed(poolId: string): Promise<PoolHistory[]> {
+    return this.createQueryBuilder('history')
+      .innerJoinAndSelect('history.pool', 'pool')
+      .innerJoinAndSelect('history.epoch', 'epoch')
+      .innerJoinAndSelect('history.cert', 'cert')
+      .innerJoinAndSelect('cert.epoch', 'certEpoch')
+      .innerJoinAndSelect('cert.rewardAccount', 'rewardAccount')
+      .innerJoinAndSelect('cert.owners', 'owners')
+      .innerJoinAndSelect('owners.account', 'ownerAccount')
+      .where('pool.poolId = :poolId', { poolId: poolId })
+      .andWhere('history.rewards > 0')
+      .andWhere('history.rewardsRevised = FALSE')
+      .getMany();
+  }
 }

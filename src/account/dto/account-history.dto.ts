@@ -6,6 +6,7 @@ export class AccountHistoryDto {
       this.account = props.account;
       this.epoch = props.epoch;
       this.rewards = props.rewards;
+      this.revisedRewards = props.revisedRewards;
       this.activeStake = props.activeStake;
       this.opRewards = props.opRewards;
       this.pool = props.pool;
@@ -30,6 +31,12 @@ export class AccountHistoryDto {
     example: 15000000,
   })
   rewards!: number;
+
+  @ApiProperty({
+    title: 'Epoch pool owner revised rewards',
+    example: 15000000,
+  })
+  revisedRewards!: number;
 
   @ApiProperty({
     title: 'Epoch account active stake',

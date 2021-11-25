@@ -10,6 +10,7 @@ import type { PoolCertType } from './types/pool-cert.type';
 import type { LastPoolCertType } from './types/last-pool-cert.type';
 import type { PoolHistoryType } from './types/pool-history.type';
 import { AddressInfoType } from './types/address-info.type';
+import { AccountWithdrawType } from './types/account-withdraw.type';
 
 @Injectable()
 export class BlockfrostService {
@@ -18,7 +19,7 @@ export class BlockfrostService {
   private readonly PROVIDER_RATE: number = config.provider.blockfrost.rate;
 
   async getPoolHistory(
-    poolId,
+    poolId: string,
     page = 1,
     limit = 100,
   ): Promise<PoolHistoryType[] | null> {
@@ -28,16 +29,16 @@ export class BlockfrostService {
 
     return result
       ? result.map((res) => ({
-          epoch: res.epoch,
-          rewards: res.rewards,
-          fees: res.fees,
-          blocks: res.blocks,
-          activeStake: res.active_stake,
+          epoch: parseInt(res.epoch),
+          rewards: parseInt(res.rewards),
+          fees: parseInt(res.fees),
+          blocks: parseInt(res.blocks),
+          activeStake: parseInt(res.active_stake),
         }))
       : null;
   }
 
-  async getPoolInfo(poolId): Promise<PoolInfoType | null> {
+  async getPoolInfo(poolId: string): Promise<PoolInfoType | null> {
     const cert = await this.request(`/pools/${poolId}`);
     const metadata = await this.request(`/pools/${poolId}/metadata`);
 
@@ -47,22 +48,22 @@ export class BlockfrostService {
           hex: cert.hex,
           name: metadata.name,
           ticker: metadata.ticker,
-          blocksMinted: cert.blocks_minted,
-          liveStake: cert.live_stake,
-          liveSaturation: cert.live_saturation,
-          liveDelegators: cert.live_delegators,
+          blocksMinted: parseInt(cert.blocks_minted),
+          liveStake: parseInt(cert.live_stake),
+          liveSaturation: parseFloat(cert.live_saturation),
+          liveDelegators: parseInt(cert.live_delegators),
           rewardAccount: cert.reward_account,
           owners: cert.owners,
-          margin: cert.margin_cost,
-          fixed: cert.fixed_cost,
+          margin: parseFloat(cert.margin_cost),
+          fixed: parseInt(cert.fixed_cost),
         }
       : null;
   }
 
-  async getAllPoolCert(poolId): Promise<PoolCertType[]> {
-    let certs: { tx_hash: string; cert_index: string; action: string }[] = [];
+  async getAllPoolCert(poolId: string): Promise<PoolCertType[]> {
+    let certs: { tx_hash: string; cert_index: number; action: string }[] = [];
     let page = 1;
-    let result: { tx_hash: string; cert_index: string; action: string }[] = [];
+    let result: { tx_hash: string; cert_index: number; action: string }[] = [];
 
     do {
       result = await this.request(`/pools/${poolId}/updates?page=${page}`);
@@ -78,14 +79,14 @@ export class BlockfrostService {
         const info = await this.getRegistration(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = txInfo.block_height;
+          info.block = parseInt(txInfo.block_height);
           infos.push(info);
         }
       } else {
         const info = await this.getRetirement(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = txInfo.block_height;
+          info.block = parseInt(txInfo.block_height);
           infos.push(info);
         }
       }
@@ -94,7 +95,7 @@ export class BlockfrostService {
     return infos;
   }
 
-  async getLastPoolCert(poolId): Promise<LastPoolCertType | null> {
+  async getLastPoolCert(poolId: string): Promise<LastPoolCertType | null> {
     const result = await this.request(
       `/pools/${poolId}/updates?order=desc&count=1`,
     );
@@ -102,13 +103,16 @@ export class BlockfrostService {
     return result
       ? {
           txHash: result[0].tx_hash,
-          certIndex: result[0].cert_index,
+          certIndex: parseInt(result[0].cert_index),
           action: result[0].action,
         }
       : null;
   }
 
-  async getRegistration(hash, certIndex): Promise<PoolCertType | null> {
+  async getRegistration(
+    hash: string,
+    certIndex: number,
+  ): Promise<PoolCertType | null> {
     let result = await this.request(`/txs/${hash}/pool_updates`);
 
     if (result) {
@@ -118,9 +122,9 @@ export class BlockfrostService {
           txHash: '',
           block: 0,
           active: true,
-          epoch: result.active_epoch,
-          margin: result.margin_cost,
-          fixed: result.fixed_cost,
+          epoch: parseInt(result.active_epoch),
+          margin: parseFloat(result.margin_cost),
+          fixed: parseInt(result.fixed_cost),
           rewardAccount: result.reward_account,
           owners: result.owners,
         };
@@ -129,7 +133,10 @@ export class BlockfrostService {
     return null;
   }
 
-  async getRetirement(hash, certIndex): Promise<PoolCertType | null> {
+  async getRetirement(
+    hash: string,
+    certIndex: number,
+  ): Promise<PoolCertType | null> {
     let result = await this.request(`/txs/${hash}/pool_retires`);
 
     if (result) {
@@ -139,7 +146,7 @@ export class BlockfrostService {
           txHash: '',
           block: 0,
           active: false,
-          epoch: result.retiring_epoch,
+          epoch: parseInt(result.retiring_epoch),
           margin: null,
           fixed: null,
           rewardAccount: null,
@@ -150,23 +157,23 @@ export class BlockfrostService {
     return null;
   }
 
-  async getAccountInfo(stakeAddress): Promise<AccountInfoType | null> {
+  async getAccountInfo(stakeAddress: string): Promise<AccountInfoType | null> {
     const result = await this.request(`/accounts/${stakeAddress}`);
 
     return result
       ? {
           stakeAddress: result.stake_address,
-          controlledAmount: result.controlled_amount,
-          withdrawalsSum: result.withdrawals_sum,
-          rewardsSum: result.rewards_sum,
-          withdrawableAmount: result.withdrawable_amount,
+          controlledAmount: parseInt(result.controlled_amount),
+          withdrawalsSum: parseInt(result.withdrawals_sum),
+          rewardsSum: parseInt(result.rewards_sum),
+          withdrawableAmount: parseInt(result.withdrawable_amount),
           poolId: result.pool_id,
         }
       : null;
   }
 
   async getAccountHistory(
-    stakeAddr,
+    stakeAddr: string,
     page = 1,
     limit = 100,
   ): Promise<AccountHistoryType | null> {
@@ -176,8 +183,8 @@ export class BlockfrostService {
     return result
       ? result.map((r) => {
           return {
-            epoch: r.active_epoch,
-            amount: r.amount,
+            epoch: parseInt(r.active_epoch),
+            amount: parseInt(r.amount),
             poolId: r.pool_id,
           };
         })
@@ -185,7 +192,7 @@ export class BlockfrostService {
   }
 
   async getAccountRewardsHistory(
-    stakeAddr,
+    stakeAddr: string,
     page = 1,
     limit = 100,
   ): Promise<AccountRewardsHistoryType | null> {
@@ -195,19 +202,19 @@ export class BlockfrostService {
     return result
       ? result.map((r) => {
           return {
-            epoch: r.epoch,
-            rewards: r.amount,
+            epoch: parseInt(r.epoch),
+            rewards: parseInt(r.amount),
             poolId: r.pool_id,
           };
         })
       : null;
   }
 
-  async getAccountAddresses(stakeAddr) {
+  async getAccountAddresses(stakeAddr: string) {
     return await this.request(`/accounts/${stakeAddr}/addresses`);
   }
 
-  async getAddressInfo(addr): Promise<AddressInfoType | null> {
+  async getAddressInfo(addr: string): Promise<AddressInfoType | null> {
     const result = await this.request(`/addresses/${addr}`);
 
     return result
@@ -225,15 +232,15 @@ export class BlockfrostService {
     const result = await this.request(`/epochs/latest`);
     return result
       ? {
-          epoch: result.epoch,
-          startTime: result.start_time,
-          endTime: result.end_time,
+          epoch: parseInt(result.epoch),
+          startTime: parseInt(result.start_time),
+          endTime: parseInt(result.end_time),
         }
       : null;
   }
 
   async getEpochHistory(
-    beforeEpoch,
+    beforeEpoch: number,
     page = 1,
     limit = 100,
   ): Promise<EpochType[] | null> {
@@ -243,12 +250,44 @@ export class BlockfrostService {
     return result
       ? result.map((r) => {
           return {
-            epoch: r.epoch,
-            startTime: r.start_time,
-            endTime: r.end_time,
+            epoch: parseInt(r.epoch),
+            startTime: parseInt(r.start_time),
+            endTime: parseInt(r.end_time),
           };
         })
       : null;
+  }
+
+  async getAllAccountWithdrawal(
+    stakeAddress: string,
+  ): Promise<AccountWithdrawType[]> {
+    let withdrawTxs: { tx_hash: string; amount: string }[] = [];
+    let page = 1;
+    let result: { tx_hash: string; amount: string }[] = [];
+
+    do {
+      result = await this.request(
+        `/accounts/${stakeAddress}/withdrawals?page=${page}`,
+      );
+      if (result) withdrawTxs = withdrawTxs.concat(result);
+      page++;
+    } while (result && result.length === this.PROVIDER_LIMIT);
+
+    const withdrawals: AccountWithdrawType[] = [];
+
+    for (const tx of withdrawTxs) {
+      const txInfo = await this.request(`/txs/${tx.tx_hash}`);
+      if (txInfo) {
+        withdrawals.push({
+          txHash: tx.tx_hash,
+          block: parseInt(txInfo.block_height),
+          blockTime: parseInt(txInfo.block_time),
+          amount: parseInt(tx.amount),
+        });
+      }
+    }
+
+    return withdrawals;
   }
 
   async request(

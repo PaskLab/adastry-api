@@ -14,7 +14,15 @@ export class PoolRepository extends Repository<Pool> {
       .getMany();
   }
 
-  async findAllMembers(query: PageParam): Promise<Pool[]> {
+  async findAllMembers(): Promise<Pool[]> {
+    return this.createQueryBuilder('pool')
+      .leftJoinAndSelect('pool.epoch', 'epoch')
+      .where('pool.isMember = TRUE')
+      .orderBy('pool.name', 'ASC')
+      .getMany();
+  }
+
+  async findMembers(query: PageParam): Promise<Pool[]> {
     const qb = this.createQueryBuilder('pool')
       .leftJoinAndSelect('pool.epoch', 'epoch')
       .where('pool.isMember = TRUE')
