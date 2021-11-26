@@ -41,11 +41,11 @@ export class SyncService {
 
       for (let i = pages; i >= 1; i--) {
         const limit =
-          i === pages ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
+          pages === 1 ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
         const upstreamHistory = await this.source.getEpochHistory(
           lastEpoch.epoch,
           i,
-          pages === 1 ? limit : this.PROVIDER_LIMIT,
+          limit,
         );
 
         if (!upstreamHistory) {
@@ -64,7 +64,7 @@ export class SyncService {
         epoch.epoch = history[i].epoch;
         epoch.startTime = history[i].startTime;
         epoch.endTime = history[i].endTime;
-        epochRepository.save(epoch);
+        await epochRepository.save(epoch);
         this.logger.log(`Epoch Sync - Saving Epoch ${epoch.epoch}`);
       }
 

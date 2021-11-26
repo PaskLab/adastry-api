@@ -31,6 +31,9 @@ export class AccountHistory {
   activeStake!: number;
 
   @Column({ default: 0 })
+  balance!: number;
+
+  @Column({ default: 0 })
   withdrawable!: number;
 
   @Column({ default: 0 })

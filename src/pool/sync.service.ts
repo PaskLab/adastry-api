@@ -77,7 +77,7 @@ export class SyncService {
 
     for (const pool of optOutMembers) {
       pool.isMember = false;
-      this.em.save(pool);
+      await this.em.save(pool);
       this.logger.log(`Removing membership for pool ID: ${pool.poolId}`);
     }
   }
@@ -118,7 +118,7 @@ export class SyncService {
         (memberPool) => memberPool.id === pool.poolId,
       );
 
-      this.em.getCustomRepository(PoolRepository).save(pool);
+      await this.em.getCustomRepository(PoolRepository).save(pool);
       this.logger.log(`Pool Sync - Updating Pool ${pool.poolId}`);
     }
   }
@@ -240,11 +240,11 @@ export class SyncService {
 
     for (let i = pages; i >= 1; i--) {
       const limit =
-        i === pages ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
+        pages === 1 ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
       let upstreamHistory = await this.source.getPoolHistory(
         pool.poolId,
         i,
-        pages === 1 ? limit : this.PROVIDER_LIMIT,
+        limit,
       );
 
       if (!upstreamHistory) {
@@ -308,7 +308,7 @@ export class SyncService {
       newHistory.activeStake = history[i].activeStake;
       newHistory.cert = lastCert;
 
-      poolHistoryRepository.save(newHistory);
+      await poolHistoryRepository.save(newHistory);
       this.logger.log(
         `Pool Update Sync - Creating Epoch ${newHistory.epoch.epoch} history record for Pool ${newHistory.pool.poolId}`,
       );
@@ -332,15 +332,15 @@ export class SyncService {
       for (const record of unprocessed) {
         const cert = record.cert;
 
-        // if (cert.epoch.epoch + 1 > record.epoch.epoch) {
+        // if (cert.epoch.epoch + 3 > record.epoch.epoch) {
         //   const previousCert = await this.em
         //     .getCustomRepository(PoolCertRepository)
-        //     .findLastCert(record.pool.poolId, cert.epoch.epoch - 1);
+        //     .findLastCert(record.pool.poolId, cert.epoch.epoch - 3);
         //
         //   if (!previousCert) {
         //     this.logger.error(
         //       `Certificate of epoch ${
-        //         record.epoch.epoch - 1
+        //         record.epoch.epoch - 3
         //       } not found for pool ${record.pool.poolId}`,
         //       'PoolSyncService.processMultiOwner()',
         //     );
@@ -362,7 +362,7 @@ export class SyncService {
         let totalStake = 0;
 
         for (const accountHistory of ownersAccountHistory) {
-          totalStake += accountHistory.activeStake;
+          totalStake += accountHistory.balance;
         }
 
         const rewardAccountHistory =
@@ -383,7 +383,7 @@ export class SyncService {
 
         for (const accountHistory of ownersAccountHistory) {
           accountHistory.stakeShare = totalStake
-            ? accountHistory.activeStake / totalStake
+            ? accountHistory.balance / totalStake
             : 0;
           accountHistory.opRewards = Math.floor(
             record.fees / ownersAccountHistory.length,
@@ -393,7 +393,7 @@ export class SyncService {
           );
           accountHistory.owner = true;
 
-          this.em.save(accountHistory);
+          await this.em.save(accountHistory);
           this.logger.log(
             `Epoch ${record.epoch.epoch} Rewards revised for owner account ${accountHistory.account.stakeAddress}`,
           );
@@ -401,7 +401,7 @@ export class SyncService {
 
         record.rewardsRevised = true;
 
-        this.em.save(record);
+        await this.em.save(record);
         this.logger.log(
           `Epoch ${record.epoch.epoch} Owners Rewards revised for pool ${record.pool.poolId}`,
         );

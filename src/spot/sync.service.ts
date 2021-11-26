@@ -96,7 +96,7 @@ export class SyncService {
         newRate.currency = currency;
         newRate.rate = rate.rate;
 
-        this.em.save(newRate);
+        await this.em.save(newRate);
         this.logger.log(
           `Rate Sync - Creating Epoch ${epoch.epoch} history record for ${currency.name}[${currency.code}] currency`,
         );
@@ -138,7 +138,7 @@ export class SyncService {
       newSpot.epoch = epoch;
       newSpot.price = spotPrice;
 
-      this.em.save(newSpot);
+      await this.em.save(newSpot);
       this.logger.log(
         `Spot Sync - Creating Epoch ${epoch.epoch} spot price history record`,
       );

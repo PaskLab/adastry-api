@@ -97,16 +97,16 @@ export class SyncService {
 
     for (let i = pages; i >= 1; i--) {
       const limit =
-        i === pages ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
+        pages === 1 ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
       const fetchUpstreamHistory = this.source.getAccountHistory(
         account.stakeAddress,
         i,
-        pages === 1 ? limit : this.PROVIDER_LIMIT,
+        limit,
       );
       const fetchUpstreamRewardsHistory = this.source.getAccountRewardsHistory(
         account.stakeAddress,
         i,
-        pages === 1 ? limit : this.PROVIDER_LIMIT,
+        limit,
       );
 
       let upstreamHistory = await fetchUpstreamHistory;
@@ -177,6 +177,9 @@ export class SyncService {
       const previousEpoch = await this.em
         .getCustomRepository(AccountHistoryRepository)
         .findOneRecord(account.stakeAddress, epoch.epoch - 1);
+      const snapshotEpoch = await this.em
+        .getCustomRepository(AccountHistoryRepository)
+        .findOneRecord(account.stakeAddress, epoch.epoch - 3);
       const withdrawals = await this.em
         .getCustomRepository(AccountWithdrawRepository)
         .findEpochWithdrawals(account.stakeAddress, epoch.epoch);
@@ -199,6 +202,9 @@ export class SyncService {
           previousEpoch.withdrawn +
           newHistory.rewards
         : newHistory.rewards;
+      newHistory.balance = snapshotEpoch
+        ? newHistory.activeStake - snapshotEpoch.withdrawable
+        : newHistory.activeStake;
       newHistory.withdrawn = totalWithdraw;
 
       // Tracking user loyalty to configured pools
@@ -214,7 +220,7 @@ export class SyncService {
         newHistory.owner = false;
       }
 
-      accountHistoryRepository.save(newHistory);
+      await accountHistoryRepository.save(newHistory);
       this.logger.log(
         `Account History Sync - Creating Epoch ${newHistory.epoch.epoch} history record for account ${account.stakeAddress}`,
       );
@@ -254,7 +260,7 @@ export class SyncService {
       newWithdrawal.block = withdraw.block;
       newWithdrawal.amount = withdraw.amount;
 
-      this.em.save(newWithdrawal);
+      await this.em.save(newWithdrawal);
       this.logger.log(
         `Account Withdrawal Sync - Adding epoch ${newWithdrawal.epoch.epoch} withdrawal record for account ${account.stakeAddress}`,
       );
