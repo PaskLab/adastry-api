@@ -174,6 +174,18 @@ export class SyncService {
         pool = await this.em.save(pool);
       }
 
+      const previousEpoch = await this.em
+        .getCustomRepository(AccountHistoryRepository)
+        .findOneRecord(account.stakeAddress, epoch.epoch - 1);
+      const withdrawals = await this.em
+        .getCustomRepository(AccountWithdrawRepository)
+        .findEpochWithdrawals(account.stakeAddress, epoch.epoch);
+
+      let totalWithdraw = 0;
+      for (const withdraw of withdrawals) {
+        totalWithdraw += withdraw.amount;
+      }
+
       newHistory = new AccountHistory();
 
       newHistory.account = account;
@@ -182,6 +194,12 @@ export class SyncService {
       newHistory.revisedRewards = 0;
       newHistory.rewards = rh ? rh.rewards : 0;
       newHistory.pool = pool;
+      newHistory.withdrawable = previousEpoch
+        ? previousEpoch.withdrawable -
+          previousEpoch.withdrawn +
+          newHistory.rewards
+        : newHistory.rewards;
+      newHistory.withdrawn = totalWithdraw;
 
       // Tracking user loyalty to configured pools
       account.loyalty = account.pool?.isMember ? account.loyalty + 1 : 0;

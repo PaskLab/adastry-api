@@ -34,6 +34,9 @@ export class AccountHistory {
   withdrawable!: number;
 
   @Column({ default: 0 })
+  withdrawn!: number;
+
+  @Column({ default: 0 })
   opRewards!: number;
 
   @Column({ default: 0 })
