@@ -127,8 +127,9 @@ export class SyncService {
     const lastCert = await this.source.getLastPoolCert(pool.poolId);
 
     if (!lastCert) {
-      this.logger.log(
-        `ERROR::PoolSync()->syncPoolUpdate()->this.source.getLastPoolUpdate(${pool.poolId}) returned ${lastCert}`,
+      this.logger.error(
+        `this.source.getLastPoolUpdate(${pool.poolId}) returned ${lastCert}`,
+        'PoolSync()->syncPoolCert()',
       );
       return;
     }
@@ -157,10 +158,11 @@ export class SyncService {
           : null;
 
         if (!epoch) {
-          this.logger.log(
-            `ERROR::PoolSync()->syncPoolUpdate()->this.epochRepository.findOne(${poolCert.epoch}) returned ${epoch}`,
+          this.logger.warn(
+            `this.epochRepository.findOne(${poolCert.epoch}) returned ${epoch}`,
+            'PoolSync()->syncPoolCert()',
           );
-          return;
+          continue;
         }
 
         const newCert = new PoolCert();
