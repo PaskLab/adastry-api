@@ -334,23 +334,6 @@ export class SyncService {
       for (const record of unprocessed) {
         const cert = record.cert;
 
-        // if (cert.epoch.epoch + 3 > record.epoch.epoch) {
-        //   const previousCert = await this.em
-        //     .getCustomRepository(PoolCertRepository)
-        //     .findLastCert(record.pool.poolId, cert.epoch.epoch - 3);
-        //
-        //   if (!previousCert) {
-        //     this.logger.error(
-        //       `Certificate of epoch ${
-        //         record.epoch.epoch - 3
-        //       } not found for pool ${record.pool.poolId}`,
-        //       'PoolSyncService.processMultiOwner()',
-        //     );
-        //     continue;
-        //   }
-        //   cert = previousCert;
-        // }
-
         const ownersStakeAddr = cert.owners.map(
           (owner) => owner.account.stakeAddress,
         );
