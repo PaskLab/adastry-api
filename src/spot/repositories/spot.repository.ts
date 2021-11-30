@@ -14,6 +14,13 @@ export class SpotRepository extends Repository<Spot> {
       .getOne();
   }
 
+  async findEpoch(epoch: number): Promise<Spot | undefined> {
+    return this.createQueryBuilder('spot')
+      .innerJoinAndSelect('spot.epoch', 'epoch')
+      .where('epoch.epoch = :epoch', { epoch: epoch })
+      .getOne();
+  }
+
   async findPriceHistory(params: HistoryParam): Promise<Spot[]> {
     const qb = this.createQueryBuilder('spot')
       .innerJoinAndSelect('spot.epoch', 'epoch')

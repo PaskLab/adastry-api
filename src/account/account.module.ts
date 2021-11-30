@@ -9,6 +9,7 @@ import { PoolModule } from '../pool/pool.module';
 import { UserAccountService } from './user-account.service';
 import { UserAccount } from './entities/user-account.entity';
 import { AccountWithdraw } from './entities/account-withdraw.entity';
+import { CsvService } from './csv.service';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { AccountWithdraw } from './entities/account-withdraw.entity';
     PoolModule,
   ],
   controllers: [UserAccountController],
-  providers: [AccountService, UserAccountService, SyncService],
+  providers: [AccountService, UserAccountService, SyncService, CsvService],
   exports: [AccountService, SyncService],
 })
 export class AccountModule {}

@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { AddUserAccountDto } from './dto/add-user-account.dto';
@@ -36,13 +37,18 @@ import { UserAccountDto } from './dto/user-account.dto';
 import { YearParam } from './params/year.param';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { CsvFormatParam } from './params/csv-format.param';
+import config from '../../config.json';
+import { CsvService } from './csv.service';
 
 @ApiTags('User Account')
 @Controller('account')
 export class UserAccountController {
+  private readonly MIN_LOYALTY = config.app.minLoyalty;
+
   constructor(
     private readonly accountService: AccountService,
     private readonly userAccountService: UserAccountService,
+    private readonly csvService: CsvService,
   ) {}
 
   @Post()
@@ -149,8 +155,20 @@ export class UserAccountController {
     @Param() yearParam: YearParam,
     @Query() formatParam: CsvFormatParam,
   ): Promise<CsvFileDto> {
-    return this.accountService.getRewardsCSV(
+    if (
+      !(await this.accountService.loyaltyCheck(
+        stakeAddressParam.stakeAddress,
+        this.MIN_LOYALTY,
+      ))
+    ) {
+      throw new BadRequestException(
+        `Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
+      );
+    }
+
+    return this.csvService.getRewardsCSV(
       request,
+      request.user.id,
       stakeAddressParam.stakeAddress,
       yearParam.year,
       formatParam.format,

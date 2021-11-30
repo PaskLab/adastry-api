@@ -4,11 +4,11 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class CsvFormatParam {
   @ApiPropertyOptional({
     title: 'CSV format',
-    default: 'koinly',
+    default: 'full',
     type: 'string',
-    enum: ['koinly'],
+    enum: ['full', 'koinly'],
   })
   @IsOptional()
-  @IsIn(['koinly'])
+  @IsIn(['full', 'koinly'])
   format?: string;
 }

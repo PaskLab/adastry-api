@@ -5,12 +5,16 @@ export class AccountHistoryDto {
     if (props) {
       this.account = props.account;
       this.epoch = props.epoch;
+      this.activeStake = props.activeStake;
+      this.balance = props.balance;
       this.rewards = props.rewards;
       this.revisedRewards = props.revisedRewards;
-      this.activeStake = props.activeStake;
       this.opRewards = props.opRewards;
+      this.withdrawable = props.withdrawable;
+      this.withdrawn = props.withdrawn;
       this.pool = props.pool;
       this.owner = props.owner;
+      this.stakeShare = props.stakeShare;
     }
   }
 
@@ -27,6 +31,18 @@ export class AccountHistoryDto {
   epoch!: number;
 
   @ApiProperty({
+    title: 'Epoch account active stake',
+    example: 370000000,
+  })
+  activeStake!: number;
+
+  @ApiProperty({
+    title: 'Account balance at epoch start',
+    example: 370000000,
+  })
+  balance!: number;
+
+  @ApiProperty({
     title: 'Epoch received rewards',
     example: 15000000,
   })
@@ -39,16 +55,22 @@ export class AccountHistoryDto {
   revisedRewards!: number;
 
   @ApiProperty({
-    title: 'Epoch account active stake',
-    example: 370000000,
-  })
-  activeStake!: number;
-
-  @ApiProperty({
     title: 'Epoch operator fees',
     example: '340000000',
   })
   opRewards!: number;
+
+  @ApiProperty({
+    title: 'Epoch withdrawable rewards',
+    example: 15765432,
+  })
+  withdrawable!: number;
+
+  @ApiProperty({
+    title: 'Epoch withdrawn rewards',
+    example: 15765432,
+  })
+  withdrawn!: number;
 
   @ApiProperty({
     oneOf: [{ type: 'string' }, { type: 'null' }],
@@ -62,4 +84,10 @@ export class AccountHistoryDto {
     example: false,
   })
   owner!: boolean;
+
+  @ApiProperty({
+    title: 'Pool owner stake share',
+    example: 0.75,
+  })
+  stakeShare!: number;
 }

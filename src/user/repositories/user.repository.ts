@@ -11,4 +11,12 @@ export class UserRepository extends Repository<User> {
       .setParameter('username', username)
       .getOne();
   }
+
+  findOneById(id: number): Promise<User | undefined> {
+    return this.createQueryBuilder('user')
+      .innerJoinAndSelect('user.currency', 'currency')
+      .where('user.id = :id', { id: id })
+      .andWhere('user.active = TRUE')
+      .getOne();
+  }
 }

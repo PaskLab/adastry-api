@@ -1,8 +1,6 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -14,23 +12,9 @@ import { AccountHistoryRepository } from './repositories/account-history.reposit
 import { AccountHistoryDto } from './dto/account-history.dto';
 import { SyncService } from './sync.service';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
-import csvWriter = require('csv-writer');
-import config from '../../config.json';
-import path from 'path';
-import { createTimestamp, dateFromUnix, generateUrl } from '../utils/utils';
-import * as crypto from 'crypto';
-import { CsvFileDto } from './dto/csv-file.dto';
-import { Request } from 'express';
-import { Cron } from '@nestjs/schedule';
-import fs from 'fs';
 
 @Injectable()
 export class AccountService {
-  private readonly logger = new Logger(SyncService.name);
-  private readonly MIN_LOYALTY = config.app.minLoyalty;
-  private readonly TMP_PATH = config.app.tmpPath;
-  private readonly TMP_TTL = config.app.tmpFileTTL;
-
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
@@ -86,124 +70,29 @@ export class AccountService {
       return new AccountHistoryDto({
         account: h.account.stakeAddress,
         epoch: h.epoch.epoch,
+        activeStake: h.activeStake,
+        balance: h.balance,
         rewards: h.rewards,
         revisedRewards: h.revisedRewards,
-        activeStake: h.activeStake,
         opRewards: h.opRewards,
+        withdrawable: h.withdrawable,
+        withdrawn: h.withdrawn,
         pool: h.pool ? h.pool.poolId : null,
         owner: h.owner,
+        stakeShare: h.stakeShare,
       });
     });
   }
 
-  async getRewardsCSV(
-    request: Request,
-    stakeAddress: string,
-    year: number,
-    format?: string,
-  ): Promise<CsvFileDto> {
+  async loyaltyCheck(stakeAddress: string, minScore: number): Promise<boolean> {
     const account = await this.em
       .getCustomRepository(AccountRepository)
       .findOne({ stakeAddress: stakeAddress });
 
-    if (account && account.loyalty < this.MIN_LOYALTY) {
-      throw new BadRequestException(
-        `Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
-      );
+    if (!account) {
+      throw new NotFoundException(`Account ${stakeAddress} not found.`);
     }
 
-    const history = await this.em
-      .getCustomRepository(AccountHistoryRepository)
-      .findByYear(stakeAddress, year);
-
-    if (!history.length) {
-      throw new NotFoundException(
-        `No reward history found for ${stakeAddress} in year ${year}`,
-      );
-    }
-
-    const filename = `${year}-${stakeAddress.slice(0, 15)}.csv`;
-    const writer = csvWriter.createObjectCsvWriter({
-      path: path.join(__dirname, '../../..', this.TMP_PATH, filename),
-      header: [
-        { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
-        { id: 'sentAmount', title: 'Sent Amount' }, // 0.00
-        { id: 'sentCurrency', title: 'Sent Currency' },
-        { id: 'receivedAmount', title: 'Received Amount' },
-        { id: 'receivedCurrency', title: 'Received Currency' }, // ADA
-        { id: 'label', title: 'Label' }, // reward
-        { id: 'description', title: 'Description' },
-        { id: 'txHash', title: 'TxHash' },
-      ],
-    });
-
-    const records: any = [];
-
-    for (const record of history) {
-      if (record.rewards < 1) continue;
-
-      const line = {
-        date: createTimestamp(dateFromUnix(record.epoch.startTime)),
-        sentAmount: '',
-        sentCurrency: '',
-        receivedAmount: record.rewards.toString(),
-        receivedCurrency: 'ADA',
-        label: 'reward',
-        description: `Epoch ${record.epoch.epoch} for ${stakeAddress}`,
-        txHash: crypto
-          .createHash('sha256')
-          .update(record.epoch.epoch + stakeAddress)
-          .digest('hex'),
-      };
-      records.push(line);
-    }
-
-    await writer
-      .writeRecords(records)
-      .then(() => this.logger.log(`Rewards CSV ${filename} generated`));
-
-    const expireAt = new Date();
-    expireAt.setTime(expireAt.valueOf() + this.TMP_TTL * 1000);
-
-    return new CsvFileDto({
-      filename: filename,
-      fileExpireAt: expireAt.toUTCString(),
-      url: generateUrl(request, 'public/tmp', filename),
-      format: format ? format : 'koinly',
-      stakeAddress: stakeAddress,
-      year: year.toString(),
-    });
-  }
-
-  @Cron('*/2 * * * *', { name: 'Temporary folder cleanup' })
-  private async cleanTMPFiles(): Promise<void> {
-    const tmpFileTTL = config.app.tmpFileTTL;
-    const absolutePath = path.join(__dirname, '../../..', this.TMP_PATH);
-
-    const files = fs.readdirSync(absolutePath);
-    const result: string[] = [];
-
-    files.forEach((fileName) => {
-      if ('.gitignore' !== fileName) {
-        const filePath = `${absolutePath}/${fileName}`;
-        const fileStat = fs.lstatSync(filePath);
-        const now = new Date(Date.now());
-        const expireAt = new Date(
-          new Date(fileStat.mtime).getTime() + tmpFileTTL * 1000,
-        );
-
-        if (expireAt < now) {
-          fs.unlinkSync(filePath);
-          result.push(fileName);
-        }
-      }
-    });
-
-    const count = result.length;
-
-    if (count) {
-      this.logger.log(`Deleted ${count} expired file(s) in /${this.TMP_PATH}`);
-      this.logger.log(result);
-    }
+    return account.loyalty >= minScore;
   }
 }
