@@ -106,6 +106,7 @@ export class CsvService {
         { id: 'realRewards', title: 'Real Rewards' },
         { id: 'revisedRewards', title: 'Revised Rewards' },
         { id: 'opRewards', title: 'Op Rewards' },
+        { id: 'stakeShare', title: 'Stake Share' },
         { id: 'withdrawable', title: 'Withdrawable' },
         { id: 'withdrawn', title: 'Withdrawn' },
       ],
@@ -152,6 +153,7 @@ export class CsvService {
         realRewards: toAda(record.rewards),
         revisedRewards: toAda(record.revisedRewards),
         opRewards: toAda(record.opRewards),
+        stakeShare: record.stakeShare,
         withdrawable: toAda(record.withdrawable),
         withdrawn: toAda(record.withdrawn),
       };
