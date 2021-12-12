@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -24,6 +25,7 @@ import { VerifyCodeParam } from './params/verify-code.param';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserDto } from './dto/user.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
+import { UpdateEmailDto } from './dto/update-email.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -40,6 +42,19 @@ export class UserController {
   async create(@Body() createUserDto: CreateUserDto): Promise<ResponseDto> {
     const user = await this.userService.createUser(createUserDto);
     return new ResponseDto(`User ${user.username} created.`);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('email')
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async updateEmail(
+    @Request() request,
+    @Body() updateEmail: UpdateEmailDto,
+  ): Promise<ResponseDto> {
+    await this.userService.updateEmail(request.user.id, updateEmail.email);
+    return new ResponseDto(`Verification email sent to ${updateEmail.email}`);
   }
 
   @Get('verify/:code')

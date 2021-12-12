@@ -2,7 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  Logger,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -16,14 +16,12 @@ import * as crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
 import ejs = require('ejs');
-import { UpdateEmailDto } from './dto/update-email.dto';
 import { CurrencyRepository } from '../spot/repositories/currency.repository';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { decrypt, encrypt } from '../utils/utils';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
-
   constructor(@InjectEntityManager() private readonly em: EntityManager) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<UserDto> {
@@ -98,9 +96,8 @@ export class UserService {
     return this.em.save(user);
   }
 
-  async addEmail(userId: number, addEmailDto: UpdateEmailDto) {
-    // todo: method to be completed, code moved from other method
-    let user = await this.em
+  async updateEmail(userId: number, email: string): Promise<string> {
+    const user = await this.em
       .getCustomRepository(UserRepository)
       .findOne({ id: userId });
 
@@ -108,14 +105,24 @@ export class UserService {
       throw new NotFoundException('User not found.');
     }
 
+    if (!process.env.DB_SECRET) {
+      throw new InternalServerErrorException('DB encryption key missing');
+    }
+
+    const encryptedEmail = await encrypt(email, process.env.DB_SECRET);
+
+    user.email = encryptedEmail.encrypted;
+
     const exp = new Date();
     exp.setHours(exp.getHours() + 24);
     user.expHash =
       exp.valueOf().toString() + crypto.randomBytes(20).toString('hex');
 
-    user = await this.em.save(user);
+    await this.sendVerifyEmail(email, user.expHash);
 
-    this.sendVerifyEmail(user.email, user.expHash);
+    await this.em.save(user);
+
+    return email;
   }
 
   async validatePWD(user: User, password: string): Promise<boolean> {
@@ -151,13 +158,10 @@ export class UserService {
       html: ejs.render(ejsTemplate, { domain: process.env.DOMAIN, code: code }),
     };
 
-    const logger = this.logger;
-
     transporter.sendMail(message, function (err) {
       if (err) {
-        logger.error(
+        throw new InternalServerErrorException(
           `Verification email for user ${email} could not be sent.`,
-          err,
         );
       }
     });
@@ -170,10 +174,32 @@ export class UserService {
       .findActiveUser(username);
 
     if (!user) {
-      throw new NotFoundException(`User ${username} not found.`);
+      throw new InternalServerErrorException(`User ${username} not found.`);
     }
 
     return user;
+  }
+
+  async getUserEmail(userId: number): Promise<string> {
+    const user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOne(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    let email = '';
+
+    if (user.expHash.length === 0) {
+      if (!process.env.DB_SECRET) {
+        throw new InternalServerErrorException('DB encryption key missing');
+      }
+
+      email = await decrypt(user.email, process.env.DB_SECRET);
+    }
+
+    return email;
   }
 
   async getUserInfo(userId: number): Promise<UserDto> {
@@ -185,10 +211,20 @@ export class UserService {
       throw new NotFoundException('User not found.');
     }
 
+    let email = '';
+
+    if (user.expHash.length === 0) {
+      if (!process.env.DB_SECRET) {
+        throw new InternalServerErrorException('DB encryption key missing');
+      }
+
+      email = await decrypt(user.email, process.env.DB_SECRET);
+    }
+
     return new UserDto({
       username: user.username,
       name: user.name,
-      email: user.email,
+      email: email,
       currency: user.currency.code,
     });
   }
