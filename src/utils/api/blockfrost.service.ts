@@ -210,8 +210,18 @@ export class BlockfrostService {
       : null;
   }
 
-  async getAccountAddresses(stakeAddr: string) {
-    return await this.request(`/accounts/${stakeAddr}/addresses`);
+  async getAccountAddresses(
+    stakeAddr: string,
+    page = 1,
+    limit = 100,
+  ): Promise<string[] | null> {
+    const result = await this.request(
+      `/accounts/${stakeAddr}/addresses?page=${page}&count=${limit}&order=desc`,
+    );
+
+    return result && result.length
+      ? result.map((value) => value.address)
+      : null;
   }
 
   async getAddressInfo(addr: string): Promise<AddressInfoType | null> {

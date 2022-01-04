@@ -16,6 +16,7 @@ import type { AccountRewardsHistoryType } from '../utils/api/types/account-rewar
 import { PoolService } from '../pool/pool.service';
 import { AccountWithdrawRepository } from './repositories/account-withdraw.repository';
 import { AccountWithdraw } from './entities/account-withdraw.entity';
+import { TxSyncService } from './sync/tx-sync.service';
 
 @Injectable()
 export class SyncService {
@@ -26,12 +27,14 @@ export class SyncService {
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly source: BlockfrostService,
     private readonly poolService: PoolService,
+    private readonly txSync: TxSyncService,
   ) {}
 
   async syncAccount(account: Account, lastEpoch: Epoch): Promise<void> {
     account = await this.syncInfo(account, lastEpoch);
     if (account.pool?.isMember) {
       await this.syncAccountWithdrawal(account);
+      await this.txSync.syncAddresses(account);
       this.syncHistory(account, lastEpoch);
     }
   }
