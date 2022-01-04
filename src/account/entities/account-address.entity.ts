@@ -3,7 +3,6 @@ import {
   Column,
   ManyToOne,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
   OneToMany,
   Index,
 } from 'typeorm';
@@ -28,8 +27,4 @@ export class AccountAddress {
 
   @OneToMany(() => AccountTransaction, (transaction) => transaction.address)
   transactions!: AccountTransaction[];
-
-  // Special columns
-  @CreateDateColumn()
-  createdAt!: string;
 }
