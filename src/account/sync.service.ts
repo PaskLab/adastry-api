@@ -34,7 +34,7 @@ export class SyncService {
     account = await this.syncInfo(account, lastEpoch);
     if (account.pool?.isMember) {
       await this.syncAccountWithdrawal(account);
-      await this.txSync.syncAddresses(account);
+      await this.txSync.syncAccount(account);
       this.syncHistory(account, lastEpoch);
     }
   }
@@ -115,8 +115,8 @@ export class SyncService {
       let upstreamHistory = await fetchUpstreamHistory;
 
       if (!upstreamHistory) {
-        this.logger.log(
-          `ERROR::AccountSync()->syncHistory()->this.source.getAccountHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamHistory}.`,
+        this.logger.error(
+          `AccountSync()->syncHistory()->this.source.getAccountHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamHistory}.`,
         );
         return;
       }
@@ -124,8 +124,8 @@ export class SyncService {
       const upstreamRewardsHistory = await fetchUpstreamRewardsHistory;
 
       if (!upstreamRewardsHistory) {
-        this.logger.log(
-          `ERROR::AccountSync()->syncHistory()->this.source.getAccountRewardsHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamRewardsHistory}`,
+        this.logger.error(
+          `AccountSync()->syncHistory()->this.source.getAccountRewardsHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamRewardsHistory}`,
         );
         return;
       }

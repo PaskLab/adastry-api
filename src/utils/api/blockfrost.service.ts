@@ -11,6 +11,9 @@ import type { LastPoolCertType } from './types/last-pool-cert.type';
 import type { PoolHistoryType } from './types/pool-history.type';
 import { AddressInfoType } from './types/address-info.type';
 import { AccountWithdrawType } from './types/account-withdraw.type';
+import { AddressTransactionType } from './types/address-transaction.type';
+import { TransactionType } from './types/transaction.type';
+import { TransactionOutputsType } from './types/transaction-outputs.type';
 
 @Injectable()
 export class BlockfrostService {
@@ -210,6 +213,9 @@ export class BlockfrostService {
       : null;
   }
 
+  /**
+   * @return - Return null if the array is empty
+   */
   async getAccountAddresses(
     stakeAddr: string,
     page = 1,
@@ -224,8 +230,8 @@ export class BlockfrostService {
       : null;
   }
 
-  async getAddressInfo(addr: string): Promise<AddressInfoType | null> {
-    const result = await this.request(`/addresses/${addr}`);
+  async getAddressInfo(address: string): Promise<AddressInfoType | null> {
+    const result = await this.request(`/addresses/${address}`);
 
     return result
       ? {
@@ -234,6 +240,90 @@ export class BlockfrostService {
           stakeAddress: result.stake_address,
           type: result.type,
           script: result.script,
+        }
+      : null;
+  }
+
+  /**
+   * @return - Return null if the array is empty
+   */
+  async getAddressTransactions(
+    address: string,
+    page = 1,
+    limit = 100,
+    fromBlock: number | null = null,
+    fromIndex: number | null = null,
+  ): Promise<AddressTransactionType[] | null> {
+    const fromStr = fromBlock
+      ? `&from=${fromBlock}${fromIndex ? ':' + fromIndex : ''}`
+      : '';
+    const result = await this.request(
+      `/addresses/${address}/transactions?page=${page}&count=${limit}${fromStr}`,
+    );
+    return result && result.length
+      ? result.map((t) => ({
+          txHash: t.tx_hash,
+          txIndex: parseInt(t.tx_index),
+          blockHeight: parseInt(t.block_height),
+          blockTime: parseInt(t.block_time),
+        }))
+      : null;
+  }
+
+  async getTransactionInfo(txHash: string): Promise<TransactionType | null> {
+    const result = await this.request(`/txs/${txHash}`);
+
+    return result
+      ? {
+          txHash: result.hash,
+          blockHash: result.block,
+          blockHeight: parseInt(result.block_height),
+          blockTime: parseInt(result.block_time),
+          slot: parseInt(result.slot),
+          index: parseInt(result.index),
+          fees: parseInt(result.fees),
+          deposit: parseInt(result.deposit),
+          withdrawalCount: parseInt(result.withdrawal_count),
+          mirCertCount: parseInt(result.mir_cert_count),
+          delegationCount: parseInt(result.delegation_count),
+          stakeCertCount: parseInt(result.stake_cert_count),
+          poolUpdateCount: parseInt(result.pool_update_count),
+          poolRetireCount: parseInt(result.pool_retire_count),
+          assetMintCount: parseInt(result.asset_mint_or_burn_count),
+          redeemerCount: parseInt(result.redeemer_count),
+          validContract: result.valid_contract,
+        }
+      : null;
+  }
+
+  async getTransactionUTxOs(
+    txHash: string,
+  ): Promise<TransactionOutputsType | null> {
+    const result = await this.request(`/txs/${txHash}/utxos`);
+
+    return result
+      ? {
+          hash: result.hash,
+          inputs: result.inputs.map((ri) => ({
+            address: ri.address,
+            amount: ri.amount.map((ria) => ({
+              unit: ria.unit,
+              quantity: ria.quantity,
+            })),
+            txHash: ri.tx_hash,
+            outputIndex: parseInt(ri.output_index),
+            dataHash: ri.data_hash,
+            collateral: ri.collateral,
+          })),
+          outputs: result.outputs.map((ri) => ({
+            address: ri.address,
+            amount: ri.amount.map((ria) => ({
+              unit: ria.unit,
+              quantity: ria.quantity,
+            })),
+            txHash: ri.tx_hash,
+            outputIndex: parseInt(ri.output_index),
+          })),
         }
       : null;
   }

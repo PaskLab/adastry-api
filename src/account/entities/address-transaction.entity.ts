@@ -9,8 +9,8 @@ import {
 import { AccountAddress } from './account-address.entity';
 
 @Entity()
-@Index(['address', 'txHash'])
-export class AccountTransaction {
+@Index(['address', 'txHash'], { unique: true })
+export class AddressTransaction {
   @PrimaryGeneratedColumn()
   id!: number;
 
@@ -70,6 +70,9 @@ export class AccountTransaction {
 
   @Column()
   validContract!: boolean;
+
+  @Column()
+  tags!: string;
 
   // Special columns
   @CreateDateColumn()
