@@ -11,8 +11,9 @@ import { UserAccount } from './entities/user-account.entity';
 import { AccountWithdraw } from './entities/account-withdraw.entity';
 import { CsvService } from './csv.service';
 import { AccountAddress } from './entities/account-address.entity';
-import { AddressTransaction } from './entities/address-transaction.entity';
+import { Transaction } from './entities/transaction.entity';
 import { TxSyncService } from './sync/tx-sync.service';
+import { TransactionService } from './transaction.service';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { TxSyncService } from './sync/tx-sync.service';
       UserAccount,
       AccountWithdraw,
       AccountAddress,
-      AddressTransaction,
+      Transaction,
     ]),
     PoolModule,
   ],
@@ -33,6 +34,7 @@ import { TxSyncService } from './sync/tx-sync.service';
     SyncService,
     CsvService,
     TxSyncService,
+    TransactionService,
   ],
   exports: [AccountService, SyncService],
 })

@@ -39,6 +39,9 @@ import { CsvFileDto } from './dto/csv-file.dto';
 import { CsvFormatParam } from './params/csv-format.param';
 import config from '../../config.json';
 import { CsvService } from './csv.service';
+import { TransactionDto } from './dto/transaction.dto';
+import { TransactionService } from './transaction.service';
+import { TxHistoryParam } from './params/tx-history.param';
 
 @ApiTags('User Account')
 @Controller('account')
@@ -48,6 +51,7 @@ export class UserAccountController {
   constructor(
     private readonly accountService: AccountService,
     private readonly userAccountService: UserAccountService,
+    private readonly transactionService: TransactionService,
     private readonly csvService: CsvService,
   ) {}
 
@@ -141,6 +145,18 @@ export class UserAccountController {
     @Query() query: HistoryParam,
   ): Promise<AccountHistoryDto[]> {
     return this.accountService.getHistory({ ...param, ...query });
+  }
+
+  @Get(':stakeAddress/transactions')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: [TransactionDto] })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async accountTransactions(
+    @Param() param: StakeAddressParam,
+    @Query() query: TxHistoryParam,
+  ): Promise<TransactionDto[]> {
+    return this.transactionService.getHistory(param.stakeAddress, query);
   }
 
   @Get(':stakeAddress/export-rewards/:year')

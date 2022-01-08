@@ -6,10 +6,10 @@ import { BlockfrostService } from '../../utils/api/blockfrost.service';
 import { Account } from '../entities/account.entity';
 import { AccountAddressRepository } from '../repositories/account-address.repository';
 import { AccountAddress } from '../entities/account-address.entity';
-import { AddressTransactionRepository } from '../repositories/address-transaction.repository';
+import { TransactionRepository } from '../repositories/transaction.repository';
 import { AddressTransactionType } from '../../utils/api/types/address-transaction.type';
 import { BlockfrostAmount } from '../../utils/api/types/transaction-outputs.type';
-import { AddressTransaction } from '../entities/address-transaction.entity';
+import { Transaction } from '../entities/transaction.entity';
 
 @Injectable()
 export class TxSyncService {
@@ -70,7 +70,7 @@ export class TxSyncService {
 
     for (const address of addressesEntities) {
       const lastTransaction = await this.em
-        .getCustomRepository(AddressTransactionRepository)
+        .getCustomRepository(TransactionRepository)
         .findLastAddressTx(address.address);
 
       let txs: AddressTransactionType[] = [];
@@ -192,7 +192,7 @@ export class TxSyncService {
         if (!txInfo.validContract) comments.push('COLLATERAL LOSS');
 
         // Save the transaction
-        const newTx = new AddressTransaction();
+        const newTx = new Transaction();
 
         newTx.address = address;
         newTx.txHash = txInfo.txHash;

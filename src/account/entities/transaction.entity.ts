@@ -10,7 +10,7 @@ import { AccountAddress } from './account-address.entity';
 
 @Entity()
 @Index(['address', 'txHash'], { unique: true })
-export class AddressTransaction {
+export class Transaction {
   @PrimaryGeneratedColumn()
   id!: number;
 

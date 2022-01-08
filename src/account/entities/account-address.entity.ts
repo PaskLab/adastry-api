@@ -7,7 +7,7 @@ import {
   Index,
 } from 'typeorm';
 import { Account } from './account.entity';
-import { AddressTransaction } from './address-transaction.entity';
+import { Transaction } from './transaction.entity';
 
 @Entity()
 export class AccountAddress {
@@ -25,6 +25,6 @@ export class AccountAddress {
   @Index({ unique: true })
   address!: string;
 
-  @OneToMany(() => AddressTransaction, (transaction) => transaction.address)
-  transactions!: AddressTransaction[];
+  @OneToMany(() => Transaction, (transaction) => transaction.address)
+  transactions!: Transaction[];
 }
