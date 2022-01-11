@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -22,6 +23,8 @@ import { decrypt, encrypt } from '../utils/utils';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(@InjectEntityManager() private readonly em: EntityManager) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<UserDto> {
@@ -158,11 +161,11 @@ export class UserService {
       html: ejs.render(ejsTemplate, { domain: process.env.DOMAIN, code: code }),
     };
 
+    const logger = this.logger;
+
     transporter.sendMail(message, function (err) {
       if (err) {
-        throw new InternalServerErrorException(
-          `Verification email for user ${email} could not be sent.`,
-        );
+        logger.error(`Verification email for user ${email} could not be sent.`);
       }
     });
     transporter.close();
@@ -174,7 +177,7 @@ export class UserService {
       .findActiveUser(username);
 
     if (!user) {
-      throw new InternalServerErrorException(`User ${username} not found.`);
+      throw new NotFoundException(`User ${username} not found.`);
     }
 
     return user;
