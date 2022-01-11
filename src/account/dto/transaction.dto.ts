@@ -23,6 +23,7 @@ export class TransactionDto {
       this.redeemerCount = props.redeemerCount;
       this.validContract = props.validContract;
       this.tags = props.tags;
+      this.needReview = props.needReview;
     }
   }
 
@@ -138,4 +139,10 @@ export class TransactionDto {
     example: 1,
   })
   tags!: string[];
+
+  @ApiProperty({
+    title: 'Transaction need verification',
+    example: true,
+  })
+  needReview!: boolean;
 }

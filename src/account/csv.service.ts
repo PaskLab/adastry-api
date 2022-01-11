@@ -18,35 +18,41 @@ export class CsvService {
     data: CsvFieldsType[],
   ): Promise<CsvFileInfoType> {
     const filePath = path.join(__dirname, '../../..', this.TMP_PATH, filename);
+    const header = [
+      { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
+      { id: 'sentAmount', title: 'Sent Amount' }, // 0.00
+      { id: 'sentCurrency', title: 'Sent Currency' },
+      { id: 'receivedAmount', title: 'Received Amount' },
+      { id: 'receivedCurrency', title: 'Received Currency' }, // ADA
+      { id: 'feeAmount', title: 'Fee Amount' },
+      { id: 'feeCurrency', title: 'Fee Currency' },
+      { id: 'netWorthAmount', title: 'Net Worth Amount' },
+      { id: 'netWorthCurrency', title: 'Net Worth Currency' },
+      { id: 'label', title: 'Label' }, // reward
+      { id: 'description', title: 'Description' },
+      { id: 'txHash', title: 'TxHash' },
+    ];
     const writer = csvWriter.createObjectCsvWriter({
       path: filePath,
-      header: [
-        { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
-        { id: 'sentAmount', title: 'Sent Amount' }, // 0.00
-        { id: 'sentCurrency', title: 'Sent Currency' },
-        { id: 'receivedAmount', title: 'Received Amount' },
-        { id: 'receivedCurrency', title: 'Received Currency' }, // ADA
-        { id: 'feeAmount', title: 'Fee Amount' },
-        { id: 'feeCurrency', title: 'Fee Currency' },
-        { id: 'netWorthAmount', title: 'Net Worth Amount' },
-        { id: 'netWorthCurrency', title: 'Net Worth Currency' },
-        { id: 'label', title: 'Label' }, // reward
-        { id: 'description', title: 'Description' },
-        { id: 'txHash', title: 'TxHash' },
-        { id: 'accountBalance', title: 'Account Balance' },
-        { id: 'realRewards', title: 'Real Rewards' },
-        { id: 'revisedRewards', title: 'Revised Rewards' },
-        { id: 'opRewards', title: 'Op Rewards' },
-        { id: 'stakeShare', title: 'Stake Share' },
-        { id: 'withdrawable', title: 'Withdrawable' },
-        { id: 'withdrawn', title: 'Withdrawn' },
-      ],
+      header:
+        data[0].accountBalance !== undefined
+          ? header.concat([
+              // Extended fields
+              { id: 'accountBalance', title: 'Account Balance' },
+              { id: 'realRewards', title: 'Real Rewards' },
+              { id: 'revisedRewards', title: 'Revised Rewards' },
+              { id: 'opRewards', title: 'Op Rewards' },
+              { id: 'stakeShare', title: 'Stake Share' },
+              { id: 'withdrawable', title: 'Withdrawable' },
+              { id: 'withdrawn', title: 'Withdrawn' },
+            ])
+          : header,
     });
 
     const records: any = [];
 
     for (const row of data) {
-      const record = {
+      let record = {
         date: row.date,
         sentAmount: row.sentAmount,
         sentCurrency: row.sentCurrency,
@@ -59,20 +65,27 @@ export class CsvService {
         label: row.label,
         description: row.description,
         txHash: row.txHash,
-        accountBalance: row.accountBalance,
-        realRewards: row.realRewards,
-        revisedRewards: row.revisedRewards,
-        opRewards: row.opRewards,
-        stakeShare: row.stakeShare,
-        withdrawable: row.withdrawable,
-        withdrawn: row.withdrawn,
       };
+
+      if (row.accountBalance !== undefined) {
+        // Extended fields
+        record = Object.assign(record, {
+          accountBalance: row.accountBalance,
+          realRewards: row.realRewards,
+          revisedRewards: row.revisedRewards,
+          opRewards: row.opRewards,
+          stakeShare: row.stakeShare,
+          withdrawable: row.withdrawable,
+          withdrawn: row.withdrawn,
+        });
+      }
+
       records.push(record);
     }
 
     await writer
       .writeRecords(records)
-      .then(() => this.logger.log(`Rewards CSV ${filename} generated`));
+      .then(() => this.logger.log(`CSV ${filename} generated`));
 
     return {
       filename: filename,
@@ -126,7 +139,7 @@ export class CsvService {
 
     await writer
       .writeRecords(records)
-      .then(() => this.logger.log(`Rewards CSV ${filename} generated`));
+      .then(() => this.logger.log(`CSV ${filename} generated`));
 
     return {
       filename: filename,

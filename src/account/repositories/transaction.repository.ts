@@ -2,6 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
 import { TxHistoryParam } from '../params/tx-history.param';
 import config from '../../../config.json';
+import { dateToUnix } from '../../utils/utils';
 
 @EntityRepository(Transaction)
 export class TransactionRepository extends Repository<Transaction> {
@@ -27,10 +28,10 @@ export class TransactionRepository extends Repository<Transaction> {
         stakeAddress: stakeAddress,
       })
       .limit(this.MAX_LIMIT)
-      .orderBy('blockTime', 'DESC');
+      .orderBy({ blockTime: 'DESC', txIndex: 'DESC' });
 
     if (params.order) {
-      qb.orderBy('blockTime', params.order);
+      qb.orderBy({ blockTime: params.order, txIndex: params.order });
     }
 
     if (params.limit) {
@@ -52,5 +53,24 @@ export class TransactionRepository extends Repository<Transaction> {
     }
 
     return qb.getMany();
+  }
+
+  findByYear(stakeAddress: string, year: number): Promise<Transaction[]> {
+    const firstDay = dateToUnix(new Date(`${year}-01-01T00:00:00Z`));
+    const lastDay = dateToUnix(new Date(`${year}-12-31T23:59:59Z`));
+
+    return this.createQueryBuilder('transaction')
+      .innerJoin('transaction.address', 'address')
+      .innerJoin('address.account', 'account')
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .andWhere('blockTime >= :startTime AND blockTime <= :endTime', {
+        startTime: firstDay,
+        endTime: lastDay,
+      })
+      .orderBy('blockTime', 'ASC')
+      .addOrderBy('txIndex', 'ASC')
+      .getMany();
   }
 }

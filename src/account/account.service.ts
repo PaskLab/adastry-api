@@ -139,7 +139,7 @@ export class AccountService {
 
     const baseCurrency = user.currency ? user.currency.code : 'USD';
 
-    const filename = `${year}-${stakeAddress.slice(0, 15)}-${
+    const filename = `${year}-rewards-${stakeAddress.slice(0, 15)}-${
       format ? format : 'full'
     }.csv`;
 

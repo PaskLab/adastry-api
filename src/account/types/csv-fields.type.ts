@@ -11,11 +11,11 @@ export type CsvFieldsType = {
   label: string;
   description: string;
   txHash: string;
-  accountBalance: number | string;
-  realRewards: number | string;
-  revisedRewards: number | string;
-  opRewards: number | string;
-  stakeShare: number | string;
-  withdrawable: number | string;
-  withdrawn: number | string;
+  accountBalance?: number | string;
+  realRewards?: number | string;
+  revisedRewards?: number | string;
+  opRewards?: number | string;
+  stakeShare?: number | string;
+  withdrawable?: number | string;
+  withdrawn?: number | string;
 };

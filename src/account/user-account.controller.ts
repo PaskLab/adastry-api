@@ -180,9 +180,8 @@ export class UserAccountController {
       );
     }
 
-    return this.accountService.getRewardsCSV(
+    return this.transactionService.getTransactionsCSV(
       request,
-      request.user.id,
       stakeAddressParam.stakeAddress,
       yearParam.year,
       formatParam.format,
