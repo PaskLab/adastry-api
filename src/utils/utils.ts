@@ -34,23 +34,37 @@ export function toAda(amount: number): number {
   return amount / 1000000;
 }
 
+/**
+ * General encryption helper
+ * @param data
+ * @param secret
+ * @param encoding
+ * @param hardenedMode - Improve security with tradeoff, hardened data cannot be queried
+ */
 export async function encrypt(
   data: string,
   secret: string,
   encoding: BufferEncoding = 'base64',
+  hardenedMode = false,
 ): Promise<EncryptedTextType> {
   const iv = randomBytes(16);
 
   // The key length is dependent on the algorithm.
   // In this case for aes256, it is 32 bytes.
   const key = (await promisify(scrypt)(secret, 'salt', 32)) as Buffer;
-  const cipher = createCipheriv('aes-256-ctr', key, iv);
+  const cipher = createCipheriv(
+    'aes-256-ctr',
+    key,
+    hardenedMode ? iv : Buffer.from('6ff5ebc8af72c6603f48d16109975ac4', 'hex'),
+  );
 
   const encryptedText = Buffer.concat([cipher.update(data), cipher.final()]);
 
   return {
     encoding: encoding,
-    encrypted: iv.toString(encoding) + encryptedText.toString(encoding),
+    encrypted:
+      (hardenedMode ? iv.toString(encoding) : '') +
+      encryptedText.toString(encoding),
   };
 }
 
@@ -59,14 +73,17 @@ export async function decrypt(
   secret: string,
   encoding: BufferEncoding = 'base64',
 ): Promise<string> {
+  let hardened = false;
+  let iv = '';
+  let encrypted = data;
+
   const match = data.match(RegExp('^(.*[=]{2})(.*)$'));
 
-  if (!match) {
-    return '';
+  if (match) {
+    hardened = true;
+    iv = match[1];
+    encrypted = match[2];
   }
-
-  const iv = match[1];
-  const encrypted = match[2];
 
   // The key length is dependent on the algorithm.
   // In this case for aes256, it is 32 bytes.
@@ -74,7 +91,9 @@ export async function decrypt(
   const decipher = createDecipheriv(
     'aes-256-ctr',
     key,
-    Buffer.from(iv, encoding),
+    hardened
+      ? Buffer.from(iv, encoding)
+      : Buffer.from('6ff5ebc8af72c6603f48d16109975ac4', 'hex'),
   );
   const decryptedText = Buffer.concat([
     decipher.update(Buffer.from(encrypted, encoding)),
