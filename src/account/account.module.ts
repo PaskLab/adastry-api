@@ -14,6 +14,7 @@ import { AccountAddress } from './entities/account-address.entity';
 import { Transaction } from './entities/transaction.entity';
 import { TxSyncService } from './sync/tx-sync.service';
 import { TransactionService } from './transaction.service';
+import { AccountSyncService } from './sync/account-sync.service';
 
 @Module({
   imports: [
@@ -32,8 +33,9 @@ import { TransactionService } from './transaction.service';
     AccountService,
     UserAccountService,
     SyncService,
-    CsvService,
+    AccountSyncService,
     TxSyncService,
+    CsvService,
     TransactionService,
   ],
   exports: [AccountService, SyncService],
