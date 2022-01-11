@@ -74,6 +74,9 @@ export class Transaction {
   @Column()
   tags!: string;
 
+  @Column({ default: false })
+  needReview!: boolean;
+
   // Special columns
   @CreateDateColumn()
   createdAt!: string;

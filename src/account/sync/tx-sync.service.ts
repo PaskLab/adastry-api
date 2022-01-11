@@ -137,9 +137,13 @@ export class TxSyncService {
         }
 
         // Subtract sent inputs
+        let txType: 'RX' | 'TX' | 'MX' | '' = '';
+
         for (const input of txUTxOs.inputs) {
           if (accountAddresses.includes(input.address)) {
             if (input.collateral && txInfo.validContract) continue;
+
+            txType = ['RX', 'MX'].includes(txType) ? 'MX' : 'TX';
 
             for (const amount of input.amount) {
               const index = txAmounts.findIndex(
@@ -157,6 +161,8 @@ export class TxSyncService {
                 ).toString();
               }
             }
+          } else {
+            txType = ['TX', 'MX'].includes(txType) ? 'MX' : 'RX';
           }
         }
 
@@ -213,6 +219,7 @@ export class TxSyncService {
         newTx.redeemerCount = txInfo.redeemerCount;
         newTx.validContract = txInfo.validContract;
         newTx.tags = JSON.stringify(comments);
+        newTx.needReview = txType === 'MX';
 
         await this.em.save(newTx);
         this.logger.log(
