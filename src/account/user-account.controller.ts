@@ -38,7 +38,6 @@ import { YearParam } from './params/year.param';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { CsvFormatParam } from './params/csv-format.param';
 import config from '../../config.json';
-import { CsvService } from './csv.service';
 import { TransactionDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 import { TxHistoryParam } from './params/tx-history.param';
@@ -52,7 +51,6 @@ export class UserAccountController {
     private readonly accountService: AccountService,
     private readonly userAccountService: UserAccountService,
     private readonly transactionService: TransactionService,
-    private readonly csvService: CsvService,
   ) {}
 
   @Post()
@@ -159,6 +157,38 @@ export class UserAccountController {
     return this.transactionService.getHistory(param.stakeAddress, query);
   }
 
+  @Get(':stakeAddress/export-transactions/:year')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: CsvFileDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async exportTransactions(
+    @Request() request,
+    @Param() stakeAddressParam: StakeAddressParam,
+    @Param() yearParam: YearParam,
+    @Query() formatParam: CsvFormatParam,
+  ): Promise<CsvFileDto> {
+    if (
+      !(await this.accountService.loyaltyCheck(
+        stakeAddressParam.stakeAddress,
+        this.MIN_LOYALTY,
+      ))
+    ) {
+      throw new BadRequestException(
+        `Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
+      );
+    }
+
+    return this.accountService.getRewardsCSV(
+      request,
+      request.user.id,
+      stakeAddressParam.stakeAddress,
+      yearParam.year,
+      formatParam.format,
+    );
+  }
+
   @Get(':stakeAddress/export-rewards/:year')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -182,7 +212,7 @@ export class UserAccountController {
       );
     }
 
-    return this.csvService.getRewardsCSV(
+    return this.accountService.getRewardsCSV(
       request,
       request.user.id,
       stakeAddressParam.stakeAddress,

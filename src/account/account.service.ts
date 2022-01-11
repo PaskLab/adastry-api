@@ -12,12 +12,28 @@ import { AccountHistoryRepository } from './repositories/account-history.reposit
 import { AccountHistoryDto } from './dto/account-history.dto';
 import { SyncService } from './sync.service';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
+import { Request } from 'express';
+import { CsvFileDto } from './dto/csv-file.dto';
+import { UserRepository } from '../user/repositories/user.repository';
+import {
+  createTimestamp,
+  dateFromUnix,
+  generateUrl,
+  roundTo,
+  toAda,
+} from '../utils/utils';
+import crypto from 'crypto';
+import { CsvFieldsType } from './types/csv-fields.type';
+import { SpotRepository } from '../spot/repositories/spot.repository';
+import { RateRepository } from '../spot/repositories/rate.repository';
+import { CsvService } from './csv.service';
 
 @Injectable()
 export class AccountService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
+    private readonly csvService: CsvService,
   ) {}
 
   async create(stakeAddress: string): Promise<Account> {
@@ -94,5 +110,126 @@ export class AccountService {
     }
 
     return account.loyalty >= minScore;
+  }
+
+  async getRewardsCSV(
+    request: Request,
+    userId: number,
+    stakeAddress: string,
+    year: number,
+    format?: string,
+  ): Promise<CsvFileDto> {
+    const history = await this.em
+      .getCustomRepository(AccountHistoryRepository)
+      .findByYear(stakeAddress, year);
+
+    if (!history.length) {
+      throw new NotFoundException(
+        `No reward history found for ${stakeAddress} in year ${year}`,
+      );
+    }
+
+    const user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const baseCurrency = user.currency ? user.currency.code : 'USD';
+
+    const filename = `${year}-${stakeAddress.slice(0, 15)}-${
+      format ? format : 'full'
+    }.csv`;
+
+    const data: CsvFieldsType[] = [];
+
+    for (const record of history) {
+      if (
+        record.rewards < 1 &&
+        record.revisedRewards < 1 &&
+        record.opRewards < 1
+      )
+        continue;
+
+      const receivedAmount =
+        record.revisedRewards || record.opRewards
+          ? record.revisedRewards + record.opRewards
+          : record.rewards;
+
+      const netWorthAmount = await this.getNetWorth(
+        toAda(receivedAmount),
+        baseCurrency,
+        record.epoch.epoch,
+      );
+
+      const row = {
+        date: createTimestamp(dateFromUnix(record.epoch.startTime)),
+        sentAmount: '',
+        sentCurrency: '',
+        receivedAmount: toAda(receivedAmount),
+        receivedCurrency: 'ADA',
+        feeAmount: 0,
+        feeCurrency: 'ADA',
+        netWorthAmount: netWorthAmount ? netWorthAmount : '',
+        netWorthCurrency: baseCurrency,
+        label: 'reward',
+        description: `Epoch ${record.epoch.epoch} for ${record.account.stakeAddress}`,
+        txHash: crypto
+          .createHash('sha256')
+          .update(record.epoch.epoch + record.account.stakeAddress)
+          .digest('hex'),
+        accountBalance: toAda(record.balance),
+        realRewards: toAda(record.rewards),
+        revisedRewards: toAda(record.revisedRewards),
+        opRewards: toAda(record.opRewards),
+        stakeShare: record.stakeShare,
+        withdrawable: toAda(record.withdrawable),
+        withdrawn: toAda(record.withdrawn),
+      };
+      data.push(row);
+    }
+
+    let fileInfo;
+
+    switch (format) {
+      case 'koinly':
+        fileInfo = await this.csvService.writeKoinlyCSV(filename, data);
+        break;
+      default:
+        fileInfo = await this.csvService.writeFullCSV(filename, data);
+    }
+
+    return new CsvFileDto({
+      filename: filename,
+      fileExpireAt: fileInfo.expireAt.toUTCString(),
+      url: generateUrl(request, 'public/tmp', filename),
+      format: format ? format : 'full',
+      stakeAddress: stakeAddress,
+      year: year.toString(),
+    });
+  }
+
+  private async getNetWorth(
+    amount: number,
+    baseCurrency: string,
+    epoch: number,
+  ): Promise<number> {
+    const spotPrice = await this.em
+      .getCustomRepository(SpotRepository)
+      .findEpoch(epoch);
+    const baseCurrencyRate = await this.em
+      .getCustomRepository(RateRepository)
+      .findRateEpoch(baseCurrency, epoch);
+
+    let netWorthAmount = 0;
+
+    if (spotPrice && baseCurrencyRate) {
+      netWorthAmount = amount * spotPrice.price * baseCurrencyRate.rate;
+      netWorthAmount = roundTo(netWorthAmount, 2);
+    }
+
+    return netWorthAmount;
   }
 }
