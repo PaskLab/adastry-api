@@ -10,6 +10,10 @@ import { TransactionRepository } from '../repositories/transaction.repository';
 import { AddressTransactionType } from '../../utils/api/types/address-transaction.type';
 import { BlockfrostAmount } from '../../utils/api/types/transaction-outputs.type';
 import { Transaction } from '../entities/transaction.entity';
+import { AssetRepository } from '../repositories/asset.repository';
+import { Asset } from '../entities/asset.entity';
+import { AccountWithdrawRepository } from '../repositories/account-withdraw.repository';
+import { parseAssetHex, toAda } from '../../utils/utils';
 
 @Injectable()
 export class TxSyncService {
@@ -111,8 +115,30 @@ export class TxSyncService {
           continue;
         }
 
+        // Add comments
+        const comments: string[] = [];
+        if (txInfo.redeemerCount) comments.push('CONTRACT');
+        if (txInfo.stakeCertCount) comments.push('STAKE REGISTRATION');
+        if (txInfo.delegationCount) comments.push('DELEGATION');
+        if (txInfo.assetMintCount) comments.push('MINTING/BURNING');
+        if (txInfo.poolUpdateCount) comments.push('POOL UPDATE');
+        if (txInfo.poolRetireCount) comments.push('POOL RETIRE');
+        if (!txInfo.validContract) comments.push('COLLATERAL LOSS');
+
         // Sort and accumulate sent input and received output amounts
         const txAmounts: BlockfrostAmount[] = [];
+
+        // Handle withdraw
+        const withdraw = await this.em
+          .getCustomRepository(AccountWithdrawRepository)
+          .findOne({ txHash: txInfo.txHash });
+        if (withdraw) {
+          txAmounts.push({
+            unit: 'lovelace',
+            quantity: withdraw.amount.toString(),
+          });
+          comments.push(`WITHDRAWAL( ${toAda(withdraw.amount)} ADA )`);
+        }
 
         // Addition received outputs
         for (const output of txUTxOs.outputs) {
@@ -166,6 +192,12 @@ export class TxSyncService {
           }
         }
 
+        // Sync assets data
+        for (const asset of txAmounts) {
+          if (asset.unit === 'lovelace') continue;
+          await this.syncAsset(asset.unit);
+        }
+
         // Split Received and Sent
         const receivedAmounts: BlockfrostAmount[] = [];
         const sentAmounts: BlockfrostAmount[] = [];
@@ -184,18 +216,6 @@ export class TxSyncService {
             });
           }
         }
-
-        // Add comments
-        const comments: string[] = [];
-
-        if (txInfo.withdrawalCount) comments.push('WITHDRAWAL');
-        if (txInfo.redeemerCount) comments.push('CONTRACT');
-        if (txInfo.stakeCertCount) comments.push('STAKE REGISTRATION');
-        if (txInfo.delegationCount) comments.push('DELEGATION');
-        if (txInfo.assetMintCount) comments.push('MINTING/BURNING');
-        if (txInfo.poolUpdateCount) comments.push('POOL UPDATE');
-        if (txInfo.poolRetireCount) comments.push('POOL RETIRE');
-        if (!txInfo.validContract) comments.push('COLLATERAL LOSS');
 
         // Save the transaction
         const newTx = new Transaction();
@@ -227,5 +247,38 @@ export class TxSyncService {
         );
       }
     }
+  }
+
+  async syncAsset(hexId: string): Promise<void> {
+    let asset = await this.em
+      .getCustomRepository(AssetRepository)
+      .findOne({ hexId: hexId });
+
+    if (asset) return;
+
+    const assetInfo = await this.source.getAssetInfo(hexId);
+
+    if (!assetInfo) {
+      this.logger.error(
+        `getAssetInfo returned ${assetInfo}`,
+        `TxSync()->syncAsset()->this.source.getAssetInfo(${hexId})`,
+      );
+      return;
+    }
+
+    asset = new Asset();
+    asset.hexId = assetInfo.hexId;
+    asset.policyId = assetInfo.policyId;
+    asset.name = assetInfo.name;
+    asset.fingerprint = assetInfo.fingerprint;
+    asset.quantity = assetInfo.quantity;
+    asset.mintTxHash = assetInfo.mintTxHash;
+    asset.onChainMetadata = assetInfo.onChainMetadata;
+    asset.metadata = assetInfo.metadata;
+
+    asset = await this.em.save(asset);
+    this.logger.log(
+      `Asset Sync - Added asset ${parseAssetHex(asset.hexId).name}`,
+    );
   }
 }

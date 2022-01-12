@@ -15,6 +15,7 @@ import { Transaction } from './entities/transaction.entity';
 import { TxSyncService } from './sync/tx-sync.service';
 import { TransactionService } from './transaction.service';
 import { AccountSyncService } from './sync/account-sync.service';
+import { Asset } from './entities/asset.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AccountSyncService } from './sync/account-sync.service';
       AccountWithdraw,
       AccountAddress,
       Transaction,
+      Asset,
     ]),
     PoolModule,
   ],

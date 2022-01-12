@@ -14,6 +14,7 @@ import { AccountWithdrawType } from './types/account-withdraw.type';
 import { AddressTransactionType } from './types/address-transaction.type';
 import { TransactionType } from './types/transaction.type';
 import { TransactionOutputsType } from './types/transaction-outputs.type';
+import { AssetInfoType } from './types/asset-info.type';
 
 @Injectable()
 export class BlockfrostService {
@@ -388,6 +389,23 @@ export class BlockfrostService {
     }
 
     return withdrawals;
+  }
+
+  async getAssetInfo(hex: string): Promise<AssetInfoType | null> {
+    const assetInfo = await this.request(`/assets/${hex}`);
+
+    return assetInfo
+      ? {
+          hexId: assetInfo.asset,
+          policyId: assetInfo.policy_id,
+          name: assetInfo.asset_name,
+          fingerprint: assetInfo.fingerprint,
+          quantity: assetInfo.quantity,
+          mintTxHash: assetInfo.initial_mint_tx_hash,
+          onChainMetadata: JSON.stringify(assetInfo.onchain_metadata),
+          metadata: JSON.stringify(assetInfo.metadata),
+        }
+      : null;
   }
 
   async request(

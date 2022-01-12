@@ -9,7 +9,7 @@ import { Account } from './account.entity';
 import { Epoch } from '../../epoch/entities/epoch.entity';
 
 @Entity()
-@Index(['account', 'epoch', 'txHash'], { unique: true })
+@Index(['account', 'txHash'], { unique: true })
 export class AccountWithdraw {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -24,6 +24,7 @@ export class AccountWithdraw {
   amount!: number;
 
   @ManyToOne(() => Epoch, { onDelete: 'CASCADE' })
+  @Index()
   epoch!: Epoch;
 
   @Column()
