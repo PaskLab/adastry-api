@@ -26,7 +26,7 @@ export class PoolCert {
   @OneToMany(() => PoolOwner, (poolOwner) => poolOwner.cert, { cascade: true })
   owners!: PoolOwner[];
 
-  @ManyToOne(() => Account, { cascade: true })
+  @ManyToOne(() => Account, { cascade: true, onDelete: 'SET NULL' })
   rewardAccount!: Account;
 
   @Column({ type: 'float', default: null, nullable: true })

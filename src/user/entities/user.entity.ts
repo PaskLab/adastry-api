@@ -4,6 +4,8 @@ import {
   Index,
   PrimaryGeneratedColumn,
   ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Currency } from '../../spot/entities/currency.entity';
 
@@ -33,4 +35,11 @@ export class User {
 
   @ManyToOne(() => Currency)
   currency!: Currency;
+
+  // Special columns
+  @CreateDateColumn()
+  createdAt!: string;
+
+  @UpdateDateColumn()
+  updatedAt!: string;
 }
