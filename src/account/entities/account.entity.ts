@@ -45,5 +45,5 @@ export class Account {
   createdAt!: string;
 
   @UpdateDateColumn()
-  updatedAd!: string;
+  updatedAt!: string;
 }
