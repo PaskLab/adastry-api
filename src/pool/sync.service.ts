@@ -283,7 +283,7 @@ export class SyncService {
       );
 
       if (newHistory) {
-        this.logger.log(
+        this.logger.warn(
           `DUPLICATE::PoolSync()->syncPoolHistory()->poolHistoryRepository.findOneRecord(${pool.poolId}, ${epoch.epoch}).`,
         );
         continue;
