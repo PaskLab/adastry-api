@@ -83,7 +83,7 @@ export class SyncService {
   }
 
   async syncPool(pool: Pool, lastEpoch: Epoch) {
-    await this.syncPoolCert(pool);
+    await this.syncPoolCert(pool, lastEpoch);
     await this.syncPoolInfo(pool, lastEpoch);
     if (pool.isMember) {
       await this.syncPoolHistory(pool, lastEpoch);
@@ -121,7 +121,7 @@ export class SyncService {
     }
   }
 
-  async syncPoolCert(pool: Pool) {
+  async syncPoolCert(pool: Pool, lastEpoch: Epoch) {
     const lastCert = await this.source.getLastPoolCert(pool.poolId);
 
     if (!lastCert) {
@@ -153,6 +153,11 @@ export class SyncService {
         poolCert.block >= lastStoredBlock &&
         poolCert.txHash !== lastStoredHash
       ) {
+        if (poolCert.epoch > lastEpoch.epoch) {
+          // Do not sync future certificate
+          continue;
+        }
+
         const epoch = poolCert.epoch
           ? await epochRepository.findOne({ epoch: poolCert.epoch })
           : null;
@@ -225,6 +230,17 @@ export class SyncService {
   }
 
   async syncPoolHistory(pool: Pool, lastEpoch: Epoch) {
+    const lastCert = await this.em
+      .getCustomRepository(PoolCertRepository)
+      .findLastCert(pool.poolId);
+
+    if (!lastCert) {
+      this.logger.warn(
+        `Pool History Sync - No cert found for pool ${pool.poolId}`,
+      );
+      return;
+    }
+
     const poolHistoryRepository = this.em.getCustomRepository(
       PoolHistoryRepository,
     );
@@ -232,9 +248,13 @@ export class SyncService {
       pool.poolId,
     );
 
+    const lastActiveEpoch = lastCert.active
+      ? lastEpoch.epoch
+      : lastCert.epoch.epoch - 1;
+
     const epochToSync = lastStoredEpoch
-      ? lastEpoch.epoch - lastStoredEpoch.epoch.epoch - 1
-      : lastEpoch.epoch - 207;
+      ? lastActiveEpoch - lastStoredEpoch.epoch.epoch - 1
+      : lastActiveEpoch - 207;
     const pages = Math.ceil(epochToSync / this.PROVIDER_LIMIT);
 
     let history: PoolHistoryType[] = [];
