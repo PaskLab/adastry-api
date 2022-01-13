@@ -234,7 +234,7 @@ export class SyncService {
     );
 
     const epochToSync = lastStoredEpoch
-      ? lastEpoch.epoch - lastStoredEpoch.epoch.epoch
+      ? lastEpoch.epoch - lastStoredEpoch.epoch.epoch - 1
       : lastEpoch.epoch - 207;
     const pages = Math.ceil(epochToSync / this.PROVIDER_LIMIT);
 
@@ -265,14 +265,14 @@ export class SyncService {
     const epochRepository = this.em.getCustomRepository(EpochRepository);
     const poolCertRepository = this.em.getCustomRepository(PoolCertRepository);
 
-    for (let i = 0; i < history.length; i++) {
-      const epoch = history[i].epoch
-        ? await epochRepository.findOne({ epoch: history[i].epoch })
+    for (const record of history) {
+      const epoch = record.epoch
+        ? await epochRepository.findOne({ epoch: record.epoch })
         : null;
 
       if (!epoch) {
         this.logger.log(
-          `NOT FOUND::PoolSync()->syncPoolHistory()->this.epochRepository.findOne(${history[i].epoch}) returned ${epoch}.`,
+          `NOT FOUND::PoolSync()->syncPoolHistory()->this.epochRepository.findOne(${record.epoch}) returned ${epoch}.`,
         );
         continue;
       }
@@ -304,10 +304,10 @@ export class SyncService {
       newHistory = new PoolHistory();
       newHistory.epoch = epoch;
       newHistory.pool = pool;
-      newHistory.rewards = history[i].rewards;
-      newHistory.fees = history[i].fees;
-      newHistory.blocks = history[i].blocks;
-      newHistory.activeStake = history[i].activeStake;
+      newHistory.rewards = record.rewards;
+      newHistory.fees = record.fees;
+      newHistory.blocks = record.blocks;
+      newHistory.activeStake = record.activeStake;
       newHistory.cert = lastCert;
 
       await poolHistoryRepository.save(newHistory);
