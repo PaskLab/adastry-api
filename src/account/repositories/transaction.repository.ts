@@ -73,4 +73,16 @@ export class TransactionRepository extends Repository<Transaction> {
       .addOrderBy('txIndex', 'ASC')
       .getMany();
   }
+
+  async exist(txHash: string, address: string): Promise<boolean> {
+    const count = await this.createQueryBuilder('transaction')
+      .innerJoin('transaction.address', 'address')
+      .where('txHash = :txHash AND address.address = :address', {
+        txHash: txHash,
+        address: address,
+      })
+      .getCount();
+
+    return count > 0;
+  }
 }

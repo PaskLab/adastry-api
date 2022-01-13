@@ -99,7 +99,7 @@ export class TxSyncService {
       for (const tx of txs) {
         const exist = await this.em
           .getCustomRepository(TransactionRepository)
-          .findOne({ txHash: tx.txHash });
+          .exist(tx.txHash, address.address);
 
         if (exist) {
           this.logger.warn(
@@ -261,11 +261,11 @@ export class TxSyncService {
   }
 
   async syncAsset(hexId: string): Promise<void> {
-    let asset = await this.em
+    const exist = await this.em
       .getCustomRepository(AssetRepository)
-      .findOne({ hexId: hexId });
+      .exist(hexId);
 
-    if (asset) return;
+    if (exist) return;
 
     const assetInfo = await this.source.getAssetInfo(hexId);
 
@@ -277,7 +277,7 @@ export class TxSyncService {
       return;
     }
 
-    asset = new Asset();
+    let asset = new Asset();
     asset.hexId = assetInfo.hexId;
     asset.policyId = assetInfo.policyId;
     asset.name = assetInfo.name;
@@ -287,9 +287,16 @@ export class TxSyncService {
     asset.onChainMetadata = assetInfo.onChainMetadata;
     asset.metadata = assetInfo.metadata;
 
-    asset = await this.em.save(asset);
-    this.logger.log(
-      `Asset Sync - Added asset ${parseAssetHex(asset.hexId).name}`,
-    );
+    try {
+      // Uniq constraint: Async context might try to add the asset simultaneously
+      asset = await this.em.save(asset);
+      this.logger.log(
+        `Asset Sync - Added asset ${parseAssetHex(asset.hexId).name}`,
+      );
+    } catch (e) {
+      this.logger.warn(
+        `Asset Sync - Failed to add asset ${parseAssetHex(asset.hexId).name}`,
+      );
+    }
   }
 }
