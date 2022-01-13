@@ -55,7 +55,7 @@ export class TxSyncService {
 
         await this.em.save(newAddress);
         this.logger.log(
-          `Account Sync - Added ${upstreamAddress.slice(
+          `Address Sync - Added ${upstreamAddress.slice(
             0,
             20,
           )}... for account ${account.id}`,
@@ -97,6 +97,17 @@ export class TxSyncService {
 
       // For each address transactions, fetch & process the transaction data
       for (const tx of txs) {
+        const exist = await this.em
+          .getCustomRepository(TransactionRepository)
+          .findOne({ txHash: tx.txHash });
+
+        if (exist) {
+          this.logger.warn(
+            `Transaction Sync - DUPLICATE transaction ${tx.txHash} for account ${account.id}`,
+          );
+          continue;
+        }
+
         const txInfo = await this.source.getTransactionInfo(tx.txHash);
         const txUTxOs = await this.source.getTransactionUTxOs(tx.txHash);
 
@@ -243,7 +254,7 @@ export class TxSyncService {
 
         await this.em.save(newTx);
         this.logger.log(
-          `Account Sync - Added transaction ${txInfo.txHash} for account ${account.id}`,
+          `Transaction Sync - Added transaction ${txInfo.txHash} for account ${account.id}`,
         );
       }
     }
