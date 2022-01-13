@@ -42,7 +42,7 @@ export class SyncService {
       await this.syncPools(lastEpoch);
       await this.syncAccounts(lastEpoch);
       await this.syncSpotPrices(lastEpoch);
-      this.poolSyncService.processMultiOwner();
+      await this.poolSyncService.processMultiOwner();
     }
   }
 
