@@ -11,7 +11,7 @@
     "blockfrost": {
       "url": "https://cardano-mainnet.blockfrost.io/api/v0",
       "limit": 100,
-      "rate": 500
+      "rate": 200
     },
     "fixerio": {
       "url": "http://data.fixer.io/api"

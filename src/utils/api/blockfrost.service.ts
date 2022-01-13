@@ -21,6 +21,7 @@ export class BlockfrostService {
   private readonly PROVIDER_LIMIT: number = config.provider.blockfrost.limit;
   private readonly PROVIDER_URL: string = config.provider.blockfrost.url;
   private readonly PROVIDER_RATE: number = config.provider.blockfrost.rate;
+  private nextCallTime = new Date();
 
   async getPoolHistory(
     poolId: string,
@@ -413,6 +414,17 @@ export class BlockfrostService {
     headers?: any,
     body?: any,
   ): Promise<any | null> {
+    let callDelay = 0;
+    const now = new Date();
+    if (this.nextCallTime > now) {
+      callDelay = this.nextCallTime.valueOf() - now.valueOf();
+      this.nextCallTime.setTime(
+        this.nextCallTime.valueOf() + this.PROVIDER_RATE,
+      );
+    } else {
+      this.nextCallTime.setTime(now.valueOf() + this.PROVIDER_RATE);
+    }
+
     return new Promise<any>((resolve) => {
       setTimeout(
         () =>
@@ -427,7 +439,7 @@ export class BlockfrostService {
               body,
             ),
           ),
-        this.PROVIDER_RATE,
+        callDelay,
       );
     });
   }
