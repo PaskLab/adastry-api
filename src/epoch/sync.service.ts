@@ -21,8 +21,8 @@ export class SyncService {
     const lastEpoch = await this.source.lastEpoch();
 
     if (!lastEpoch) {
-      this.logger.log(
-        `ERROR::EpochSync()->syncEpoch()->source.lastEpoch() returned null`,
+      this.logger.error(
+        `EpochSync()->syncEpoch()->source.lastEpoch() returned null`,
       );
       return null;
     }
