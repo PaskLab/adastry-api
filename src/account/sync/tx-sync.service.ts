@@ -14,6 +14,8 @@ import { AssetRepository } from '../repositories/asset.repository';
 import { Asset } from '../entities/asset.entity';
 import { AccountWithdrawRepository } from '../repositories/account-withdraw.repository';
 import { parseAssetHex, toAda } from '../../utils/utils';
+import { TransactionAddress } from '../entities/transaction-address.entity';
+import { TransactionAddressRepository } from '../repositories/transaction-address.repository';
 
 @Injectable()
 export class TxSyncService {
@@ -97,14 +99,25 @@ export class TxSyncService {
 
       // For each address transactions, fetch & process the transaction data
       for (const tx of txs) {
-        const exist = await this.em
+        const accountTx = await this.em
           .getCustomRepository(TransactionRepository)
-          .exist(tx.txHash, address.address);
+          .findOneForAccount(tx.txHash, account.stakeAddress);
 
-        if (exist) {
-          this.logger.warn(
-            `Transaction Sync - DUPLICATE transaction ${tx.txHash} for account ${account.id}`,
-          );
+        if (accountTx) {
+          const mappingExist = await this.em
+            .getCustomRepository(TransactionAddressRepository)
+            .exist(tx.txHash, address.address);
+
+          if (mappingExist) {
+            this.logger.warn(
+              `Transaction Sync - DUPLICATE transaction ${tx.txHash} for account ${account.id}`,
+            );
+            continue;
+          }
+
+          // Add Tx-Address mapping
+          await this.mapTransaction(accountTx, address);
+
           continue;
         }
 
@@ -116,14 +129,16 @@ export class TxSyncService {
             `txInfo returned ${txInfo}`,
             `TxSync()->syncTransactions()->this.source.getTransactionInfo(${tx.txHash})`,
           );
-          continue;
+          // Missing info, sync will resume for this address the next time
+          break;
         }
         if (!txUTxOs) {
           this.logger.error(
             `txUTxOs returned ${txUTxOs}`,
             `TxSync()->syncTransactions()->this.source.getTransactionUTxOs(${tx.txHash})`,
           );
-          continue;
+          // Missing info, sync will resume for this address the next time
+          break;
         }
 
         // Add comments
@@ -229,9 +244,9 @@ export class TxSyncService {
         }
 
         // Save the transaction
-        const newTx = new Transaction();
+        let newTx = new Transaction();
 
-        newTx.address = address;
+        newTx.account = account;
         newTx.txHash = txInfo.txHash;
         newTx.blockHeight = txInfo.blockHeight;
         newTx.blockTime = txInfo.blockTime;
@@ -252,10 +267,14 @@ export class TxSyncService {
         newTx.tags = JSON.stringify(comments);
         newTx.needReview = txType === 'MX';
 
-        await this.em.save(newTx);
+        newTx = await this.em.save(newTx);
+
         this.logger.log(
           `Transaction Sync - Added transaction ${txInfo.txHash} for account ${account.id}`,
         );
+
+        // Add Transaction-Address mapping
+        await this.mapTransaction(newTx, address);
       }
     }
   }
@@ -298,5 +317,21 @@ export class TxSyncService {
         `Asset Sync - Failed to add asset ${parseAssetHex(asset.hexId).name}`,
       );
     }
+  }
+
+  private async mapTransaction(
+    tx: Transaction,
+    address: AccountAddress,
+  ): Promise<void> {
+    const mapping = new TransactionAddress();
+
+    mapping.tx = tx;
+    mapping.address = address;
+
+    await this.em.save(mapping);
+
+    this.logger.log(
+      `Transaction Sync - Mapped transaction ${tx.txHash} to address ${address.address}`,
+    );
   }
 }

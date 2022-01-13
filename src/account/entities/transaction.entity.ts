@@ -5,20 +5,26 @@ import {
   CreateDateColumn,
   Index,
   Entity,
+  UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
-import { AccountAddress } from './account-address.entity';
+import { Account } from './account.entity';
+import { TransactionAddress } from './transaction-address.entity';
 
 @Entity()
-@Index(['address', 'txHash'], { unique: true })
+@Index(['account', 'txHash'], { unique: true })
 export class Transaction {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => AccountAddress, (address) => address.transactions, {
+  @ManyToOne(() => Account, (account) => account.transactions, {
     cascade: true,
     onDelete: 'CASCADE',
   })
-  address!: AccountAddress;
+  account!: Account;
+
+  @OneToMany(() => TransactionAddress, (txAddress) => txAddress.tx)
+  addresses!: TransactionAddress[];
 
   @Column()
   txHash!: string;
@@ -80,4 +86,7 @@ export class Transaction {
   // Special columns
   @CreateDateColumn()
   createdAt!: string;
+
+  @UpdateDateColumn()
+  updatedAt!: string;
 }

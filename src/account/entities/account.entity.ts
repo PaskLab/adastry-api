@@ -12,6 +12,7 @@ import { AccountHistory } from './account-history.entity';
 import { Pool } from '../../pool/entities/pool.entity';
 import { Epoch } from '../../epoch/entities/epoch.entity';
 import { AccountAddress } from './account-address.entity';
+import { Transaction } from './transaction.entity';
 
 @Entity()
 export class Account {
@@ -39,6 +40,9 @@ export class Account {
 
   @OneToMany(() => AccountAddress, (address) => address.account)
   addresses!: AccountAddress[];
+
+  @OneToMany(() => Transaction, (transaction) => transaction.account)
+  transactions!: Transaction[];
 
   // Special columns
   @CreateDateColumn()

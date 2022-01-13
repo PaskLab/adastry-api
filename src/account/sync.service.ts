@@ -15,8 +15,8 @@ export class SyncService {
     account = await this.accountSync.syncInfo(account, lastEpoch);
     if (account.pool?.isMember) {
       await this.accountSync.syncAccountWithdrawal(account);
-      this.txSync.syncAccount(account);
-      this.accountSync.syncHistory(account, lastEpoch);
+      await this.txSync.syncAccount(account);
+      await this.accountSync.syncHistory(account, lastEpoch);
     }
   }
 }

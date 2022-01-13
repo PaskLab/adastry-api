@@ -10,7 +10,8 @@ export class TransactionRepository extends Repository<Transaction> {
 
   findLastAddressTx(address: string): Promise<Transaction | undefined> {
     return this.createQueryBuilder('transaction')
-      .innerJoin('transaction.address', 'address')
+      .innerJoin('transaction.addresses', 'addresses')
+      .innerJoin('addresses.address', 'address')
       .where('address.address = :address', { address: address })
       .orderBy('blockHeight', 'DESC')
       .addOrderBy('txIndex', 'DESC')
@@ -22,8 +23,15 @@ export class TransactionRepository extends Repository<Transaction> {
     params: TxHistoryParam,
   ): Promise<Transaction[]> {
     const qb = this.createQueryBuilder('transaction')
-      .innerJoinAndSelect('transaction.address', 'address')
-      .innerJoin('address.account', 'account')
+      .innerJoin('transaction.account', 'account')
+      .leftJoinAndSelect('transaction.addresses', 'addresses')
+      .innerJoinAndSelect('addresses.address', 'address')
+      .innerJoin(
+        'address.account',
+        'account',
+        'account.stakeAddress = :stakeAddress',
+        { stakeAddress: stakeAddress },
+      )
       .where('account.stakeAddress = :stakeAddress', {
         stakeAddress: stakeAddress,
       })
@@ -60,8 +68,7 @@ export class TransactionRepository extends Repository<Transaction> {
     const lastDay = dateToUnix(new Date(`${year}-12-31T23:59:59Z`));
 
     return this.createQueryBuilder('transaction')
-      .innerJoin('transaction.address', 'address')
-      .innerJoin('address.account', 'account')
+      .innerJoin('transaction.account', 'account')
       .where('account.stakeAddress = :stakeAddress', {
         stakeAddress: stakeAddress,
       })
@@ -74,15 +81,16 @@ export class TransactionRepository extends Repository<Transaction> {
       .getMany();
   }
 
-  async exist(txHash: string, address: string): Promise<boolean> {
-    const count = await this.createQueryBuilder('transaction')
-      .innerJoin('transaction.address', 'address')
-      .where('txHash = :txHash AND address.address = :address', {
+  findOneForAccount(
+    txHash: string,
+    stakeAddress: string,
+  ): Promise<Transaction | undefined> {
+    return this.createQueryBuilder('transaction')
+      .innerJoin('transaction.account', 'account')
+      .where('txHash = :txHash AND account.stakeAddress = :stakeAddress', {
         txHash: txHash,
-        address: address,
+        stakeAddress: stakeAddress,
       })
-      .getCount();
-
-    return count > 0;
+      .getOne();
   }
 }

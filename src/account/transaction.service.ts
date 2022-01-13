@@ -33,7 +33,7 @@ export class TransactionService {
 
     return history.map((h) => {
       return new TransactionDto({
-        address: h.address.address,
+        addresses: h.addresses.map((a) => a.address.address),
         txHash: h.txHash,
         txIndex: h.txIndex,
         blockHeight: h.blockHeight,

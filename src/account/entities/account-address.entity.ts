@@ -3,11 +3,9 @@ import {
   Column,
   ManyToOne,
   PrimaryGeneratedColumn,
-  OneToMany,
   Index,
 } from 'typeorm';
 import { Account } from './account.entity';
-import { Transaction } from './transaction.entity';
 
 @Entity()
 export class AccountAddress {
@@ -24,7 +22,4 @@ export class AccountAddress {
   @Column()
   @Index({ unique: true })
   address!: string;
-
-  @OneToMany(() => Transaction, (transaction) => transaction.address)
-  transactions!: Transaction[];
 }

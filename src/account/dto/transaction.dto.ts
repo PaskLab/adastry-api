@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class TransactionDto {
   constructor(props?: TransactionDto) {
     if (props) {
-      this.address = props.address;
+      this.addresses = props.addresses;
       this.txHash = props.txHash;
       this.txIndex = props.txIndex;
       this.blockHeight = props.blockHeight;
@@ -28,11 +28,12 @@ export class TransactionDto {
   }
 
   @ApiProperty({
-    title: 'Cardano address',
-    example:
-      'addr2q3apu4wdtw75k3g5j6lecj7sufyml0ysw8j3tst93yls9c7jd0cjf3azel78n1yw26us03q5u5y8endc22g3j23ut9ws4rpu56',
+    title: 'Account implicated addresses',
+    example: [
+      'addr1fxh87fkuvcd0s4aejrnf44640fuf6un2u3ysfwqg0rrmt6xjdfcjf3azel78n8yyc6us0lq5u5y8endcl2g3j2kut9wscxnetq',
+    ],
   })
-  address!: string;
+  addresses!: string[];
 
   @ApiProperty({
     title: 'Cardano Tx Hash',

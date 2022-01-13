@@ -86,9 +86,9 @@ export class SyncService {
     if (pool.isMember) {
       await this.syncPoolCert(pool);
     }
-    this.syncPoolInfo(pool, lastEpoch);
+    await this.syncPoolInfo(pool, lastEpoch);
     if (pool.isMember) {
-      this.syncPoolHistory(pool, lastEpoch);
+      await this.syncPoolHistory(pool, lastEpoch);
     }
   }
 
