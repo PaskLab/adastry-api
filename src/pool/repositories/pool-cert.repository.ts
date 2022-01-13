@@ -10,9 +10,9 @@ export class PoolCertRepository extends Repository<PoolCert> {
     const query = this.createQueryBuilder('cert')
       .innerJoinAndSelect('cert.pool', 'pool')
       .innerJoinAndSelect('cert.epoch', 'epoch')
-      .innerJoinAndSelect('cert.rewardAccount', 'rewardAccount')
-      .innerJoinAndSelect('cert.owners', 'owners')
-      .innerJoinAndSelect('owners.account', 'ownerAccount')
+      .leftJoinAndSelect('cert.rewardAccount', 'rewardAccount')
+      .leftJoinAndSelect('cert.owners', 'owners')
+      .leftJoinAndSelect('owners.account', 'ownerAccount')
       .where('pool.poolId = :poolId')
       .orderBy('cert.block', 'DESC')
       .setParameter('poolId', poolId);

@@ -144,7 +144,7 @@ export class BlockfrostService {
     let result = await this.request(`/txs/${hash}/pool_retires`);
 
     if (result) {
-      result = result.find((el) => (el.cert_index = certIndex));
+      result = result.find((el) => el.cert_index == certIndex);
       if (result)
         return {
           txHash: '',

@@ -83,9 +83,7 @@ export class SyncService {
   }
 
   async syncPool(pool: Pool, lastEpoch: Epoch) {
-    if (pool.isMember) {
-      await this.syncPoolCert(pool);
-    }
+    await this.syncPoolCert(pool);
     await this.syncPoolInfo(pool, lastEpoch);
     if (pool.isMember) {
       await this.syncPoolHistory(pool, lastEpoch);
@@ -138,7 +136,8 @@ export class SyncService {
       .getCustomRepository(PoolCertRepository)
       .findLastCert(pool.poolId);
 
-    const lastStoredEpoch = lastStoredCert ? lastStoredCert.epoch : 0;
+    const lastStoredHash = lastStoredCert ? lastStoredCert.txHash : '';
+    const lastStoredBlock = lastStoredCert ? lastStoredCert.block : 0;
 
     // Check whether a sync is required or not
     if (lastStoredCert && lastCert.txHash === lastStoredCert.txHash) {
@@ -149,10 +148,11 @@ export class SyncService {
     const epochRepository = this.em.getCustomRepository(EpochRepository);
     const accountRepository = this.em.getCustomRepository(AccountRepository);
 
-    for (let i = 0; i < poolCerts.length; i++) {
-      if (poolCerts[i].epoch > lastStoredEpoch) {
-        const poolCert = poolCerts[i];
-
+    for (const poolCert of poolCerts) {
+      if (
+        poolCert.block >= lastStoredBlock &&
+        poolCert.txHash !== lastStoredHash
+      ) {
         const epoch = poolCert.epoch
           ? await epochRepository.findOne({ epoch: poolCert.epoch })
           : null;
@@ -195,8 +195,7 @@ export class SyncService {
 
         // Add or create owner account
         if (poolCert.owners) {
-          for (let j = 0; j < poolCert.owners.length; j++) {
-            const certOwner = poolCert.owners[j];
+          for (const certOwner of poolCert.owners) {
             let owner = await accountRepository.findOne({
               stakeAddress: certOwner,
             });
