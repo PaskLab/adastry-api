@@ -24,7 +24,7 @@ export class TransactionRepository extends Repository<Transaction> {
   ): Promise<Transaction[]> {
     const qb = this.createQueryBuilder('transaction')
       .innerJoin('transaction.account', 'account')
-      .leftJoinAndSelect('transaction.addresses', 'addresses')
+      .innerJoinAndSelect('transaction.addresses', 'addresses')
       .innerJoinAndSelect('addresses.address', 'address')
       .innerJoin(
         'address.account',
