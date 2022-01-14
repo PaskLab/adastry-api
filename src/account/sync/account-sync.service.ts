@@ -29,7 +29,7 @@ export class AccountSyncService {
   ) {}
 
   async syncInfo(account: Account, lastEpoch: Epoch): Promise<Account> {
-    if (account.epoch && account.epoch.epoch !== lastEpoch.epoch) {
+    if (!account.epoch || account.epoch.epoch !== lastEpoch.epoch) {
       const accountUpdate = await this.source.getAccountInfo(
         account.stakeAddress,
       );
