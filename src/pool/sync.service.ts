@@ -100,7 +100,7 @@ export class SyncService {
       return;
     }
 
-    if (pool.epoch !== lastEpoch) {
+    if (pool.epoch && pool.epoch.epoch !== lastEpoch.epoch) {
       const lastCert = await this.em
         .getCustomRepository(PoolCertRepository)
         .findLastCert(pool.poolId);
