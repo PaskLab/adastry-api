@@ -35,7 +35,7 @@ export class CsvService {
     const writer = csvWriter.createObjectCsvWriter({
       path: filePath,
       header:
-        data[0].accountBalance !== undefined
+        data[0]?.accountBalance !== undefined
           ? header.concat([
               // Extended fields
               { id: 'accountBalance', title: 'Account Balance' },
