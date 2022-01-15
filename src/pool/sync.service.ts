@@ -144,7 +144,10 @@ export class SyncService {
       return;
     }
 
-    const poolCerts = await this.source.getAllPoolCert(pool.poolId);
+    const poolCerts = await this.source.getAllPoolCert(
+      pool.poolId,
+      lastStoredCert?.txHash,
+    );
     const epochRepository = this.em.getCustomRepository(EpochRepository);
     const accountRepository = this.em.getCustomRepository(AccountRepository);
 
