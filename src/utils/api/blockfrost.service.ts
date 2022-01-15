@@ -65,16 +65,34 @@ export class BlockfrostService {
       : null;
   }
 
-  async getAllPoolCert(poolId: string): Promise<PoolCertType[]> {
+  async getAllPoolCert(
+    poolId: string,
+    afterTxHash?: string,
+  ): Promise<PoolCertType[]> {
     let certs: { tx_hash: string; cert_index: number; action: string }[] = [];
     let page = 1;
     let result: { tx_hash: string; cert_index: number; action: string }[] = [];
 
     do {
-      result = await this.request(`/pools/${poolId}/updates?page=${page}`);
+      result = await this.request(
+        `/pools/${poolId}/updates?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
+      );
       if (result) certs = certs.concat(result);
+      if (afterTxHash && certs.some((cert) => cert.tx_hash === afterTxHash)) {
+        break;
+      }
       page++;
     } while (result && result.length === this.PROVIDER_LIMIT);
+
+    certs.reverse();
+
+    if (afterTxHash) {
+      // Remove everything before 'afterTxHash'
+      const index = certs.findIndex((cert) => cert.tx_hash === afterTxHash);
+      if (index >= 0) {
+        certs = certs.slice(index + 1);
+      }
+    }
 
     const infos: PoolCertType[] = [];
 
@@ -362,6 +380,7 @@ export class BlockfrostService {
 
   async getAllAccountWithdrawal(
     stakeAddress: string,
+    afterTxHash?: string,
   ): Promise<AccountWithdrawType[]> {
     let withdrawTxs: { tx_hash: string; amount: string }[] = [];
     let page = 1;
@@ -369,11 +388,27 @@ export class BlockfrostService {
 
     do {
       result = await this.request(
-        `/accounts/${stakeAddress}/withdrawals?page=${page}`,
+        `/accounts/${stakeAddress}/withdrawals?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
       );
+
       if (result) withdrawTxs = withdrawTxs.concat(result);
+
+      if (afterTxHash && withdrawTxs.some((tx) => tx.tx_hash === afterTxHash)) {
+        break;
+      }
+
       page++;
     } while (result && result.length === this.PROVIDER_LIMIT);
+
+    withdrawTxs.reverse();
+
+    if (afterTxHash) {
+      // Remove everything before 'afterTxHash'
+      const index = withdrawTxs.findIndex((tx) => tx.tx_hash === afterTxHash);
+      if (index >= 0) {
+        withdrawTxs = withdrawTxs.slice(index + 1);
+      }
+    }
 
     const withdrawals: AccountWithdrawType[] = [];
 

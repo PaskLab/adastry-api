@@ -27,12 +27,7 @@ export class TxSyncService {
     private readonly source: BlockfrostService,
   ) {}
 
-  async syncAccount(account: Account): Promise<void> {
-    await this.syncAddresses(account);
-    this.syncTransactions(account);
-  }
-
-  async syncAddresses(account: Account): Promise<void> {
+  async syncAddresses(account: Account): Promise<Account> {
     const accountAddresses = await this.em
       .getCustomRepository(AccountAddressRepository)
       .findAccountAddr(account.stakeAddress);
@@ -65,9 +60,12 @@ export class TxSyncService {
       }
       page++;
     }
+
+    account.addressesLastSync = new Date();
+    return this.em.save(account);
   }
 
-  async syncTransactions(account: Account): Promise<void> {
+  async syncTransactions(account: Account): Promise<Account> {
     const addressesEntities = await this.em
       .getCustomRepository(AccountAddressRepository)
       .findAccountAddr(account.stakeAddress);
@@ -277,6 +275,9 @@ export class TxSyncService {
         await this.mapTransaction(newTx, address);
       }
     }
+
+    account.transactionsLastSync = new Date();
+    return this.em.save(account);
   }
 
   async syncAsset(hexId: string): Promise<void> {

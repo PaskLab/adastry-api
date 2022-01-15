@@ -14,8 +14,7 @@ export class AccountWithdraw {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Account, (account) => account.history, {
-    cascade: true,
+  @ManyToOne(() => Account, (account) => account.withdraw, {
     onDelete: 'CASCADE',
   })
   account!: Account;

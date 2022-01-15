@@ -1,5 +1,12 @@
 export type ConfigType = {
-  app: { minLoyalty: number };
+  app: { minLoyalty: number; tmpFileTTL: number; tmpPath: string };
+  sync: {
+    rateLimit: {
+      accountWithdraw: number;
+      accountAddress: number;
+      accountTransaction: number;
+    };
+  };
   api: { pageLimit: number };
   provider: SyncConfigProviderType;
   currencies: SyncConfigCurrenciesType;

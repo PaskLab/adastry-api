@@ -4,6 +4,13 @@
     "tmpFileTTL": 600,
     "tmpPath": "public/tmp"
   },
+  "sync": {
+    "rateLimit": {
+      "accountWithdraw": 400000000,
+      "accountAddress": 400000000,
+      "accountTransaction": 400000000
+    }
+  },
   "api": {
     "pageLimit": 100
   },

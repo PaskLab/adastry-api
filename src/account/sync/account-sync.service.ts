@@ -29,55 +29,53 @@ export class AccountSyncService {
   ) {}
 
   async syncInfo(account: Account, lastEpoch: Epoch): Promise<Account> {
-    if (!account.epoch || account.epoch.epoch !== lastEpoch.epoch) {
-      const accountUpdate = await this.source.getAccountInfo(
-        account.stakeAddress,
-      );
+    if (account.epoch?.epoch === lastEpoch.epoch) return account;
 
-      if (!accountUpdate) {
-        this.logger.log(
-          `NOT FOUND::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress}) returned ${accountUpdate}.`,
-        );
-        return account;
-      }
+    const accountUpdate = await this.source.getAccountInfo(
+      account.stakeAddress,
+    );
 
-      account.rewardsSum = accountUpdate.rewardsSum;
-
-      account.epoch = lastEpoch;
-      if (account.pool?.poolId !== accountUpdate.poolId) {
-        let pool = accountUpdate.poolId
-          ? await this.em
-              .getCustomRepository(PoolRepository)
-              .findOne({ poolId: accountUpdate.poolId })
-          : null;
-
-        if (pool === undefined) {
-          pool = new Pool();
-          pool.poolId = accountUpdate.poolId;
-          pool.isMember = false;
-          pool = await this.em.save(pool);
-        }
-
-        account.pool = pool;
-      }
-
-      account = await this.em
-        .getCustomRepository(AccountRepository)
-        .save(account);
+    if (!accountUpdate) {
       this.logger.log(
-        `Account Sync - Updating account ${account.stakeAddress}`,
+        `NOT FOUND::AccountSync()->syncAccount()->source.getAccountInfo(${account.stakeAddress}) returned ${accountUpdate}.`,
       );
+      return account;
     }
+
+    account.rewardsSum = accountUpdate.rewardsSum;
+
+    account.epoch = lastEpoch;
+    if (account.pool?.poolId !== accountUpdate.poolId) {
+      let pool = accountUpdate.poolId
+        ? await this.em
+            .getCustomRepository(PoolRepository)
+            .findOne({ poolId: accountUpdate.poolId })
+        : null;
+
+      if (pool === undefined) {
+        pool = new Pool();
+        pool.poolId = accountUpdate.poolId;
+        pool.isMember = false;
+        pool = await this.em.save(pool);
+      }
+
+      account.pool = pool;
+    }
+
+    account = await this.em
+      .getCustomRepository(AccountRepository)
+      .save(account);
+    this.logger.log(`Account Sync - Updating account ${account.stakeAddress}`);
+
     return account;
   }
 
   async syncHistory(account: Account, lastEpoch: Epoch): Promise<void> {
-    const accountHistoryRepository = this.em.getCustomRepository(
-      AccountHistoryRepository,
-    );
-    const lastStoredEpoch = await accountHistoryRepository.findLastEpoch(
-      account.stakeAddress,
-    );
+    const lastStoredEpoch = await this.em
+      .getCustomRepository(AccountHistoryRepository)
+      .findLastEpoch(account.stakeAddress);
+
+    if (lastStoredEpoch?.epoch.epoch === lastEpoch.epoch) return;
 
     const epochToSync = lastStoredEpoch
       ? lastEpoch.epoch - lastStoredEpoch.epoch.epoch
@@ -147,10 +145,9 @@ export class AccountSyncService {
         continue;
       }
 
-      let newHistory = await accountHistoryRepository.findOneRecord(
-        account.stakeAddress,
-        epoch.epoch,
-      );
+      let newHistory = await this.em
+        .getCustomRepository(AccountHistoryRepository)
+        .findOneRecord(account.stakeAddress, epoch.epoch);
 
       if (newHistory) {
         this.logger.log(
@@ -212,16 +209,21 @@ export class AccountSyncService {
         newHistory.owner = false;
       }
 
-      await accountHistoryRepository.save(newHistory);
+      await this.em.save(newHistory);
       this.logger.log(
         `Account History Sync - Creating Epoch ${newHistory.epoch.epoch} history record for account ${account.stakeAddress}`,
       );
     }
   }
 
-  async syncAccountWithdrawal(account: Account): Promise<void> {
+  async syncAccountWithdrawal(account: Account): Promise<Account> {
+    const lastWithdraw = await this.em
+      .getCustomRepository(AccountWithdrawRepository)
+      .findLastWithdraw();
+
     const withdrawals = await this.source.getAllAccountWithdrawal(
       account.stakeAddress,
+      lastWithdraw?.txHash,
     );
 
     for (const withdraw of withdrawals) {
@@ -257,5 +259,8 @@ export class AccountSyncService {
         `Account Withdrawal Sync - Adding epoch ${newWithdrawal.epoch.epoch} withdrawal record for account ${account.stakeAddress}`,
       );
     }
+
+    account.withdrawLastSync = new Date();
+    return this.em.save(account);
   }
 }

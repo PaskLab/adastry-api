@@ -13,6 +13,7 @@ import { Pool } from '../../pool/entities/pool.entity';
 import { Epoch } from '../../epoch/entities/epoch.entity';
 import { AccountAddress } from './account-address.entity';
 import { Transaction } from './transaction.entity';
+import { AccountWithdraw } from './account-withdraw.entity';
 
 @Entity()
 export class Account {
@@ -41,8 +42,20 @@ export class Account {
   @OneToMany(() => AccountAddress, (address) => address.account)
   addresses!: AccountAddress[];
 
+  @Column({ default: () => "datetime('now')" })
+  addressesLastSync!: Date;
+
   @OneToMany(() => Transaction, (transaction) => transaction.account)
   transactions!: Transaction[];
+
+  @Column({ default: () => "datetime('now')" })
+  transactionsLastSync!: Date;
+
+  @OneToMany(() => AccountWithdraw, (withdraw) => withdraw.account)
+  withdraw!: AccountWithdraw[];
+
+  @Column({ default: () => "datetime('now')" })
+  withdrawLastSync!: Date;
 
   // Special columns
   @CreateDateColumn()
