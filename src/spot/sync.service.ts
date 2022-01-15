@@ -63,8 +63,8 @@ export class SyncService {
         .findOne({ epoch: i });
 
       if (!epoch) {
-        this.logger.log(
-          `ERROR::SpotSync()->syncRates()->this.em.getCustomRepository(EpochRepository).find({epoch: ${i}) returned ${epoch}`,
+        this.logger.error(
+          `SpotSync()->syncRates()->this.em.getCustomRepository(EpochRepository).find({epoch: ${i}) returned ${epoch}`,
         );
         continue;
       }
@@ -73,8 +73,8 @@ export class SyncService {
       const rates = await this.rateSource.getRate(date);
 
       if (!rates) {
-        this.logger.log(
-          `ERROR::SpotSync()->syncRates()->this.source.getRate(date) returned ${rates}`,
+        this.logger.error(
+          `SpotSync()->syncRates()->this.source.getRate(date) returned ${rates}`,
         );
         return;
       }
@@ -118,8 +118,8 @@ export class SyncService {
         .findOne({ epoch: i });
 
       if (!epoch) {
-        this.logger.log(
-          `ERROR::SpotSync()->syncSpotPrices()->this.em.getCustomRepository(EpochRepository).find({epoch: ${i}) returned ${epoch}`,
+        this.logger.error(
+          `SpotSync()->syncSpotPrices()->this.em.getCustomRepository(EpochRepository).find({epoch: ${i}) returned ${epoch}`,
         );
         continue;
       }
@@ -128,8 +128,8 @@ export class SyncService {
       const spotPrice = await this.spotSource.getSpotPrice(date);
 
       if (!spotPrice) {
-        this.logger.log(
-          `ERROR::SpotSync()->syncSpotPrices()->this.spotSource.getSpotPrice(date) returned ${spotPrice}`,
+        this.logger.error(
+          `SpotSync()->syncSpotPrices()->this.spotSource.getSpotPrice(date) returned ${spotPrice}`,
         );
         continue;
       }
