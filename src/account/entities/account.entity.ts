@@ -42,20 +42,17 @@ export class Account {
   @OneToMany(() => AccountAddress, (address) => address.account)
   addresses!: AccountAddress[];
 
-  @Column({ default: () => "datetime('now')" })
-  addressesLastSync!: Date;
+  @Column({ nullable: true })
+  addressesLastSync!: Date | null;
 
   @OneToMany(() => Transaction, (transaction) => transaction.account)
   transactions!: Transaction[];
 
-  @Column({ default: () => "datetime('now')" })
-  transactionsLastSync!: Date;
+  @Column({ nullable: true })
+  transactionsLastSync!: Date | null;
 
   @OneToMany(() => AccountWithdraw, (withdraw) => withdraw.account)
   withdraw!: AccountWithdraw[];
-
-  @Column({ default: () => "datetime('now')" })
-  withdrawLastSync!: Date;
 
   // Special columns
   @CreateDateColumn()

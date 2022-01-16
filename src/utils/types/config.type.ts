@@ -2,7 +2,6 @@ export type ConfigType = {
   app: { minLoyalty: number; tmpFileTTL: number; tmpPath: string };
   sync: {
     rateLimit: {
-      accountWithdraw: number;
       accountAddress: number;
       accountTransaction: number;
     };

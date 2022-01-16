@@ -6,7 +6,6 @@
   },
   "sync": {
     "rateLimit": {
-      "accountWithdraw": 400000000,
       "accountAddress": 400000000,
       "accountTransaction": 400000000
     }

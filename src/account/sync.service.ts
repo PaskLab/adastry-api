@@ -7,7 +7,6 @@ import config from '../../config.json';
 
 @Injectable()
 export class SyncService {
-  private readonly WITHDRAW_SYNC_RATE = config.sync.rateLimit.accountWithdraw;
   private readonly ADDRESS_SYNC_RATE = config.sync.rateLimit.accountAddress;
   private readonly TX_SYNC_RATE = config.sync.rateLimit.accountTransaction;
 
@@ -19,9 +18,7 @@ export class SyncService {
   async syncAccount(account: Account, lastEpoch: Epoch): Promise<void> {
     account = await this.accountSync.syncInfo(account, lastEpoch);
     if (account.pool?.isMember) {
-      if (this.requireSync(account.withdrawLastSync, this.WITHDRAW_SYNC_RATE)) {
-        account = await this.accountSync.syncAccountWithdrawal(account);
-      }
+      account = await this.accountSync.syncAccountWithdrawal(account);
 
       if (this.requireSync(account.addressesLastSync, this.ADDRESS_SYNC_RATE)) {
         account = await this.txSync.syncAddresses(account);
@@ -35,7 +32,8 @@ export class SyncService {
     }
   }
 
-  private requireSync(lastSync: Date, rateLimit: number): boolean {
+  private requireSync(lastSync: Date | null, rateLimit: number): boolean {
+    if (!lastSync) return true;
     const nextSync = new Date(lastSync.valueOf() + rateLimit);
     return new Date() >= nextSync;
   }
