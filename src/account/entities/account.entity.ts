@@ -42,13 +42,13 @@ export class Account {
   @OneToMany(() => AccountAddress, (address) => address.account)
   addresses!: AccountAddress[];
 
-  @Column({ nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   addressesLastSync!: Date | null;
 
   @OneToMany(() => Transaction, (transaction) => transaction.account)
   transactions!: Transaction[];
 
-  @Column({ nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   transactionsLastSync!: Date | null;
 
   @OneToMany(() => AccountWithdraw, (withdraw) => withdraw.account)
