@@ -260,7 +260,6 @@ export class AccountSyncService {
       );
     }
 
-    account.withdrawLastSync = new Date();
-    return this.em.save(account);
+    return account;
   }
 }
