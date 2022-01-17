@@ -79,12 +79,13 @@ export class TxSyncService {
 
       let txs: AddressTransactionType[] = [];
       let upstreamTxs: AddressTransactionType[] | null = [];
+      let page = 1;
 
       // Find all address transactions since the last saved one
       do {
         upstreamTxs = await this.source.getAddressTransactions(
           address.address,
-          1,
+          page,
           this.PROVIDER_LIMIT,
           lastTransaction ? lastTransaction.blockHeight : null,
           lastTransaction ? lastTransaction.txIndex + 1 : null,
@@ -93,6 +94,7 @@ export class TxSyncService {
         if (upstreamTxs) {
           txs = txs.concat(upstreamTxs);
         }
+        page++;
       } while (upstreamTxs && upstreamTxs.length % this.PROVIDER_LIMIT === 0);
 
       // For each address transactions, fetch & process the transaction data
