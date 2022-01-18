@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { Account } from './account.entity';
 import { Epoch } from '../../epoch/entities/epoch.entity';
+import { StrToBigInt } from '../../utils/utils';
 
 @Entity()
 @Index(['account', 'txHash'], { unique: true })
@@ -19,14 +20,14 @@ export class AccountWithdraw {
   })
   account!: Account;
 
-  @Column({ type: 'bigint', default: 0 })
+  @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
   amount!: number;
 
   @ManyToOne(() => Epoch, { onDelete: 'CASCADE' })
   @Index()
   epoch!: Epoch;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', transformer: [StrToBigInt] })
   block!: number;
 
   /*

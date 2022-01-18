@@ -2,6 +2,7 @@ import { Request } from 'express';
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { EncryptedTextType } from './types/encrypted-text.type';
+import { ValueTransformer } from 'typeorm';
 
 export function generateUrl(request: Request, ...args: string[]) {
   return `${request.protocol}://${request.get('host')}/${args.join('/')}`;
@@ -40,6 +41,11 @@ export function parseAssetHex(hex: string): { policy: string; name: string } {
     name: Buffer.from(hex.slice(56), 'hex').toString(),
   };
 }
+
+export const StrToBigInt: ValueTransformer = {
+  to: (entityValue: number) => entityValue,
+  from: (databaseValue: string): number => parseInt(databaseValue, 10),
+};
 
 /**
  * General encryption helper

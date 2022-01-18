@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Account } from './account.entity';
 import { TransactionAddress } from './transaction-address.entity';
+import { StrToBigInt } from '../../utils/utils';
 
 @Entity()
 @Index(['account', 'txHash'], { unique: true })
@@ -32,7 +33,7 @@ export class Transaction {
   @Column()
   txIndex!: number;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', transformer: [StrToBigInt] })
   blockHeight!: number;
 
   @Column()
@@ -44,10 +45,10 @@ export class Transaction {
   @Column()
   sent!: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', transformer: [StrToBigInt] })
   fees!: number;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', transformer: [StrToBigInt] })
   deposit!: number;
 
   @Column()

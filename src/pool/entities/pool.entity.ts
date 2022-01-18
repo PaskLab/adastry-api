@@ -12,6 +12,7 @@ import { Epoch } from '../../epoch/entities/epoch.entity';
 import { Account } from '../../account/entities/account.entity';
 import { PoolHistory } from './pool-history.entity';
 import { PoolCert } from './pool-cert.entity';
+import { StrToBigInt } from '../../utils/utils';
 
 @Entity()
 export class Pool {
@@ -28,7 +29,7 @@ export class Pool {
   @Column({ default: 0 })
   blocksMinted!: number;
 
-  @Column({ type: 'bigint', default: 0 })
+  @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
   liveStake!: number;
 
   @Column({ type: 'float', default: 0 })

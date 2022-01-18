@@ -10,6 +10,7 @@ import { Epoch } from '../../epoch/entities/epoch.entity';
 import { Pool } from './pool.entity';
 import { Account } from '../../account/entities/account.entity';
 import { PoolOwner } from './pool-owner.entity';
+import { StrToBigInt } from '../../utils/utils';
 
 @Entity()
 @Index(['pool', 'epoch', 'txHash'], { unique: true })
@@ -38,7 +39,7 @@ export class PoolCert {
   @Column({ default: false })
   active!: boolean;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', transformer: [StrToBigInt] })
   block!: number;
 
   /*

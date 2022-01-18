@@ -14,6 +14,7 @@ import { Epoch } from '../../epoch/entities/epoch.entity';
 import { AccountAddress } from './account-address.entity';
 import { Transaction } from './transaction.entity';
 import { AccountWithdraw } from './account-withdraw.entity';
+import { StrToBigInt } from '../../utils/utils';
 
 @Entity()
 export class Account {
@@ -24,7 +25,7 @@ export class Account {
   @Index({ unique: true })
   stakeAddress!: string;
 
-  @Column({ type: 'bigint', default: 0 })
+  @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
   rewardsSum!: number;
 
   @Column({ default: 0 })
