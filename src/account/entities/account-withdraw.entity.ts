@@ -19,14 +19,14 @@ export class AccountWithdraw {
   })
   account!: Account;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   amount!: number;
 
   @ManyToOne(() => Epoch, { onDelete: 'CASCADE' })
   @Index()
   epoch!: Epoch;
 
-  @Column()
+  @Column({ type: 'bigint' })
   block!: number;
 
   /*

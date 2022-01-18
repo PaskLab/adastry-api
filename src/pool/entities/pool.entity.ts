@@ -28,10 +28,10 @@ export class Pool {
   @Column({ default: 0 })
   blocksMinted!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   liveStake!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'float', default: 0 })
   liveSaturation!: number;
 
   @Column({ default: 0 })

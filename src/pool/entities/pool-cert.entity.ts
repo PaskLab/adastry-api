@@ -38,7 +38,7 @@ export class PoolCert {
   @Column({ default: false })
   active!: boolean;
 
-  @Column()
+  @Column({ type: 'bigint' })
   block!: number;
 
   /*

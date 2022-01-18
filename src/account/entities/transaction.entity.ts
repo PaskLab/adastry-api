@@ -32,7 +32,7 @@ export class Transaction {
   @Column()
   txIndex!: number;
 
-  @Column()
+  @Column({ type: 'bigint' })
   blockHeight!: number;
 
   @Column()
@@ -44,10 +44,10 @@ export class Transaction {
   @Column()
   sent!: string;
 
-  @Column()
+  @Column({ type: 'bigint' })
   fees!: number;
 
-  @Column()
+  @Column({ type: 'bigint' })
   deposit!: number;
 
   @Column()

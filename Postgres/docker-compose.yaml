@@ -1,0 +1,28 @@
+version: "3.7"
+# Use --compatibility flag with "docker-compose up" for deploy key translation
+
+services:
+
+  postgres:
+    container_name: adastry-postgres
+    environment:
+      POSTGRES_PASSWORD: 'CHANGE_ME'
+    image: postgres:latest
+    tty: true
+    volumes:
+      - type: bind
+        source: ./data
+        target: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G

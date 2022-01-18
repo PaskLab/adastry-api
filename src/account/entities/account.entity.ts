@@ -24,7 +24,7 @@ export class Account {
   @Index({ unique: true })
   stakeAddress!: string;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   rewardsSum!: number;
 
   @Column({ default: 0 })
@@ -42,13 +42,13 @@ export class Account {
   @OneToMany(() => AccountAddress, (address) => address.account)
   addresses!: AccountAddress[];
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   addressesLastSync!: Date | null;
 
   @OneToMany(() => Transaction, (transaction) => transaction.account)
   transactions!: Transaction[];
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   transactionsLastSync!: Date | null;
 
   @OneToMany(() => AccountWithdraw, (withdraw) => withdraw.account)

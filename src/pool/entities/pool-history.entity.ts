@@ -21,16 +21,16 @@ export class PoolHistory {
   @ManyToOne(() => Epoch, { onDelete: 'CASCADE' })
   epoch!: Epoch;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   rewards!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   fees!: number;
 
   @Column({ default: 0 })
   blocks!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   activeStake!: number;
 
   @ManyToOne(() => PoolCert)

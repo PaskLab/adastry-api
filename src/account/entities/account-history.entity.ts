@@ -24,25 +24,25 @@ export class AccountHistory {
   @ManyToOne(() => Epoch, { onDelete: 'CASCADE' })
   epoch!: Epoch;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   rewards!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   activeStake!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   balance!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   withdrawable!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   withdrawn!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   opRewards!: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   revisedRewards!: number;
 
   @Column({ type: 'float', default: 0 })
