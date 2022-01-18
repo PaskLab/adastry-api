@@ -13,8 +13,8 @@ export class TransactionRepository extends Repository<Transaction> {
       .innerJoin('transaction.addresses', 'addresses')
       .innerJoin('addresses.address', 'address')
       .where('address.address = :address', { address: address })
-      .orderBy('blockHeight', 'DESC')
-      .addOrderBy('txIndex', 'DESC')
+      .orderBy('transaction.blockHeight', 'DESC')
+      .addOrderBy('transaction.txIndex', 'DESC')
       .getOne();
   }
 
@@ -36,10 +36,16 @@ export class TransactionRepository extends Repository<Transaction> {
         stakeAddress: stakeAddress,
       })
       .limit(this.MAX_LIMIT)
-      .orderBy({ blockTime: 'DESC', txIndex: 'DESC' });
+      .orderBy({
+        'transaction.blockTime': 'DESC',
+        'transaction.txIndex': 'DESC',
+      });
 
     if (params.order) {
-      qb.orderBy({ blockTime: params.order, txIndex: params.order });
+      qb.orderBy({
+        'transaction.blockTime': params.order,
+        'transaction.txIndex': params.order,
+      });
     }
 
     if (params.limit) {
@@ -53,11 +59,11 @@ export class TransactionRepository extends Repository<Transaction> {
     }
 
     if (params.from) {
-      qb.andWhere('blockTime >= :from', { from: params.from });
+      qb.andWhere('transaction.blockTime >= :from', { from: params.from });
     }
 
     if (params.to) {
-      qb.andWhere('blockTime <= :to', { to: params.to });
+      qb.andWhere('transaction.blockTime <= :to', { to: params.to });
     }
 
     return qb.getMany();
@@ -72,12 +78,15 @@ export class TransactionRepository extends Repository<Transaction> {
       .where('account.stakeAddress = :stakeAddress', {
         stakeAddress: stakeAddress,
       })
-      .andWhere('blockTime >= :startTime AND blockTime <= :endTime', {
-        startTime: firstDay,
-        endTime: lastDay,
-      })
-      .orderBy('blockTime', 'ASC')
-      .addOrderBy('txIndex', 'ASC')
+      .andWhere(
+        'transaction.blockTime >= :startTime AND transaction.blockTime <= :endTime',
+        {
+          startTime: firstDay,
+          endTime: lastDay,
+        },
+      )
+      .orderBy('transaction.blockTime', 'ASC')
+      .addOrderBy('transaction.txIndex', 'ASC')
       .getMany();
   }
 
@@ -87,10 +96,13 @@ export class TransactionRepository extends Repository<Transaction> {
   ): Promise<Transaction | undefined> {
     return this.createQueryBuilder('transaction')
       .innerJoin('transaction.account', 'account')
-      .where('txHash = :txHash AND account.stakeAddress = :stakeAddress', {
-        txHash: txHash,
-        stakeAddress: stakeAddress,
-      })
+      .where(
+        'transaction.txHash = :txHash AND account.stakeAddress = :stakeAddress',
+        {
+          txHash: txHash,
+          stakeAddress: stakeAddress,
+        },
+      )
       .getOne();
   }
 }

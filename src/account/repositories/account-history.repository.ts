@@ -43,10 +43,10 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       .where('account.stakeAddress = :stakeAddress')
       .setParameter('stakeAddress', params.stakeAddress)
       .limit(this.MAX_LIMIT)
-      .orderBy('epoch', 'DESC');
+      .orderBy('epoch.epoch', 'DESC');
 
     if (params.order) {
-      qb.orderBy('epoch', params.order);
+      qb.orderBy('epoch.epoch', params.order);
     }
 
     if (params.limit) {

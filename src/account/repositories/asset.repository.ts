@@ -5,7 +5,7 @@ import { Asset } from '../entities/asset.entity';
 export class AssetRepository extends Repository<Asset> {
   async exist(hexId: string): Promise<boolean> {
     const count = await this.createQueryBuilder('asset')
-      .where('hexId = :hexId', { hexId: hexId })
+      .where('asset.hexId = :hexId', { hexId: hexId })
       .getCount();
 
     return count > 0;

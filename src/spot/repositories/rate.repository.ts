@@ -39,7 +39,7 @@ export class RateRepository extends Repository<Rate> {
       .innerJoinAndSelect('rate.epoch', 'epoch')
       .where('currency.code = :code', { code: params.code })
       .limit(this.MAX_LIMIT)
-      .orderBy('epoch', 'DESC');
+      .orderBy('epoch.epoch', 'DESC');
 
     if (params.order) {
       qb.orderBy('epoch', params.order);

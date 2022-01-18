@@ -18,9 +18,9 @@ export class EpochRepository extends Repository<Epoch> {
     const qb = this.createQueryBuilder('epoch');
 
     if (params.order) {
-      qb.orderBy('epoch', params.order);
+      qb.orderBy('epoch.epoch', params.order);
     } else {
-      qb.orderBy('epoch', 'DESC');
+      qb.orderBy('epoch.epoch', 'DESC');
     }
 
     if (params.limit) {

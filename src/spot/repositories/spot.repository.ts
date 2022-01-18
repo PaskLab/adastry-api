@@ -25,7 +25,7 @@ export class SpotRepository extends Repository<Spot> {
     const qb = this.createQueryBuilder('spot')
       .innerJoinAndSelect('spot.epoch', 'epoch')
       .limit(this.MAX_LIMIT)
-      .orderBy('epoch', 'DESC');
+      .orderBy('epoch.epoch', 'DESC');
 
     if (params.order) {
       qb.orderBy('epoch', params.order);
