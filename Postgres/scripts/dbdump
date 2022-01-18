@@ -1,0 +1,25 @@
+#!/bin/bash
+
+TIMESTAMP=$(date +"%F")_$(date +"%H")H$(date +"%M")
+
+PGSQL_USER="postgres"
+PGDUMP_PATH="/usr/lib/postgresql/14/bin"
+TARGET_PATH="/backup"
+
+DOCKER_CMD="docker exec adastry-postgres bash -c"
+PGSQL_CMD="${PGDUMP_PATH}/pg_dump -U ${PGSQL_USER} $1 -O | gzip > ${TARGET_PATH}/$1_${TIMESTAMP}.sql.gz"
+
+
+if [ -z "$1" ]
+then
+    echo "You must specify a Database !"
+else
+    if [ -n "$2" ]; then
+        if [ $2 = "backup" ]; then
+            TIMESTAMP="preload_backup"
+        fi
+    fi
+
+    $DOCKER_CMD "${PGSQL_CMD}"
+    echo -e "\n$1 database has been dump at that location ----> $TARGET_PATH/$1_$TIMESTAMP.sql.gz"
+fi
