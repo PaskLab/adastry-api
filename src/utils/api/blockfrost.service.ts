@@ -34,11 +34,11 @@ export class BlockfrostService {
 
     return result
       ? result.map((res) => ({
-          epoch: parseInt(res.epoch),
-          rewards: parseInt(res.rewards),
-          fees: parseInt(res.fees),
-          blocks: parseInt(res.blocks),
-          activeStake: parseInt(res.active_stake),
+          epoch: parseInt(res.epoch) || 0,
+          rewards: parseInt(res.rewards) || 0,
+          fees: parseInt(res.fees) || 0,
+          blocks: parseInt(res.blocks) || 0,
+          activeStake: parseInt(res.active_stake) || 0,
         }))
       : null;
   }
@@ -53,14 +53,14 @@ export class BlockfrostService {
           hex: cert.hex,
           name: metadata.name,
           ticker: metadata.ticker,
-          blocksMinted: parseInt(cert.blocks_minted),
-          liveStake: parseInt(cert.live_stake),
-          liveSaturation: parseFloat(cert.live_saturation),
-          liveDelegators: parseInt(cert.live_delegators),
+          blocksMinted: parseInt(cert.blocks_minted) || 0,
+          liveStake: parseInt(cert.live_stake) || 0,
+          liveSaturation: parseFloat(cert.live_saturation) || 0,
+          liveDelegators: parseInt(cert.live_delegators) || 0,
           rewardAccount: cert.reward_account,
           owners: cert.owners,
-          margin: parseFloat(cert.margin_cost),
-          fixed: parseInt(cert.fixed_cost),
+          margin: parseFloat(cert.margin_cost) || 0,
+          fixed: parseInt(cert.fixed_cost) || 0,
         }
       : null;
   }
@@ -102,14 +102,14 @@ export class BlockfrostService {
         const info = await this.getRegistration(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = parseInt(txInfo.block_height);
+          info.block = parseInt(txInfo.block_height) || 0;
           infos.push(info);
         }
       } else {
         const info = await this.getRetirement(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = parseInt(txInfo.block_height);
+          info.block = parseInt(txInfo.block_height) || 0;
           infos.push(info);
         }
       }
@@ -126,7 +126,7 @@ export class BlockfrostService {
     return result
       ? {
           txHash: result[0].tx_hash,
-          certIndex: parseInt(result[0].cert_index),
+          certIndex: parseInt(result[0].cert_index) || 0,
           action: result[0].action,
         }
       : null;
@@ -145,9 +145,9 @@ export class BlockfrostService {
           txHash: '',
           block: 0,
           active: true,
-          epoch: parseInt(result.active_epoch),
-          margin: parseFloat(result.margin_cost),
-          fixed: parseInt(result.fixed_cost),
+          epoch: parseInt(result.active_epoch) || 0,
+          margin: parseFloat(result.margin_cost) || 0,
+          fixed: parseInt(result.fixed_cost) || 0,
           rewardAccount: result.reward_account,
           owners: result.owners,
         };
@@ -169,7 +169,7 @@ export class BlockfrostService {
           txHash: '',
           block: 0,
           active: false,
-          epoch: parseInt(result.retiring_epoch),
+          epoch: parseInt(result.retiring_epoch) || 0,
           margin: null,
           fixed: null,
           rewardAccount: null,
@@ -186,10 +186,10 @@ export class BlockfrostService {
     return result
       ? {
           stakeAddress: result.stake_address,
-          controlledAmount: parseInt(result.controlled_amount),
-          withdrawalsSum: parseInt(result.withdrawals_sum),
-          rewardsSum: parseInt(result.rewards_sum),
-          withdrawableAmount: parseInt(result.withdrawable_amount),
+          controlledAmount: parseInt(result.controlled_amount) || 0,
+          withdrawalsSum: parseInt(result.withdrawals_sum) || 0,
+          rewardsSum: parseInt(result.rewards_sum) || 0,
+          withdrawableAmount: parseInt(result.withdrawable_amount) || 0,
           poolId: result.pool_id,
         }
       : null;
@@ -206,8 +206,8 @@ export class BlockfrostService {
     return result
       ? result.map((r) => {
           return {
-            epoch: parseInt(r.active_epoch),
-            amount: parseInt(r.amount),
+            epoch: parseInt(r.active_epoch) || 0,
+            amount: parseInt(r.amount) || 0,
             poolId: r.pool_id,
           };
         })
@@ -225,8 +225,8 @@ export class BlockfrostService {
     return result
       ? result.map((r) => {
           return {
-            epoch: parseInt(r.epoch),
-            rewards: parseInt(r.amount),
+            epoch: parseInt(r.epoch) || 0,
+            rewards: parseInt(r.amount) || 0,
             poolId: r.pool_id,
           };
         })
@@ -283,9 +283,9 @@ export class BlockfrostService {
     return result && result.length
       ? result.map((t) => ({
           txHash: t.tx_hash,
-          txIndex: parseInt(t.tx_index),
-          blockHeight: parseInt(t.block_height),
-          blockTime: parseInt(t.block_time),
+          txIndex: parseInt(t.tx_index) || 0,
+          blockHeight: parseInt(t.block_height) || 0,
+          blockTime: parseInt(t.block_time) || 0,
         }))
       : null;
   }
@@ -297,20 +297,20 @@ export class BlockfrostService {
       ? {
           txHash: result.hash,
           blockHash: result.block,
-          blockHeight: parseInt(result.block_height),
-          blockTime: parseInt(result.block_time),
-          slot: parseInt(result.slot),
-          index: parseInt(result.index),
-          fees: parseInt(result.fees),
-          deposit: parseInt(result.deposit),
-          withdrawalCount: parseInt(result.withdrawal_count),
-          mirCertCount: parseInt(result.mir_cert_count),
-          delegationCount: parseInt(result.delegation_count),
-          stakeCertCount: parseInt(result.stake_cert_count),
-          poolUpdateCount: parseInt(result.pool_update_count),
-          poolRetireCount: parseInt(result.pool_retire_count),
-          assetMintCount: parseInt(result.asset_mint_or_burn_count),
-          redeemerCount: parseInt(result.redeemer_count),
+          blockHeight: parseInt(result.block_height) || 0,
+          blockTime: parseInt(result.block_time) || 0,
+          slot: parseInt(result.slot) || 0,
+          index: parseInt(result.index) || 0,
+          fees: parseInt(result.fees) || 0,
+          deposit: parseInt(result.deposit) || 0,
+          withdrawalCount: parseInt(result.withdrawal_count) || 0,
+          mirCertCount: parseInt(result.mir_cert_count) || 0,
+          delegationCount: parseInt(result.delegation_count) || 0,
+          stakeCertCount: parseInt(result.stake_cert_count) || 0,
+          poolUpdateCount: parseInt(result.pool_update_count) || 0,
+          poolRetireCount: parseInt(result.pool_retire_count) || 0,
+          assetMintCount: parseInt(result.asset_mint_or_burn_count) || 0,
+          redeemerCount: parseInt(result.redeemer_count) || 0,
           validContract: result.valid_contract,
         }
       : null;
@@ -331,7 +331,7 @@ export class BlockfrostService {
               quantity: ria.quantity,
             })),
             txHash: ri.tx_hash,
-            outputIndex: parseInt(ri.output_index),
+            outputIndex: parseInt(ri.output_index) || 0,
             dataHash: ri.data_hash,
             collateral: ri.collateral,
           })),
@@ -342,7 +342,7 @@ export class BlockfrostService {
               quantity: ria.quantity,
             })),
             txHash: ri.tx_hash,
-            outputIndex: parseInt(ri.output_index),
+            outputIndex: parseInt(ri.output_index) || 0,
           })),
         }
       : null;
@@ -352,9 +352,9 @@ export class BlockfrostService {
     const result = await this.request(`/epochs/latest`);
     return result
       ? {
-          epoch: parseInt(result.epoch),
-          startTime: parseInt(result.start_time),
-          endTime: parseInt(result.end_time),
+          epoch: parseInt(result.epoch) || 0,
+          startTime: parseInt(result.start_time) || 0,
+          endTime: parseInt(result.end_time) || 0,
         }
       : null;
   }
@@ -370,9 +370,9 @@ export class BlockfrostService {
     return result
       ? result.map((r) => {
           return {
-            epoch: parseInt(r.epoch),
-            startTime: parseInt(r.start_time),
-            endTime: parseInt(r.end_time),
+            epoch: parseInt(r.epoch) || 0,
+            startTime: parseInt(r.start_time) || 0,
+            endTime: parseInt(r.end_time) || 0,
           };
         })
       : null;
@@ -417,9 +417,9 @@ export class BlockfrostService {
       if (txInfo) {
         withdrawals.push({
           txHash: tx.tx_hash,
-          block: parseInt(txInfo.block_height),
-          blockTime: parseInt(txInfo.block_time),
-          amount: parseInt(tx.amount),
+          block: parseInt(txInfo.block_height) || 0,
+          blockTime: parseInt(txInfo.block_time) || 0,
+          amount: parseInt(tx.amount) || 0,
         });
       }
     }
