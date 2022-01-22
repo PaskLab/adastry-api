@@ -85,6 +85,7 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
         'epoch.startTime >= :startTime AND epoch.startTime <= :endTime',
         { startTime: firstDay, endTime: lastDay },
       )
+      .orderBy('epoch.startTime', 'ASC')
       .getMany();
   }
 
