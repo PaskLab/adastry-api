@@ -6,12 +6,18 @@ import fs from 'fs';
 import csvWriter = require('csv-writer');
 import { CsvFileInfoType } from './types/csv-file-info.type';
 import { CsvFieldsType } from './types/csv-fields.type';
+import { AssetRepository } from './repositories/asset.repository';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { parseAssetHex } from '../utils/utils';
 
 @Injectable()
 export class CsvService {
   private readonly logger = new Logger(CsvService.name);
   private readonly TMP_PATH = config.app.tmpPath;
   private readonly TMP_TTL = config.app.tmpFileTTL;
+
+  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
 
   async writeFullCSV(
     filename: string,
@@ -118,20 +124,80 @@ export class CsvService {
     });
 
     const records: any = [];
+    const nftCount: { [key: string]: number } = {};
+    const tokenCount: { [key: string]: number } = {};
 
     for (const row of data) {
+      // Koinly doesn't support native assets, replace for wildcards
+      let sentCurrency = row.sentCurrency;
+      let receivedCurrency = row.receivedCurrency;
+      let description = row.description;
+      const realTxHash = row.txHash.slice(-64);
+
+      if (row.sentCurrency.length && row.sentCurrency !== 'ADA') {
+        const asset = await this.em
+          .getCustomRepository(AssetRepository)
+          .findOne({ hexId: row.sentCurrency });
+
+        if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
+          tokenCount[realTxHash] = tokenCount[realTxHash]
+            ? tokenCount[realTxHash] + 1
+            : 1;
+
+          sentCurrency = 'NULL' + tokenCount[realTxHash];
+          description = `(${sentCurrency} = ${
+            parseAssetHex(row.sentCurrency).name
+          }) ${description}`;
+        } else {
+          nftCount[realTxHash] = nftCount[realTxHash]
+            ? nftCount[realTxHash] + 1
+            : 1;
+
+          sentCurrency = 'NFT' + nftCount[realTxHash];
+          description = `(${sentCurrency} = ${
+            parseAssetHex(row.sentCurrency).name
+          }) ${description}`;
+        }
+      }
+
+      if (row.receivedCurrency.length && row.receivedCurrency !== 'ADA') {
+        const asset = await this.em
+          .getCustomRepository(AssetRepository)
+          .findOne({ hexId: row.receivedCurrency });
+
+        if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
+          tokenCount[realTxHash] = tokenCount[realTxHash]
+            ? tokenCount[realTxHash] + 1
+            : 1;
+
+          receivedCurrency = 'NULL' + tokenCount[realTxHash];
+          description = `(${receivedCurrency} = ${
+            parseAssetHex(row.receivedCurrency).name
+          }) ${description}`;
+        } else {
+          nftCount[realTxHash] = nftCount[realTxHash]
+            ? nftCount[realTxHash] + 1
+            : 1;
+
+          receivedCurrency = 'NFT' + nftCount[realTxHash];
+          description = `(${receivedCurrency} = ${
+            parseAssetHex(row.receivedCurrency).name
+          }) ${description}`;
+        }
+      }
+
       const record = {
         date: row.date,
         sentAmount: row.sentAmount,
-        sentCurrency: row.sentCurrency,
+        sentCurrency: sentCurrency,
         receivedAmount: row.receivedAmount,
-        receivedCurrency: row.receivedCurrency,
+        receivedCurrency: receivedCurrency,
         feeAmount: row.feeAmount,
         feeCurrency: row.feeCurrency,
         netWorthAmount: row.netWorthAmount,
         netWorthCurrency: row.netWorthCurrency,
         label: row.label,
-        description: row.description,
+        description: description,
         txHash: row.txHash,
       };
       records.push(record);

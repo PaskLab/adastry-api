@@ -107,7 +107,7 @@ export class TransactionService {
             row.receivedCurrency = 'ADA';
           } else {
             row.receivedAmount = parseInt(received[0].quantity);
-            row.receivedCurrency = parseAssetHex(received[0].unit).name;
+            row.receivedCurrency = received[0].unit;
           }
         }
         if (sent.length) {
@@ -118,7 +118,7 @@ export class TransactionService {
             row.feeCurrency = 'ADA';
           } else {
             row.sentAmount = parseInt(sent[0].quantity);
-            row.sentCurrency = parseAssetHex(sent[0].unit).name;
+            row.sentCurrency = sent[0].unit;
           }
         }
 
@@ -131,11 +131,11 @@ export class TransactionService {
             row.receivedAmount = toAda(parseInt(rx.quantity));
             row.receivedCurrency = 'ADA';
           } else {
-            const unit = parseAssetHex(rx.unit).name;
+            const unit = rx.unit;
             row.receivedAmount = parseInt(rx.quantity);
             row.receivedCurrency = unit;
             row.description = `Subpart of txHash: ${row.txHash}`;
-            row.txHash = `(${unit})${row.txHash}`;
+            row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
           }
           data.push(row);
         }
@@ -147,11 +147,11 @@ export class TransactionService {
             row.feeAmount = toAda(record.fees);
             row.feeCurrency = 'ADA';
           } else {
-            const unit = parseAssetHex(tx.unit).name;
+            const unit = tx.unit;
             row.sentAmount = parseInt(tx.quantity);
             row.sentCurrency = unit;
             row.description = `Subpart of txHash: ${row.txHash}`;
-            row.txHash = `(${unit})${row.txHash}`;
+            row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
           }
           data.push(row);
         }
