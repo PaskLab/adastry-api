@@ -6,20 +6,24 @@ PGSQL_CMD_PATH="/usr/lib/postgresql/14/bin"
 DB_NAME="$2"
 ROLE_NAME="$3"
 DOCKER_CMD="docker exec adastry-postgres bash -c"
-DROP_CMD="$PGSQL_CMD_PATH/dropdb $DB_NAME -U $PGSQL_USER"
-CREATE_CMD="$PGSQL_CMD_PATH/createdb -T template0 -O $ROLE_NAME -U $PGSQL_USER $DB_NAME"
-LOAD_CMD="gunzip -c $DIR/$1 | $PGSQL_CMD_PATH/psql $DB_NAME -U $PGSQL_USER"
+
 
 if [ -z "$1" ]
 then
     echo "You must specify a *.gz file !"
+fi
 if [ -z "$DB_NAME" ]
 then
     echo "You must specify a db name !"
+fi
 if [ -z "$ROLE_NAME" ]
 then
     echo "You must specify a owner name !"
 else
+
+  DROP_CMD="$PGSQL_CMD_PATH/dropdb $DB_NAME -U $PGSQL_USER"
+  CREATE_CMD="$PGSQL_CMD_PATH/createdb -T template0 -O $ROLE_NAME -U $PGSQL_USER $DB_NAME"
+  LOAD_CMD="gunzip -c $DIR/$1 | $PGSQL_CMD_PATH/psql $DB_NAME -U $ROLE_NAME"
 
   # Safety backup
   dbdump $DB_NAME backup
