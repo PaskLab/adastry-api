@@ -161,7 +161,7 @@ export class TxSyncService {
         if (withdraw) {
           txAmounts.push({
             unit: 'lovelace',
-            quantity: withdraw.amount.toString(),
+            quantity: (BigInt(withdraw.amount) * BigInt(-1)).toString(),
           });
           comments.push(`WITHDRAWAL( ${toAda(withdraw.amount)} ADA )`);
         }

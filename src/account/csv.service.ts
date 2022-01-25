@@ -188,15 +188,24 @@ export class CsvService {
 
       const record = {
         date: row.date,
-        sentAmount: row.sentAmount,
+        sentAmount:
+          row.sentAmount.toString() === '0' && row.feeAmount != ''
+            ? row.feeAmount
+            : row.sentAmount, // Handle self transaction
         sentCurrency: sentCurrency,
         receivedAmount: row.receivedAmount,
         receivedCurrency: receivedCurrency,
         feeAmount: row.feeAmount,
-        feeCurrency: row.feeCurrency,
+        feeCurrency:
+          row.sentAmount.toString() === '0' && row.feeAmount != ''
+            ? ''
+            : row.feeCurrency, // Handle self transaction
         netWorthAmount: row.netWorthAmount,
         netWorthCurrency: row.netWorthCurrency,
-        label: row.label,
+        label:
+          row.sentAmount.toString() === '0' && row.feeAmount != ''
+            ? 'Cost'
+            : row.label, // Handle self transaction
         description: description,
         txHash: row.txHash,
       };

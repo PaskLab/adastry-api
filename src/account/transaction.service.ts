@@ -106,18 +106,18 @@ export class TransactionService {
             row.receivedAmount = toAda(parseInt(received[0].quantity));
             row.receivedCurrency = 'ADA';
           } else {
-            row.receivedAmount = parseInt(received[0].quantity);
+            row.receivedAmount = BigInt(received[0].quantity).toString();
             row.receivedCurrency = received[0].unit;
           }
         }
         if (sent.length) {
           if (sent[0].unit === 'lovelace') {
-            row.sentAmount = toAda(parseInt(sent[0].quantity));
+            row.sentAmount = toAda(parseInt(sent[0].quantity) - record.fees);
             row.sentCurrency = 'ADA';
             row.feeAmount = toAda(record.fees);
             row.feeCurrency = 'ADA';
           } else {
-            row.sentAmount = parseInt(sent[0].quantity);
+            row.sentAmount = BigInt(sent[0].quantity).toString();
             row.sentCurrency = sent[0].unit;
           }
         }
@@ -132,7 +132,7 @@ export class TransactionService {
             row.receivedCurrency = 'ADA';
           } else {
             const unit = rx.unit;
-            row.receivedAmount = parseInt(rx.quantity);
+            row.receivedAmount = BigInt(rx.quantity).toString();
             row.receivedCurrency = unit;
             row.description = `Subpart of txHash: ${row.txHash}`;
             row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
@@ -142,13 +142,13 @@ export class TransactionService {
         for (const tx of sent) {
           const row = JSON.parse(JSON.stringify(template));
           if (tx.unit === 'lovelace') {
-            row.sentAmount = toAda(parseInt(tx.quantity));
+            row.sentAmount = toAda(parseInt(tx.quantity) - record.fees);
             row.sentCurrency = 'ADA';
             row.feeAmount = toAda(record.fees);
             row.feeCurrency = 'ADA';
           } else {
             const unit = tx.unit;
-            row.sentAmount = parseInt(tx.quantity);
+            row.sentAmount = BigInt(tx.quantity).toString();
             row.sentCurrency = unit;
             row.description = `Subpart of txHash: ${row.txHash}`;
             row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
