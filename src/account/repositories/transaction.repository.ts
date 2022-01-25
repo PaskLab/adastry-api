@@ -28,8 +28,8 @@ export class TransactionRepository extends Repository<Transaction> {
       .innerJoinAndSelect('addresses.address', 'address')
       .innerJoin(
         'address.account',
-        'account',
-        'account.stakeAddress = :stakeAddress',
+        'addressAccount',
+        'addressAccount.stakeAddress = :stakeAddress',
         { stakeAddress: stakeAddress },
       )
       .where('account.stakeAddress = :stakeAddress', {
