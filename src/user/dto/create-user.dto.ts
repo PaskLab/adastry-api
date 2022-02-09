@@ -2,6 +2,7 @@ import {
   IsAlpha,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Length,
   Matches,
 } from 'class-validator';
@@ -19,7 +20,7 @@ export class CreateUserDto {
     title: 'Full name',
     example: 'Alice',
   })
-  @IsNotEmpty()
+  @IsString()
   name!: string;
 
   @ApiProperty({
