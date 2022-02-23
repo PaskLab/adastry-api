@@ -38,7 +38,7 @@ export class UserAccountRepository extends Repository<UserAccount> {
       .innerJoinAndSelect('userAccount.user', 'user')
       .where('user.id = :userId')
       .setParameter('userId', userId)
-      .orderBy('userAccount.name')
+      .orderBy('userAccount.name', 'ASC')
       .getMany();
   }
 }
