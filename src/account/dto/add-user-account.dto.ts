@@ -3,7 +3,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class AddUserAccountDto {
   @IsNotEmpty()
-  @Matches('^stake[a-z0-9]{54}|addr[a-z0-9]{99}$')
+  @Matches('^stake1[a-z0-9]{53}|addr1[a-z0-9]{98}$', '', {
+    message: 'address must be a valid mainnet payment or stake address',
+  })
   @ApiProperty({
     title: 'Account stake or payment address',
     pattern: '^stake[a-z0-9]{54}|addr[a-z0-9]{99}$',
