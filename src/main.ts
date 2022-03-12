@@ -12,7 +12,7 @@ async function bootstrap() {
     : [];
   app.enableCors({
     origin: function (origin, callback) {
-      if (!origin || whitelist.indexOf(origin) !== -1) {
+      if (!origin || whitelist.indexOf(new URL(origin).hostname) !== -1) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
