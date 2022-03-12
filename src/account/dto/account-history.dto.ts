@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PoolDto } from '../../pool/dto/pool.dto';
 
 export class AccountHistoryDto {
   constructor(props?: AccountHistoryDto) {
@@ -73,11 +74,10 @@ export class AccountHistoryDto {
   withdrawn!: number;
 
   @ApiProperty({
-    oneOf: [{ type: 'string' }, { type: 'null' }],
-    title: 'Epoch delegated to',
-    example: 'pool19f6guwy97mmnxg9dz65rxyj8hq07qxud886hamyu4fgfz7dj9gl',
+    type: PoolDto,
+    nullable: true,
   })
-  pool!: string | null;
+  pool!: PoolDto | null;
 
   @ApiProperty({
     title: 'Is pool owner for the current epoch',

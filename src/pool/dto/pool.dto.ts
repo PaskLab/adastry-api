@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { EpochDto } from '../../epoch/dto/epoch.dto';
 
 export class PoolDto {
   constructor(props?: PoolDto) {
@@ -58,7 +57,6 @@ export class PoolDto {
   isMember!: boolean;
 
   @ApiProperty({
-    type: EpochDto,
     title: 'Last updated epoch',
     nullable: true,
   })

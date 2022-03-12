@@ -27,6 +27,7 @@ import { CsvFieldsType } from './types/csv-fields.type';
 import { SpotRepository } from '../spot/repositories/spot.repository';
 import { RateRepository } from '../spot/repositories/rate.repository';
 import { CsvService } from './csv.service';
+import { PoolDto } from '../pool/dto/pool.dto';
 
 @Injectable()
 export class AccountService {
@@ -93,7 +94,18 @@ export class AccountService {
         opRewards: h.opRewards,
         withdrawable: h.withdrawable,
         withdrawn: h.withdrawn,
-        pool: h.pool ? h.pool.poolId : null,
+        pool: h.pool
+          ? new PoolDto({
+              poolId: h.pool.poolId,
+              name: h.pool.name,
+              blocksMinted: h.pool.blocksMinted,
+              liveStake: h.pool.liveStake,
+              liveSaturation: h.pool.liveSaturation,
+              liveDelegators: h.pool.liveDelegators,
+              epoch: h.pool.epoch ? h.pool.epoch.epoch : null,
+              isMember: h.pool.isMember,
+            })
+          : null,
         owner: h.owner,
         stakeShare: h.stakeShare,
       });
