@@ -28,6 +28,8 @@ import { SpotRepository } from '../spot/repositories/spot.repository';
 import { RateRepository } from '../spot/repositories/rate.repository';
 import { CsvService } from './csv.service';
 import { PoolDto } from '../pool/dto/pool.dto';
+import { AccountHistory } from './entities/account-history.entity';
+import { AccountHistoryListDto } from './dto/account-history-list.dto';
 
 @Injectable()
 export class AccountService {
@@ -78,37 +80,44 @@ export class AccountService {
     }
   }
 
-  async getHistory(params: HistoryQueryType): Promise<AccountHistoryDto[]> {
-    const history = await this.em
+  async getHistory(params: HistoryQueryType): Promise<AccountHistoryListDto> {
+    const history = (await this.em
       .getCustomRepository(AccountHistoryRepository)
-      .findAccountHistory(params);
+      .findAccountHistory(params)) as AccountHistory[];
 
-    return history.map((h) => {
-      return new AccountHistoryDto({
-        account: h.account.stakeAddress,
-        epoch: h.epoch.epoch,
-        activeStake: h.activeStake,
-        balance: h.balance,
-        rewards: h.rewards,
-        revisedRewards: h.revisedRewards,
-        opRewards: h.opRewards,
-        withdrawable: h.withdrawable,
-        withdrawn: h.withdrawn,
-        pool: h.pool
-          ? new PoolDto({
-              poolId: h.pool.poolId,
-              name: h.pool.name,
-              blocksMinted: h.pool.blocksMinted,
-              liveStake: h.pool.liveStake,
-              liveSaturation: h.pool.liveSaturation,
-              liveDelegators: h.pool.liveDelegators,
-              epoch: h.pool.epoch ? h.pool.epoch.epoch : null,
-              isMember: h.pool.isMember,
-            })
-          : null,
-        owner: h.owner,
-        stakeShare: h.stakeShare,
-      });
+    const count = (await this.em
+      .getCustomRepository(AccountHistoryRepository)
+      .findAccountHistory(params, true)) as number;
+
+    return new AccountHistoryListDto({
+      count: count,
+      data: history.map((h) => {
+        return new AccountHistoryDto({
+          account: h.account.stakeAddress,
+          epoch: h.epoch.epoch,
+          activeStake: h.activeStake,
+          balance: h.balance,
+          rewards: h.rewards,
+          revisedRewards: h.revisedRewards,
+          opRewards: h.opRewards,
+          withdrawable: h.withdrawable,
+          withdrawn: h.withdrawn,
+          pool: h.pool
+            ? new PoolDto({
+                poolId: h.pool.poolId,
+                name: h.pool.name,
+                blocksMinted: h.pool.blocksMinted,
+                liveStake: h.pool.liveStake,
+                liveSaturation: h.pool.liveSaturation,
+                liveDelegators: h.pool.liveDelegators,
+                epoch: h.pool.epoch ? h.pool.epoch.epoch : null,
+                isMember: h.pool.isMember,
+              })
+            : null,
+          owner: h.owner,
+          stakeShare: h.stakeShare,
+        });
+      }),
     });
   }
 

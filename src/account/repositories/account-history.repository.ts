@@ -35,22 +35,18 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
 
   async findAccountHistory(
     params: HistoryQueryType,
-  ): Promise<AccountHistory[]> {
+    count?: boolean,
+  ): Promise<AccountHistory[] | number> {
     const qb = this.createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .leftJoinAndSelect('history.pool', 'pool')
       .where('account.stakeAddress = :stakeAddress')
       .setParameter('stakeAddress', params.stakeAddress)
-      .limit(this.MAX_LIMIT)
       .orderBy('epoch.epoch', 'DESC');
 
     if (params.order) {
       qb.orderBy('epoch.epoch', params.order);
-    }
-
-    if (params.limit) {
-      qb.limit(params.limit);
     }
 
     if (params.page) {
@@ -67,6 +63,10 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       }
       qb.setParameter('from', params.from);
     }
+
+    if (count) return qb.getCount();
+
+    qb.limit(params.limit ? params.limit : this.MAX_LIMIT);
 
     return qb.getMany();
   }

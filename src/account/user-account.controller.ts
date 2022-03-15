@@ -25,7 +25,6 @@ import {
 import { AccountDto } from './dto/account.dto';
 import { UpdateUserAccountDto } from './dto/update-user-account.dto';
 import { ResponseDto } from '../utils/dto/response.dto';
-import { AccountHistoryDto } from './dto/account-history.dto';
 import { StakeAddressParam } from '../utils/params/stake-address.param';
 import { HistoryParam } from '../utils/params/history.param';
 import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
@@ -41,6 +40,7 @@ import config from '../../config.json';
 import { TransactionDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 import { TxHistoryParam } from './params/tx-history.param';
+import { AccountHistoryListDto } from './dto/account-history-list.dto';
 
 @ApiTags('User Account')
 @Controller('account')
@@ -136,12 +136,12 @@ export class UserAccountController {
   @Get(':stakeAddress/history')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: [AccountHistoryDto] })
+  @ApiOkResponse({ type: AccountHistoryListDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async accountHistory(
     @Param() param: StakeAddressParam,
     @Query() query: HistoryParam,
-  ): Promise<AccountHistoryDto[]> {
+  ): Promise<AccountHistoryListDto> {
     return this.accountService.getHistory({ ...param, ...query });
   }
 
