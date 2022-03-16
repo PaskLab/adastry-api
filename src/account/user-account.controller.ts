@@ -40,7 +40,7 @@ import config from '../../config.json';
 import { TransactionDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 import { TxHistoryParam } from './params/tx-history.param';
-import { AccountHistoryListDto } from './dto/account-history-list.dto';
+import { AccountHistoryListDto } from './dto/account-history.dto';
 
 @ApiTags('User Account')
 @Controller('account')

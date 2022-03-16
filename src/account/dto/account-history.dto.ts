@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PoolDto } from '../../pool/dto/pool.dto';
+import { ListAbstract } from './list.abstract';
 
 export class AccountHistoryDto {
   constructor(props?: AccountHistoryDto) {
@@ -90,4 +91,20 @@ export class AccountHistoryDto {
     example: 0.75,
   })
   stakeShare!: number;
+}
+
+export class AccountHistoryListDto extends ListAbstract {
+  constructor(props?: AccountHistoryListDto) {
+    super();
+    if (props) {
+      this.count = props.count;
+      this.data = props.data;
+    }
+  }
+
+  @ApiProperty({
+    type: [AccountHistoryDto],
+    nullable: true,
+  })
+  data!: AccountHistoryDto[];
 }

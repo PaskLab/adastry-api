@@ -29,7 +29,7 @@ import { RateRepository } from '../spot/repositories/rate.repository';
 import { CsvService } from './csv.service';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountHistory } from './entities/account-history.entity';
-import { AccountHistoryListDto } from './dto/account-history-list.dto';
+import { AccountHistoryListDto } from './dto/account-history.dto';
 
 @Injectable()
 export class AccountService {
