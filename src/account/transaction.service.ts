@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { TransactionDto, TransactionListDto } from './dto/transaction.dto';
+import {
+  BlockfrostAmountDto,
+  TransactionDto,
+  TransactionListDto,
+} from './dto/transaction.dto';
 import { TxHistoryParam } from './params/tx-history.param';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { Request } from 'express';
@@ -45,8 +49,14 @@ export class TransactionService {
           txIndex: h.txIndex,
           blockHeight: h.blockHeight,
           blockTime: h.blockTime,
-          received: JSON.parse(h.received),
-          sent: JSON.parse(h.sent),
+          received: JSON.parse(h.received).map(
+            (v) =>
+              new BlockfrostAmountDto({ unit: v.unit, quantity: v.quantity }),
+          ),
+          sent: JSON.parse(h.sent).map(
+            (v) =>
+              new BlockfrostAmountDto({ unit: v.unit, quantity: v.quantity }),
+          ),
           fees: h.fees,
           deposit: h.deposit,
           withdrawalCount: h.withdrawalCount,

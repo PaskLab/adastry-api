@@ -1,6 +1,27 @@
-import { BlockfrostAmount } from '../../utils/api/types/transaction-outputs.type';
 import { ApiProperty } from '@nestjs/swagger';
 import { ListAbstract } from './list.abstract';
+
+export class BlockfrostAmountDto {
+  constructor(props?: BlockfrostAmountDto) {
+    if (props) {
+      this.unit = props.unit;
+      this.quantity = props.quantity;
+    }
+  }
+
+  @ApiProperty({
+    title: 'Asset name',
+    example:
+      'bb024f986a145377d4767a2dbbadaaa630bb76c741c8efc6479dbb9e5363686d65636b6c63',
+  })
+  unit!: string;
+
+  @ApiProperty({
+    title: 'Asset Quantity',
+    example: '1',
+  })
+  quantity!: string;
+}
 
 export class TransactionDto {
   constructor(props?: TransactionDto) {
@@ -62,13 +83,15 @@ export class TransactionDto {
 
   @ApiProperty({
     title: 'Assets amount received',
+    type: [BlockfrostAmountDto],
   })
-  received!: BlockfrostAmount[];
+  received!: BlockfrostAmountDto[];
 
   @ApiProperty({
     title: 'Assets amount sent',
+    type: [BlockfrostAmountDto],
   })
-  sent!: BlockfrostAmount[];
+  sent!: BlockfrostAmountDto[];
 
   @ApiProperty({
     title: 'Transaction fees',
