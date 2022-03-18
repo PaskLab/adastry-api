@@ -21,7 +21,8 @@ export class TransactionRepository extends Repository<Transaction> {
   async findHistory(
     stakeAddress: string,
     params: TxHistoryParam,
-  ): Promise<Transaction[]> {
+    count?: boolean,
+  ): Promise<Transaction[] | number> {
     const qb = this.createQueryBuilder('transaction')
       .innerJoin('transaction.account', 'account')
       .innerJoinAndSelect('transaction.addresses', 'addresses')
@@ -35,7 +36,6 @@ export class TransactionRepository extends Repository<Transaction> {
       .where('account.stakeAddress = :stakeAddress', {
         stakeAddress: stakeAddress,
       })
-      .limit(this.MAX_LIMIT)
       .orderBy({
         'transaction.blockTime': 'DESC',
         'transaction.txIndex': 'DESC',
@@ -65,6 +65,10 @@ export class TransactionRepository extends Repository<Transaction> {
     if (params.to) {
       qb.andWhere('transaction.blockTime <= :to', { to: params.to });
     }
+
+    if (count) return qb.getCount();
+
+    qb.limit(params.limit ? params.limit : this.MAX_LIMIT);
 
     return qb.getMany();
   }

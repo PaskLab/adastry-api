@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { TransactionDto } from './dto/transaction.dto';
+import { TransactionDto, TransactionListDto } from './dto/transaction.dto';
 import { TxHistoryParam } from './params/tx-history.param';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { Request } from 'express';
@@ -15,6 +15,7 @@ import {
   toAda,
 } from '../utils/utils';
 import { CsvService } from './csv.service';
+import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionService {
@@ -26,34 +27,41 @@ export class TransactionService {
   async getHistory(
     stakeAddress: string,
     params: TxHistoryParam,
-  ): Promise<TransactionDto[]> {
-    const history = await this.em
+  ): Promise<TransactionListDto> {
+    const history = (await this.em
       .getCustomRepository(TransactionRepository)
-      .findHistory(stakeAddress, params);
+      .findHistory(stakeAddress, params)) as Transaction[];
 
-    return history.map((h) => {
-      return new TransactionDto({
-        addresses: h.addresses.map((a) => a.address.address),
-        txHash: h.txHash,
-        txIndex: h.txIndex,
-        blockHeight: h.blockHeight,
-        blockTime: h.blockTime,
-        received: JSON.parse(h.received),
-        sent: JSON.parse(h.sent),
-        fees: h.fees,
-        deposit: h.deposit,
-        withdrawalCount: h.withdrawalCount,
-        mirCertCount: h.mirCertCount,
-        delegationCount: h.delegationCount,
-        stakeCertCount: h.stakeCertCount,
-        poolUpdateCount: h.poolUpdateCount,
-        poolRetireCount: h.poolRetireCount,
-        assetMintCount: h.assetMintCount,
-        redeemerCount: h.redeemerCount,
-        validContract: h.validContract,
-        tags: JSON.parse(h.tags),
-        needReview: h.needReview,
-      });
+    const count = (await this.em
+      .getCustomRepository(TransactionRepository)
+      .findHistory(stakeAddress, params, true)) as number;
+
+    return new TransactionListDto({
+      count: count,
+      data: history.map((h) => {
+        return new TransactionDto({
+          addresses: h.addresses.map((a) => a.address.address),
+          txHash: h.txHash,
+          txIndex: h.txIndex,
+          blockHeight: h.blockHeight,
+          blockTime: h.blockTime,
+          received: JSON.parse(h.received),
+          sent: JSON.parse(h.sent),
+          fees: h.fees,
+          deposit: h.deposit,
+          withdrawalCount: h.withdrawalCount,
+          mirCertCount: h.mirCertCount,
+          delegationCount: h.delegationCount,
+          stakeCertCount: h.stakeCertCount,
+          poolUpdateCount: h.poolUpdateCount,
+          poolRetireCount: h.poolRetireCount,
+          assetMintCount: h.assetMintCount,
+          redeemerCount: h.redeemerCount,
+          validContract: h.validContract,
+          tags: JSON.parse(h.tags),
+          needReview: h.needReview,
+        });
+      }),
     });
   }
 

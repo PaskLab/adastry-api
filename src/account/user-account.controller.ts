@@ -37,7 +37,7 @@ import { YearParam } from './params/year.param';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { CsvFormatParam } from './params/csv-format.param';
 import config from '../../config.json';
-import { TransactionDto } from './dto/transaction.dto';
+import { TransactionListDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 import { TxHistoryParam } from './params/tx-history.param';
 import { AccountHistoryListDto } from './dto/account-history.dto';
@@ -148,12 +148,12 @@ export class UserAccountController {
   @Get(':stakeAddress/transactions')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: [TransactionDto] })
+  @ApiOkResponse({ type: TransactionListDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async accountTransactions(
     @Param() param: StakeAddressParam,
     @Query() query: TxHistoryParam,
-  ): Promise<TransactionDto[]> {
+  ): Promise<TransactionListDto> {
     return this.transactionService.getHistory(param.stakeAddress, query);
   }
 

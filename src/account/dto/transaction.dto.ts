@@ -1,5 +1,6 @@
 import { BlockfrostAmount } from '../../utils/api/types/transaction-outputs.type';
 import { ApiProperty } from '@nestjs/swagger';
+import { ListAbstract } from './list.abstract';
 
 export class TransactionDto {
   constructor(props?: TransactionDto) {
@@ -146,4 +147,20 @@ export class TransactionDto {
     example: true,
   })
   needReview!: boolean;
+}
+
+export class TransactionListDto extends ListAbstract {
+  constructor(props?: TransactionListDto) {
+    super();
+    if (props) {
+      this.count = props.count;
+      this.data = props.data;
+    }
+  }
+
+  @ApiProperty({
+    type: [TransactionDto],
+    nullable: true,
+  })
+  data!: TransactionDto[];
 }
