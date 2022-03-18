@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PoolDto } from '../../pool/dto/pool.dto';
 import { ListAbstract } from './list.abstract';
+import { EpochDto } from '../../epoch/dto/epoch.dto';
 
 export class AccountHistoryDto {
   constructor(props?: AccountHistoryDto) {
@@ -28,9 +29,9 @@ export class AccountHistoryDto {
 
   @ApiProperty({
     title: 'History epoch',
-    example: 208,
+    type: EpochDto,
   })
-  epoch!: number;
+  epoch!: EpochDto;
 
   @ApiProperty({
     title: 'Epoch account active stake',

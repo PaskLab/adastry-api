@@ -30,6 +30,7 @@ import { CsvService } from './csv.service';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountHistory } from './entities/account-history.entity';
 import { AccountHistoryListDto } from './dto/account-history.dto';
+import { EpochDto } from '../epoch/dto/epoch.dto';
 
 @Injectable()
 export class AccountService {
@@ -94,7 +95,11 @@ export class AccountService {
       data: history.map((h) => {
         return new AccountHistoryDto({
           account: h.account.stakeAddress,
-          epoch: h.epoch.epoch,
+          epoch: new EpochDto({
+            epoch: h.epoch.epoch,
+            startTime: h.epoch.startTime,
+            endTime: h.epoch.endTime,
+          }),
           activeStake: h.activeStake,
           balance: h.balance,
           rewards: h.rewards,
