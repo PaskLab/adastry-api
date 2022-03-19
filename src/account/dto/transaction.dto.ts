@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ListAbstract } from './list.abstract';
+import { ListAbstract } from '../../utils/dto/list.abstract';
 
 export class BlockfrostAmountDto {
   constructor(props?: BlockfrostAmountDto) {
@@ -183,7 +183,6 @@ export class TransactionListDto extends ListAbstract {
 
   @ApiProperty({
     type: [TransactionDto],
-    nullable: true,
   })
   data!: TransactionDto[];
 }

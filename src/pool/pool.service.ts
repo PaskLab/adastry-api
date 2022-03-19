@@ -5,11 +5,11 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { PoolCertRepository } from './repositories/pool-cert.repository';
 import { PoolRepository } from './repositories/pool.repository';
-import { PoolDto } from './dto/pool.dto';
+import { PoolDto, PoolListDto } from './dto/pool.dto';
 import { PageParam } from '../utils/params/page.param';
 import { HistoryQueryType } from './types/history-query.type';
 import { PoolHistoryRepository } from './repositories/pool-history.repository';
-import { PoolHistoryDto } from './dto/pool-history.dto';
+import { PoolHistoryDto, PoolHistoryListDto } from './dto/pool-history.dto';
 
 @Injectable()
 export class PoolService {
@@ -33,22 +33,25 @@ export class PoolService {
     );
   }
 
-  async getMemberPools(query: PageParam): Promise<PoolDto[]> {
+  async getMemberPools(query: PageParam): Promise<PoolListDto> {
     const pools = await this.em
       .getCustomRepository(PoolRepository)
       .findMembers(query);
 
-    return pools.map((p) => {
-      return new PoolDto({
-        poolId: p.poolId,
-        name: p.name,
-        blocksMinted: p.blocksMinted,
-        liveStake: p.liveStake,
-        liveSaturation: p.liveSaturation,
-        liveDelegators: p.liveDelegators,
-        isMember: p.isMember,
-        epoch: p.epoch ? p.epoch.epoch : null,
-      });
+    return new PoolListDto({
+      count: pools[1],
+      data: pools[0].map((p) => {
+        return new PoolDto({
+          poolId: p.poolId,
+          name: p.name,
+          blocksMinted: p.blocksMinted,
+          liveStake: p.liveStake,
+          liveSaturation: p.liveSaturation,
+          liveDelegators: p.liveDelegators,
+          isMember: p.isMember,
+          epoch: p.epoch ? p.epoch.epoch : null,
+        });
+      }),
     });
   }
 
@@ -73,24 +76,27 @@ export class PoolService {
     });
   }
 
-  async getPoolHistory(params: HistoryQueryType): Promise<PoolHistoryDto[]> {
+  async getPoolHistory(params: HistoryQueryType): Promise<PoolHistoryListDto> {
     const history = await this.em
       .getCustomRepository(PoolHistoryRepository)
       .findPoolHistory(params);
 
-    return history.map((h) => {
-      return new PoolHistoryDto({
-        epoch: h.epoch.epoch,
-        rewards: h.rewards,
-        fees: h.fees,
-        blocks: h.blocks,
-        activeStake: h.activeStake,
-        owners: h.cert.owners.map((owner) => owner.account.stakeAddress),
-        rewardAccount: h.cert.rewardAccount.stakeAddress,
-        margin: h.cert.margin,
-        fixed: h.cert.fixed,
-        active: h.cert.active,
-      });
+    return new PoolHistoryListDto({
+      count: history[1],
+      data: history[0].map((h) => {
+        return new PoolHistoryDto({
+          epoch: h.epoch.epoch,
+          rewards: h.rewards,
+          fees: h.fees,
+          blocks: h.blocks,
+          activeStake: h.activeStake,
+          owners: h.cert.owners.map((owner) => owner.account.stakeAddress),
+          rewardAccount: h.cert.rewardAccount.stakeAddress,
+          margin: h.cert.margin,
+          fixed: h.cert.fixed,
+          active: h.cert.active,
+        });
+      }),
     });
   }
 }

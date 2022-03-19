@@ -28,7 +28,6 @@ import { SpotRepository } from '../spot/repositories/spot.repository';
 import { RateRepository } from '../spot/repositories/rate.repository';
 import { CsvService } from './csv.service';
 import { PoolDto } from '../pool/dto/pool.dto';
-import { AccountHistory } from './entities/account-history.entity';
 import { AccountHistoryListDto } from './dto/account-history.dto';
 import { EpochDto } from '../epoch/dto/epoch.dto';
 
@@ -82,17 +81,13 @@ export class AccountService {
   }
 
   async getHistory(params: HistoryQueryType): Promise<AccountHistoryListDto> {
-    const history = (await this.em
+    const history = await this.em
       .getCustomRepository(AccountHistoryRepository)
-      .findAccountHistory(params)) as AccountHistory[];
-
-    const count = (await this.em
-      .getCustomRepository(AccountHistoryRepository)
-      .findAccountHistory(params, true)) as number;
+      .findAccountHistory(params);
 
     return new AccountHistoryListDto({
-      count: count,
-      data: history.map((h) => {
+      count: history[1],
+      data: history[0].map((h) => {
         return new AccountHistoryDto({
           account: h.account.stakeAddress,
           epoch: new EpochDto({

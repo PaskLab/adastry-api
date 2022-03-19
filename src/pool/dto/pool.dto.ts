@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ListAbstract } from '../../utils/dto/list.abstract';
 
 export class PoolDto {
   constructor(props?: PoolDto) {
@@ -61,4 +62,19 @@ export class PoolDto {
     nullable: true,
   })
   epoch!: number | null;
+}
+
+export class PoolListDto extends ListAbstract {
+  constructor(props?: PoolListDto) {
+    super();
+    if (props) {
+      this.count = props.count;
+      this.data = props.data;
+    }
+  }
+
+  @ApiProperty({
+    type: [PoolDto],
+  })
+  data!: PoolDto[];
 }

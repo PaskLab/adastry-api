@@ -21,10 +21,10 @@ export class SpotRepository extends Repository<Spot> {
       .getOne();
   }
 
-  async findPriceHistory(params: HistoryParam): Promise<Spot[]> {
+  async findPriceHistory(params: HistoryParam): Promise<[Spot[], number]> {
     const qb = this.createQueryBuilder('spot')
       .innerJoinAndSelect('spot.epoch', 'epoch')
-      .limit(this.MAX_LIMIT)
+      .take(this.MAX_LIMIT)
       .orderBy('epoch.epoch', 'DESC');
 
     if (params.order) {
@@ -32,11 +32,11 @@ export class SpotRepository extends Repository<Spot> {
     }
 
     if (params.limit) {
-      qb.limit(params.limit);
+      qb.take(params.limit);
     }
 
     if (params.page) {
-      qb.offset(
+      qb.skip(
         (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
       );
     }
@@ -50,6 +50,6 @@ export class SpotRepository extends Repository<Spot> {
       qb.setParameter('from', params.from);
     }
 
-    return qb.getMany();
+    return qb.getManyAndCount();
   }
 }

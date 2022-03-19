@@ -31,7 +31,9 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
       .getOne();
   }
 
-  async findPoolHistory(params: HistoryQueryType): Promise<PoolHistory[]> {
+  async findPoolHistory(
+    params: HistoryQueryType,
+  ): Promise<[PoolHistory[], number]> {
     const qb = this.createQueryBuilder('history')
       .innerJoinAndSelect('history.pool', 'pool')
       .innerJoinAndSelect('history.epoch', 'epoch')
@@ -41,7 +43,7 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
       .innerJoinAndSelect('owners.account', 'ownerAccount')
       .where('pool.poolId = :poolId')
       .setParameter('poolId', params.poolId)
-      .limit(this.MAX_LIMIT)
+      .take(this.MAX_LIMIT)
       .orderBy('epoch', 'DESC');
 
     if (params.order) {
@@ -49,11 +51,11 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
     }
 
     if (params.limit) {
-      qb.limit(params.limit);
+      qb.take(params.limit);
     }
 
     if (params.page) {
-      qb.offset(
+      qb.skip(
         (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
       );
     }
@@ -67,7 +69,7 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
       qb.setParameter('from', params.from);
     }
 
-    return qb.getMany();
+    return qb.getManyAndCount();
   }
 
   async findUnprocessed(poolId: string): Promise<PoolHistory[]> {

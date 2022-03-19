@@ -35,8 +35,7 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
 
   async findAccountHistory(
     params: HistoryQueryType,
-    count?: boolean,
-  ): Promise<AccountHistory[] | number> {
+  ): Promise<[AccountHistory[], number]> {
     const qb = this.createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')
@@ -49,12 +48,6 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       qb.orderBy('epoch.epoch', params.order);
     }
 
-    if (params.page) {
-      qb.offset(
-        (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
-      );
-    }
-
     if (params.from) {
       if (params.order && params.order === 'ASC') {
         qb.andWhere('epoch.epoch >= :from');
@@ -64,11 +57,15 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       qb.setParameter('from', params.from);
     }
 
-    if (count) return qb.getCount();
+    qb.take(params.limit ? params.limit : this.MAX_LIMIT);
 
-    qb.limit(params.limit ? params.limit : this.MAX_LIMIT);
+    if (params.page) {
+      qb.skip(
+        (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
+      );
+    }
 
-    return qb.getMany();
+    return qb.getManyAndCount();
   }
 
   findByYear(stakeAddress: string, year: number): Promise<AccountHistory[]> {

@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { EpochService } from './epoch.service';
-import { EpochDto } from './dto/epoch.dto';
+import { EpochDto, EpochListDto } from './dto/epoch.dto';
 import {
   ApiBearerAuth,
   ApiNotFoundResponse,
@@ -29,8 +29,8 @@ export class EpochController {
   @Get('history')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: [EpochDto] })
-  epochHistory(@Query() query: HistoryParam): Promise<EpochDto[]> {
+  @ApiOkResponse({ type: EpochListDto })
+  epochHistory(@Query() query: HistoryParam): Promise<EpochListDto> {
     return this.epochService.getHistory(query);
   }
 

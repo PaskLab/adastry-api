@@ -22,24 +22,22 @@ export class PoolRepository extends Repository<Pool> {
       .getMany();
   }
 
-  async findMembers(query: PageParam): Promise<Pool[]> {
+  async findMembers(query: PageParam): Promise<[Pool[], number]> {
     const qb = this.createQueryBuilder('pool')
       .leftJoinAndSelect('pool.epoch', 'epoch')
       .where('pool.isMember = TRUE')
-      .limit(this.MAX_LIMIT)
+      .take(this.MAX_LIMIT)
       .orderBy('pool.name', 'ASC');
 
     if (query.limit) {
-      qb.limit(query.limit);
+      qb.take(query.limit);
     }
 
     if (query.page) {
-      qb.offset(
-        (query.page - 1) * (query.limit ? query.limit : this.MAX_LIMIT),
-      );
+      qb.skip((query.page - 1) * (query.limit ? query.limit : this.MAX_LIMIT));
     }
 
-    return qb.getMany();
+    return qb.getManyAndCount();
   }
 
   async findOptOutMembers(poolIds: string[]): Promise<Pool[]> {

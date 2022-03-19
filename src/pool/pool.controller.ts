@@ -8,12 +8,12 @@ import {
 } from '@nestjs/swagger';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { PoolDto } from './dto/pool.dto';
+import { PoolDto, PoolListDto } from './dto/pool.dto';
 import { PageParam } from '../utils/params/page.param';
 import { PoolIdParam } from '../utils/params/pool-id.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { HistoryParam } from '../utils/params/history.param';
-import { PoolHistoryDto } from './dto/pool-history.dto';
+import { PoolHistoryListDto } from './dto/pool-history.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Pool')
@@ -27,8 +27,8 @@ export class PoolController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: [PoolDto], description: 'Return member pools' })
-  list(@Query() query: PageParam): Promise<PoolDto[]> {
+  @ApiOkResponse({ type: PoolListDto, description: 'Return member pools' })
+  list(@Query() query: PageParam): Promise<PoolListDto> {
     return this.poolService.getMemberPools(query);
   }
 
@@ -44,12 +44,12 @@ export class PoolController {
   @Get(':poolId/history')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: [PoolHistoryDto] })
+  @ApiOkResponse({ type: PoolHistoryListDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   poolHistory(
     @Param() param: PoolIdParam,
     @Query() query: HistoryParam,
-  ): Promise<PoolHistoryDto[]> {
+  ): Promise<PoolHistoryListDto> {
     return this.poolService.getPoolHistory({ ...param, ...query });
   }
 }

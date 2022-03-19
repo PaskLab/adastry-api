@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ListAbstract } from '../../utils/dto/list.abstract';
 
 export class RateDto {
   constructor(props: RateDto) {
@@ -19,4 +20,19 @@ export class RateDto {
     example: 1.159676,
   })
   rate!: number;
+}
+
+export class RateListDto extends ListAbstract {
+  constructor(props?: RateListDto) {
+    super();
+    if (props) {
+      this.count = props.count;
+      this.data = props.data;
+    }
+  }
+
+  @ApiProperty({
+    type: [RateDto],
+  })
+  data!: RateDto[];
 }

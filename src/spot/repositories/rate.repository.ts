@@ -33,12 +33,12 @@ export class RateRepository extends Repository<Rate> {
       .getOne();
   }
 
-  async findRateHistory(params: RateHistoryType): Promise<Rate[]> {
+  async findRateHistory(params: RateHistoryType): Promise<[Rate[], number]> {
     const qb = this.createQueryBuilder('rate')
       .innerJoinAndSelect('rate.currency', 'currency')
       .innerJoinAndSelect('rate.epoch', 'epoch')
       .where('currency.code = :code', { code: params.code })
-      .limit(this.MAX_LIMIT)
+      .take(this.MAX_LIMIT)
       .orderBy('epoch.epoch', 'DESC');
 
     if (params.order) {
@@ -46,11 +46,11 @@ export class RateRepository extends Repository<Rate> {
     }
 
     if (params.limit) {
-      qb.limit(params.limit);
+      qb.take(params.limit);
     }
 
     if (params.page) {
-      qb.offset(
+      qb.skip(
         (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
       );
     }
@@ -64,6 +64,6 @@ export class RateRepository extends Repository<Rate> {
       qb.setParameter('from', params.from);
     }
 
-    return qb.getMany();
+    return qb.getManyAndCount();
   }
 }

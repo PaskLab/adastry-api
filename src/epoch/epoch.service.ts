@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { EpochDto } from './dto/epoch.dto';
+import { EpochDto, EpochListDto } from './dto/epoch.dto';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { EpochRepository } from './repositories/epoch.repository';
@@ -43,19 +43,22 @@ export class EpochService {
     return epochDto;
   }
 
-  async getHistory(query: HistoryParam): Promise<EpochDto[]> {
+  async getHistory(query: HistoryParam): Promise<EpochListDto> {
     const history = await this.em
       .getCustomRepository(EpochRepository)
       .findEpochHistory(query);
 
-    return history.map((h) => {
-      const dto = new EpochDto();
+    return new EpochListDto({
+      count: history[1],
+      data: history[0].map((h) => {
+        const dto = new EpochDto();
 
-      dto.epoch = h.epoch;
-      dto.startTime = h.startTime;
-      dto.endTime = h.endTime;
+        dto.epoch = h.epoch;
+        dto.startTime = h.startTime;
+        dto.endTime = h.endTime;
 
-      return dto;
+        return dto;
+      }),
     });
   }
 }

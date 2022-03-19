@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ListAbstract } from '../../utils/dto/list.abstract';
 
 export class PoolHistoryDto {
   constructor(props: PoolHistoryDto) {
@@ -76,4 +77,19 @@ export class PoolHistoryDto {
     example: true,
   })
   active!: boolean;
+}
+
+export class PoolHistoryListDto extends ListAbstract {
+  constructor(props?: PoolHistoryListDto) {
+    super();
+    if (props) {
+      this.count = props.count;
+      this.data = props.data;
+    }
+  }
+
+  @ApiProperty({
+    type: [PoolHistoryDto],
+  })
+  data!: PoolHistoryDto[];
 }

@@ -14,7 +14,7 @@ export class EpochRepository extends Repository<Epoch> {
       .getOne();
   }
 
-  async findEpochHistory(params: HistoryParam): Promise<Epoch[]> {
+  async findEpochHistory(params: HistoryParam): Promise<[Epoch[], number]> {
     const qb = this.createQueryBuilder('epoch');
 
     if (params.order) {
@@ -24,13 +24,13 @@ export class EpochRepository extends Repository<Epoch> {
     }
 
     if (params.limit) {
-      qb.limit(params.limit);
+      qb.take(params.limit);
     } else {
-      qb.limit(this.MAX_LIMIT);
+      qb.take(this.MAX_LIMIT);
     }
 
     if (params.page) {
-      qb.offset(
+      qb.skip(
         (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
       );
     }
@@ -44,7 +44,7 @@ export class EpochRepository extends Repository<Epoch> {
       qb.setParameter('from', params.from);
     }
 
-    return qb.getMany();
+    return qb.getManyAndCount();
   }
 
   async findFromTime(time: number): Promise<Epoch | undefined> {

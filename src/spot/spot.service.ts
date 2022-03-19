@@ -4,10 +4,10 @@ import { EntityManager } from 'typeorm';
 import { CurrencyRepository } from './repositories/currency.repository';
 import { CurrencyDto } from './dto/currency.dto';
 import { RateRepository } from './repositories/rate.repository';
-import { RateDto } from './dto/rate.dto';
+import { RateDto, RateListDto } from './dto/rate.dto';
 import { RateHistoryType } from './types/rate-history.type';
 import { SpotRepository } from './repositories/spot.repository';
-import { SpotDto } from './dto/spot.dto';
+import { SpotDto, SpotListDto } from './dto/spot.dto';
 import { HistoryParam } from '../utils/params/history.param';
 
 @Injectable()
@@ -48,14 +48,17 @@ export class SpotService {
     return new RateDto({ epoch: rate.epoch.epoch, rate: rate.rate });
   }
 
-  async getRateHistory(params: RateHistoryType): Promise<RateDto[]> {
+  async getRateHistory(params: RateHistoryType): Promise<RateListDto> {
     const rates = await this.em
       .getCustomRepository(RateRepository)
       .findRateHistory(params);
 
-    return rates.map(
-      (r) => new RateDto({ epoch: r.epoch.epoch, rate: r.rate }),
-    );
+    return new RateListDto({
+      count: rates[1],
+      data: rates[0].map(
+        (r) => new RateDto({ epoch: r.epoch.epoch, rate: r.rate }),
+      ),
+    });
   }
 
   async getLastPrice(code?: string): Promise<SpotDto> {
@@ -87,18 +90,23 @@ export class SpotService {
   async getPriceHistory(
     params: HistoryParam,
     code?: string,
-  ): Promise<SpotDto[]> {
-    const prices = await this.em
+  ): Promise<SpotListDto> {
+    const pricesAndCount = await this.em
       .getCustomRepository(SpotRepository)
       .findPriceHistory(params);
 
+    const count = pricesAndCount[1];
+    const prices = pricesAndCount[0];
+
     if (code) {
-      const rates = await this.em
+      const ratesAndCount = await this.em
         .getCustomRepository(RateRepository)
         .findRateHistory({
           code: code,
           ...params,
         });
+
+      const rates = ratesAndCount[0];
 
       for (const price of prices) {
         const rate = rates.find(
@@ -115,8 +123,11 @@ export class SpotService {
       }
     }
 
-    return prices.map(
-      (p) => new SpotDto({ epoch: p.epoch.epoch, price: p.price }),
-    );
+    return new SpotListDto({
+      count: count,
+      data: prices.map(
+        (p) => new SpotDto({ epoch: p.epoch.epoch, price: p.price }),
+      ),
+    });
   }
 }

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ListAbstract } from '../../utils/dto/list.abstract';
 
 export class EpochDto {
   constructor(props?: EpochDto) {
@@ -28,4 +29,19 @@ export class EpochDto {
     example: 1597355091,
   })
   endTime!: number;
+}
+
+export class EpochListDto extends ListAbstract {
+  constructor(props?: EpochListDto) {
+    super();
+    if (props) {
+      this.count = props.count;
+      this.data = props.data;
+    }
+  }
+
+  @ApiProperty({
+    type: [EpochDto],
+  })
+  data!: EpochDto[];
 }

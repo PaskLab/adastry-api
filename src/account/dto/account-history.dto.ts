@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PoolDto } from '../../pool/dto/pool.dto';
-import { ListAbstract } from './list.abstract';
+import { ListAbstract } from '../../utils/dto/list.abstract';
 import { EpochDto } from '../../epoch/dto/epoch.dto';
 
 export class AccountHistoryDto {
@@ -105,7 +105,6 @@ export class AccountHistoryListDto extends ListAbstract {
 
   @ApiProperty({
     type: [AccountHistoryDto],
-    nullable: true,
   })
   data!: AccountHistoryDto[];
 }

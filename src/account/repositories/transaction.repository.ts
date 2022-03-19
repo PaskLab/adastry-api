@@ -21,8 +21,7 @@ export class TransactionRepository extends Repository<Transaction> {
   async findHistory(
     stakeAddress: string,
     params: TxHistoryParam,
-    count?: boolean,
-  ): Promise<Transaction[] | number> {
+  ): Promise<[Transaction[], number]> {
     const qb = this.createQueryBuilder('transaction')
       .innerJoin('transaction.account', 'account')
       .innerJoinAndSelect('transaction.addresses', 'addresses')
@@ -48,16 +47,6 @@ export class TransactionRepository extends Repository<Transaction> {
       });
     }
 
-    if (params.limit) {
-      qb.limit(params.limit);
-    }
-
-    if (params.page) {
-      qb.offset(
-        (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
-      );
-    }
-
     if (params.from) {
       qb.andWhere('transaction.blockTime >= :from', { from: params.from });
     }
@@ -66,11 +55,15 @@ export class TransactionRepository extends Repository<Transaction> {
       qb.andWhere('transaction.blockTime <= :to', { to: params.to });
     }
 
-    if (count) return qb.getCount();
+    qb.take(params.limit ? params.limit : this.MAX_LIMIT);
 
-    qb.limit(params.limit ? params.limit : this.MAX_LIMIT);
+    if (params.page) {
+      qb.skip(
+        (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
+      );
+    }
 
-    return qb.getMany();
+    return qb.getManyAndCount();
   }
 
   findByYear(stakeAddress: string, year: number): Promise<Transaction[]> {

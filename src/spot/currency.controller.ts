@@ -11,7 +11,7 @@ import { EntityManager } from 'typeorm';
 import { CurrencyDto } from './dto/currency.dto';
 import { CodeParam } from './params/code.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
-import { RateDto } from './dto/rate.dto';
+import { RateDto, RateListDto } from './dto/rate.dto';
 import { HistoryParam } from '../utils/params/history.param';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -58,11 +58,11 @@ export class CurrencyController {
   @Get(':code/rate-history')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: [RateDto], description: 'Currency rate history' })
+  @ApiOkResponse({ type: RateListDto, description: 'Currency rate history' })
   rateHistory(
     @Param() param: CodeParam,
     @Query() query: HistoryParam,
-  ): Promise<RateDto[]> {
+  ): Promise<RateListDto> {
     return this.spotService.getRateHistory({ ...param, ...query });
   }
 }

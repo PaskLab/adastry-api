@@ -10,7 +10,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { HistoryParam } from '../utils/params/history.param';
-import { SpotDto } from './dto/spot.dto';
+import { SpotDto, SpotListDto } from './dto/spot.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PreferredCodeParam } from './params/preferred-code.param';
 
@@ -37,11 +37,11 @@ export class SpotController {
   @Get('history')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ type: [SpotDto], description: 'ADA price history' })
+  @ApiOkResponse({ type: SpotListDto, description: 'ADA price history' })
   priceHistory(
     @Query() code: PreferredCodeParam,
     @Query() query: HistoryParam,
-  ): Promise<SpotDto[]> {
+  ): Promise<SpotListDto> {
     return this.spotService.getPriceHistory({ ...query }, code.code);
   }
 }

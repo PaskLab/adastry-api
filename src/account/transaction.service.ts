@@ -19,7 +19,6 @@ import {
   toAda,
 } from '../utils/utils';
 import { CsvService } from './csv.service';
-import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionService {
@@ -32,17 +31,13 @@ export class TransactionService {
     stakeAddress: string,
     params: TxHistoryParam,
   ): Promise<TransactionListDto> {
-    const history = (await this.em
+    const history = await this.em
       .getCustomRepository(TransactionRepository)
-      .findHistory(stakeAddress, params)) as Transaction[];
-
-    const count = (await this.em
-      .getCustomRepository(TransactionRepository)
-      .findHistory(stakeAddress, params, true)) as number;
+      .findHistory(stakeAddress, params);
 
     return new TransactionListDto({
-      count: count,
-      data: history.map((h) => {
+      count: history[1],
+      data: history[0].map((h) => {
         return new TransactionDto({
           addresses: h.addresses.map((a) => a.address.address),
           txHash: h.txHash,
