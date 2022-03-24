@@ -161,7 +161,7 @@ export class AccountService {
     const baseCurrency = user.currency ? user.currency.code : 'USD';
 
     const filename = `${year}-rewards-${stakeAddress.slice(0, 15)}-${
-      format ? format : 'full'
+      format ? format : 'default'
     }.csv`;
 
     const data: CsvFieldsType[] = [];
@@ -208,6 +208,8 @@ export class AccountService {
         stakeShare: record.stakeShare,
         withdrawable: toAda(record.withdrawable),
         withdrawn: toAda(record.withdrawn),
+        activeStake: toAda(record.activeStake),
+        epoch: record.epoch.epoch,
       };
       data.push(row);
     }
@@ -215,18 +217,27 @@ export class AccountService {
     let fileInfo;
 
     switch (format) {
+      case 'transaction':
+        fileInfo = await this.csvService.writeTransactionCSV(filename, data);
+        break;
       case 'koinly':
         fileInfo = await this.csvService.writeKoinlyCSV(filename, data);
         break;
+      case 'spo':
+        fileInfo = await this.csvService.writeSpoCSV(filename, data);
+        break;
+      case 'multiowner':
+        fileInfo = await this.csvService.writeMultiOwnerCSV(filename, data);
+        break;
       default:
-        fileInfo = await this.csvService.writeFullCSV(filename, data);
+        fileInfo = await this.csvService.writeHistoryCSV(filename, data);
     }
 
     return new CsvFileDto({
       filename: filename,
       fileExpireAt: fileInfo.expireAt.toUTCString(),
       url: generateUrl(request, 'public/tmp', filename),
-      format: format ? format : 'full',
+      format: format ? format : 'default',
       stakeAddress: stakeAddress,
       year: year.toString(),
     });

@@ -87,7 +87,7 @@ export class TransactionService {
     }
 
     const filename = `${year}-txs-${stakeAddress.slice(0, 15)}-${
-      format ? format : 'full'
+      format ? format : 'default'
     }.csv`;
 
     const data: CsvFieldsType[] = [];
@@ -178,14 +178,14 @@ export class TransactionService {
         fileInfo = await this.csvService.writeKoinlyCSV(filename, data);
         break;
       default:
-        fileInfo = await this.csvService.writeFullCSV(filename, data);
+        fileInfo = await this.csvService.writeTransactionCSV(filename, data);
     }
 
     return new CsvFileDto({
       filename: filename,
       fileExpireAt: fileInfo.expireAt.toUTCString(),
       url: generateUrl(request, 'public/tmp', filename),
-      format: format ? format : 'full',
+      format: format ? format : 'default',
       stakeAddress: stakeAddress,
       year: year.toString(),
     });

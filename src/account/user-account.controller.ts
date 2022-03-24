@@ -35,7 +35,10 @@ import { UserAccountService } from './user-account.service';
 import { UserAccountDto } from './dto/user-account.dto';
 import { YearParam } from './params/year.param';
 import { CsvFileDto } from './dto/csv-file.dto';
-import { CsvFormatParam } from './params/csv-format.param';
+import {
+  RewardsCsvFormatParam,
+  TxCsvFormatParam,
+} from './params/csv-format.param';
 import config from '../../config.json';
 import { TransactionListDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
@@ -167,7 +170,7 @@ export class UserAccountController {
     @Request() request,
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
-    @Query() formatParam: CsvFormatParam,
+    @Query() formatParam: TxCsvFormatParam,
   ): Promise<CsvFileDto> {
     if (
       !(await this.accountService.loyaltyCheck(
@@ -198,7 +201,7 @@ export class UserAccountController {
     @Request() request,
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
-    @Query() formatParam: CsvFormatParam,
+    @Query() formatParam: RewardsCsvFormatParam,
   ): Promise<CsvFileDto> {
     if (
       !(await this.accountService.loyaltyCheck(

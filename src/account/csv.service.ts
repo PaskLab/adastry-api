@@ -19,46 +19,90 @@ export class CsvService {
 
   constructor(@InjectEntityManager() private readonly em: EntityManager) {}
 
-  async writeFullCSV(
+  /**
+   * Use with "Rewards Export" only
+   */
+  async writeHistoryCSV(
     filename: string,
     data: CsvFieldsType[],
   ): Promise<CsvFileInfoType> {
     const filePath = path.join(__dirname, '../../..', this.TMP_PATH, filename);
-    const header = [
-      { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
-      { id: 'sentAmount', title: 'Sent Amount' }, // 0.00
-      { id: 'sentCurrency', title: 'Sent Currency' },
-      { id: 'receivedAmount', title: 'Received Amount' },
-      { id: 'receivedCurrency', title: 'Received Currency' }, // ADA
-      { id: 'feeAmount', title: 'Fee Amount' },
-      { id: 'feeCurrency', title: 'Fee Currency' },
-      { id: 'netWorthAmount', title: 'Net Worth Amount' },
-      { id: 'netWorthCurrency', title: 'Net Worth Currency' },
-      { id: 'label', title: 'Label' }, // reward
-      { id: 'description', title: 'Description' },
-      { id: 'txHash', title: 'TxHash' },
-    ];
+
     const writer = csvWriter.createObjectCsvWriter({
       path: filePath,
-      header:
-        data[0]?.accountBalance !== undefined
-          ? header.concat([
-              // Extended fields
-              { id: 'accountBalance', title: 'Account Balance' },
-              { id: 'realRewards', title: 'Real Rewards' },
-              { id: 'revisedRewards', title: 'Revised Rewards' },
-              { id: 'opRewards', title: 'Op Rewards' },
-              { id: 'stakeShare', title: 'Stake Share' },
-              { id: 'withdrawable', title: 'Withdrawable' },
-              { id: 'withdrawn', title: 'Withdrawn' },
-            ])
-          : header,
+      header: [
+        { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
+        { id: 'epoch', title: 'Epoch' },
+        { id: 'rewards', title: 'Rewards' },
+        { id: 'netWorthAmount', title: 'Net Worth Amount' },
+        { id: 'netWorthCurrency', title: 'Net Worth Currency' },
+        { id: 'activeStake', title: 'Active Stake' },
+        { id: 'withdrawable', title: 'Withdrawable' },
+        { id: 'withdrawn', title: 'Withdrawn' },
+        { id: 'description', title: 'Description' },
+      ],
     });
 
     const records: any = [];
 
     for (const row of data) {
-      let record = {
+      const record = {
+        date: row.date,
+        epoch: row.epoch,
+        rewards: row.receivedAmount,
+        netWorthAmount: row.netWorthAmount,
+        netWorthCurrency: row.netWorthCurrency,
+        activeStake: row.activeStake,
+        withdrawable: row.withdrawable,
+        withdrawn: row.withdrawn,
+        description: row.description,
+      };
+
+      records.push(record);
+    }
+
+    await writer
+      .writeRecords(records)
+      .then(() => this.logger.log(`CSV ${filename} generated`));
+
+    return {
+      filename: filename,
+      path: filePath,
+      expireAt: this.getExpire(),
+    };
+  }
+
+  /**
+   * Use with "Rewards & Transaction Export"
+   */
+  async writeTransactionCSV(
+    filename: string,
+    data: CsvFieldsType[],
+  ): Promise<CsvFileInfoType> {
+    const filePath = path.join(__dirname, '../../..', this.TMP_PATH, filename);
+
+    const writer = csvWriter.createObjectCsvWriter({
+      path: filePath,
+      header: [
+        { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
+        { id: 'sentAmount', title: 'Sent Amount' }, // 0.00
+        { id: 'sentCurrency', title: 'Sent Currency' },
+        { id: 'receivedAmount', title: 'Received Amount' },
+        { id: 'receivedCurrency', title: 'Received Currency' }, // ADA
+        { id: 'feeAmount', title: 'Fee Amount' },
+        { id: 'feeCurrency', title: 'Fee Currency' },
+        { id: 'netWorthAmount', title: 'Net Worth Amount' },
+        { id: 'netWorthCurrency', title: 'Net Worth Currency' },
+        { id: 'label', title: 'Label' }, // reward
+        { id: 'description', title: 'Description' },
+        { id: 'txHash', title: 'TxHash' },
+      ],
+    });
+
+    const records: any = [];
+
+    for (const row of data) {
+      const record = {
         date: row.date,
         sentAmount: row.sentAmount,
         sentCurrency: row.sentCurrency,
@@ -73,18 +117,128 @@ export class CsvService {
         txHash: row.txHash,
       };
 
-      if (row.accountBalance !== undefined) {
-        // Extended fields
-        record = Object.assign(record, {
-          accountBalance: row.accountBalance,
-          realRewards: row.realRewards,
-          revisedRewards: row.revisedRewards,
-          opRewards: row.opRewards,
-          stakeShare: row.stakeShare,
-          withdrawable: row.withdrawable,
-          withdrawn: row.withdrawn,
-        });
-      }
+      records.push(record);
+    }
+
+    await writer
+      .writeRecords(records)
+      .then(() => this.logger.log(`CSV ${filename} generated`));
+
+    return {
+      filename: filename,
+      path: filePath,
+      expireAt: this.getExpire(),
+    };
+  }
+
+  /**
+   * Use with "Rewards Export" Only
+   */
+  async writeSpoCSV(
+    filename: string,
+    data: CsvFieldsType[],
+  ): Promise<CsvFileInfoType> {
+    const filePath = path.join(__dirname, '../../..', this.TMP_PATH, filename);
+
+    const writer = csvWriter.createObjectCsvWriter({
+      path: filePath,
+      header: [
+        { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
+        { id: 'epoch', title: 'Epoch' },
+        { id: 'rewards', title: 'Rewards' },
+        { id: 'netWorthAmount', title: 'Net Worth Amount' },
+        { id: 'netWorthCurrency', title: 'Net Worth Currency' },
+        { id: 'activeStake', title: 'Active Stake' },
+        { id: 'accountBalance', title: 'Account Balance' },
+        { id: 'netRewards', title: 'Net Rewards' },
+        { id: 'opRewards', title: 'Op Rewards' },
+        { id: 'withdrawable', title: 'Withdrawable' },
+        { id: 'withdrawn', title: 'Withdrawn' },
+        { id: 'description', title: 'Description' },
+      ],
+    });
+
+    const records: any = [];
+
+    for (const row of data) {
+      const record = {
+        date: row.date,
+        epoch: row.epoch,
+        rewards: row.receivedAmount,
+        netWorthAmount: row.netWorthAmount,
+        netWorthCurrency: row.netWorthCurrency,
+        activeStake: row.activeStake,
+        accountBalance: row.accountBalance,
+        netRewards: row.revisedRewards,
+        opRewards: row.opRewards,
+        stakeShare: row.stakeShare,
+        withdrawable: row.withdrawable,
+        withdrawn: row.withdrawn,
+        description: row.description,
+      };
+
+      records.push(record);
+    }
+
+    await writer
+      .writeRecords(records)
+      .then(() => this.logger.log(`CSV ${filename} generated`));
+
+    return {
+      filename: filename,
+      path: filePath,
+      expireAt: this.getExpire(),
+    };
+  }
+
+  /**
+   * Use with "Rewards Export" Only
+   */
+  async writeMultiOwnerCSV(
+    filename: string,
+    data: CsvFieldsType[],
+  ): Promise<CsvFileInfoType> {
+    const filePath = path.join(__dirname, '../../..', this.TMP_PATH, filename);
+
+    const writer = csvWriter.createObjectCsvWriter({
+      path: filePath,
+      header: [
+        { id: 'date', title: 'Date' }, // YYYY-MM-DD HH:mm:ss
+        { id: 'epoch', title: 'Epoch' },
+        { id: 'rewards', title: 'Rewards' },
+        { id: 'netWorthAmount', title: 'Net Worth Amount' },
+        { id: 'netWorthCurrency', title: 'Net Worth Currency' },
+        { id: 'activeStake', title: 'Active Stake' },
+        { id: 'accountBalance', title: 'Account Balance' },
+        { id: 'realRewards', title: 'Real Rewards' },
+        { id: 'netRewards', title: 'Net Rewards' },
+        { id: 'opRewards', title: 'Op Rewards' },
+        { id: 'stakeShare', title: 'Stake Share' },
+        { id: 'withdrawable', title: 'Withdrawable' },
+        { id: 'withdrawn', title: 'Withdrawn' },
+        { id: 'description', title: 'Description' },
+      ],
+    });
+
+    const records: any = [];
+
+    for (const row of data) {
+      const record = {
+        date: row.date,
+        epoch: row.epoch,
+        rewards: row.receivedAmount,
+        netWorthAmount: row.netWorthAmount,
+        netWorthCurrency: row.netWorthCurrency,
+        activeStake: row.activeStake,
+        accountBalance: row.accountBalance,
+        realRewards: row.realRewards,
+        netRewards: row.revisedRewards,
+        opRewards: row.opRewards,
+        stakeShare: row.stakeShare,
+        withdrawable: row.withdrawable,
+        withdrawn: row.withdrawn,
+        description: row.description,
+      };
 
       records.push(record);
     }
@@ -105,6 +259,7 @@ export class CsvService {
     data: CsvFieldsType[],
   ): Promise<CsvFileInfoType> {
     const filePath = path.join(__dirname, '../../..', this.TMP_PATH, filename);
+
     const writer = csvWriter.createObjectCsvWriter({
       path: filePath,
       header: [

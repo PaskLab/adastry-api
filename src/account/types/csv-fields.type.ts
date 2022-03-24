@@ -18,4 +18,6 @@ export type CsvFieldsType = {
   stakeShare?: number | string;
   withdrawable?: number | string;
   withdrawn?: number | string;
+  activeStake?: number | string;
+  epoch?: number | string;
 };
