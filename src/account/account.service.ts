@@ -99,7 +99,11 @@ export class AccountService {
       .findAccountHistory(params);
 
     const priceHistory = await this.spotService.getPriceHistory(
-      { ...params, from: history[0][0].epoch.epoch },
+      {
+        from: history[0][0].epoch.epoch,
+        limit: params.limit,
+        order: params.order,
+      },
       user.currency.code,
     );
 
