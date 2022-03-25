@@ -253,8 +253,8 @@ export class TxSyncService {
         newTx.txIndex = txInfo.index;
         newTx.received = JSON.stringify(receivedAmounts);
         newTx.sent = JSON.stringify(sentAmounts);
-        newTx.fees = txInfo.fees;
-        newTx.deposit = txInfo.deposit;
+        newTx.fees = txType == 'RX' ? 0 : txInfo.fees;
+        newTx.deposit = txType == 'RX' ? 0 : txInfo.deposit;
         newTx.withdrawalCount = txInfo.withdrawalCount;
         newTx.mirCertCount = txInfo.mirCertCount;
         newTx.delegationCount = txInfo.delegationCount;
