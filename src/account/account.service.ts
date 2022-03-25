@@ -94,17 +94,14 @@ export class AccountService {
       throw new NotFoundException('User not found.');
     }
 
-    const pHistory = this.em
+    const history = await this.em
       .getCustomRepository(AccountHistoryRepository)
       .findAccountHistory(params);
 
-    const pPriceHistory = this.spotService.getPriceHistory(
-      params,
+    const priceHistory = await this.spotService.getPriceHistory(
+      { ...params, from: history[0][0].epoch.epoch },
       user.currency.code,
     );
-
-    const history = await pHistory;
-    const priceHistory = await pPriceHistory;
 
     return new AccountHistoryListDto({
       count: history[1],
