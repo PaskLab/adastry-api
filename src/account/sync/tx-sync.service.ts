@@ -218,6 +218,9 @@ export class TxSyncService {
           }
         }
 
+        // Handle multisig comment/tag
+        if (txType == 'MX') comments.push('MULTI-SIGNATURES');
+
         // Sync assets data
         for (const asset of txAmounts) {
           if (asset.unit === 'lovelace') continue;
@@ -251,6 +254,7 @@ export class TxSyncService {
         newTx.blockHeight = txInfo.blockHeight;
         newTx.blockTime = txInfo.blockTime;
         newTx.txIndex = txInfo.index;
+        newTx.txType = txType;
         newTx.received = JSON.stringify(receivedAmounts);
         newTx.sent = JSON.stringify(sentAmounts);
         newTx.fees = txType == 'RX' ? 0 : txInfo.fees;

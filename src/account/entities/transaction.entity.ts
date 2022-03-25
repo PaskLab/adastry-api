@@ -39,6 +39,9 @@ export class Transaction {
   @Column()
   blockTime!: number;
 
+  @Column({ nullable: true })
+  txType!: string;
+
   @Column()
   received!: string;
 
