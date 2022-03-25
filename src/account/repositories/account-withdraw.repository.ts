@@ -22,4 +22,15 @@ export class AccountWithdrawRepository extends Repository<AccountWithdraw> {
       .orderBy('block', 'DESC')
       .getOne();
   }
+
+  async findOneByAccountTx(
+    stakeAddress: string,
+    txHash: string,
+  ): Promise<AccountWithdraw | undefined> {
+    return this.createQueryBuilder('withdraw')
+      .innerJoin('withdraw.account', 'account')
+      .where('withdraw.txHash = :txHash', { txHash })
+      .andWhere('account.stakeAddress = :stakeAddress', { stakeAddress })
+      .getOne();
+  }
 }

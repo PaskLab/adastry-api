@@ -157,7 +157,7 @@ export class TxSyncService {
         // Handle withdraw
         const withdraw = await this.em
           .getCustomRepository(AccountWithdrawRepository)
-          .findOne({ txHash: txInfo.txHash });
+          .findOneByAccountTx(account.stakeAddress, txInfo.txHash);
         if (withdraw) {
           txAmounts.push({
             unit: 'lovelace',
