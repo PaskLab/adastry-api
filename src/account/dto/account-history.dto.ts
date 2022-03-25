@@ -3,6 +3,27 @@ import { PoolDto } from '../../pool/dto/pool.dto';
 import { ListAbstract } from '../../utils/dto/list.abstract';
 import { EpochDto } from '../../epoch/dto/epoch.dto';
 
+export class HistorySpotDto {
+  constructor(props?: HistorySpotDto) {
+    if (props) {
+      this.code = props.code;
+      this.price = props.price;
+    }
+  }
+
+  @ApiProperty({
+    title: 'Currency code',
+    example: 'USD',
+  })
+  code!: string;
+
+  @ApiProperty({
+    title: 'Spot Price',
+    example: 1.33,
+  })
+  price!: number;
+}
+
 export class AccountHistoryDto {
   constructor(props?: AccountHistoryDto) {
     if (props) {
@@ -18,6 +39,7 @@ export class AccountHistoryDto {
       this.pool = props.pool;
       this.owner = props.owner;
       this.stakeShare = props.stakeShare;
+      this.spotPrice = props.spotPrice;
     }
   }
 
@@ -92,6 +114,12 @@ export class AccountHistoryDto {
     example: 0.75,
   })
   stakeShare!: number;
+
+  @ApiProperty({
+    title: 'Epoch spot price',
+    type: HistorySpotDto,
+  })
+  spotPrice!: HistorySpotDto;
 }
 
 export class AccountHistoryListDto extends ListAbstract {

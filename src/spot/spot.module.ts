@@ -12,6 +12,6 @@ import { CurrencyController } from './currency.controller';
   imports: [TypeOrmModule.forFeature([Currency, Spot, Rate])],
   controllers: [SpotController, CurrencyController],
   providers: [SyncService, SpotService],
-  exports: [SyncService],
+  exports: [SyncService, SpotService],
 })
 export class SpotModule {}

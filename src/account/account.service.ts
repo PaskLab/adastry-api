@@ -9,7 +9,7 @@ import { AccountRepository } from './repositories/account.repository';
 import { Account } from './entities/account.entity';
 import { HistoryQueryType } from './types/history-query.type';
 import { AccountHistoryRepository } from './repositories/account-history.repository';
-import { AccountHistoryDto } from './dto/account-history.dto';
+import { AccountHistoryDto, HistorySpotDto } from './dto/account-history.dto';
 import { SyncService } from './sync.service';
 import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { Request } from 'express';
@@ -30,6 +30,7 @@ import { CsvService } from './csv.service';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountHistoryListDto } from './dto/account-history.dto';
 import { EpochDto } from '../epoch/dto/epoch.dto';
+import { SpotService } from '../spot/spot.service';
 
 @Injectable()
 export class AccountService {
@@ -37,6 +38,7 @@ export class AccountService {
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
     private readonly csvService: CsvService,
+    private readonly spotService: SpotService,
   ) {}
 
   async create(stakeAddress: string): Promise<Account> {
@@ -80,14 +82,37 @@ export class AccountService {
     }
   }
 
-  async getHistory(params: HistoryQueryType): Promise<AccountHistoryListDto> {
-    const history = await this.em
+  async getHistory(
+    userId: number,
+    params: HistoryQueryType,
+  ): Promise<AccountHistoryListDto> {
+    const user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const pHistory = this.em
       .getCustomRepository(AccountHistoryRepository)
       .findAccountHistory(params);
+
+    const pPriceHistory = this.spotService.getPriceHistory(
+      params,
+      user.currency.code,
+    );
+
+    const history = await pHistory;
+    const priceHistory = await pPriceHistory;
 
     return new AccountHistoryListDto({
       count: history[1],
       data: history[0].map((h) => {
+        const spotPrice = priceHistory.data.find(
+          (price) => price.epoch === h.epoch.epoch,
+        );
+
         return new AccountHistoryDto({
           account: h.account.stakeAddress,
           epoch: new EpochDto({
@@ -116,6 +141,10 @@ export class AccountService {
             : null,
           owner: h.owner,
           stakeShare: h.stakeShare,
+          spotPrice: new HistorySpotDto({
+            code: user.currency.code,
+            price: spotPrice ? spotPrice.price : 0,
+          }),
         });
       }),
     });

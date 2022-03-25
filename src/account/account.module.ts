@@ -17,6 +17,7 @@ import { TransactionService } from './transaction.service';
 import { AccountSyncService } from './sync/account-sync.service';
 import { Asset } from './entities/asset.entity';
 import { TransactionAddress } from './entities/transaction-address.entity';
+import { SpotModule } from '../spot/spot.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { TransactionAddress } from './entities/transaction-address.entity';
       Asset,
     ]),
     PoolModule,
+    SpotModule,
   ],
   controllers: [UserAccountController],
   providers: [

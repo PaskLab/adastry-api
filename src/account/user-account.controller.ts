@@ -142,10 +142,14 @@ export class UserAccountController {
   @ApiOkResponse({ type: AccountHistoryListDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async accountHistory(
+    @Request() request,
     @Param() param: StakeAddressParam,
     @Query() query: HistoryParam,
   ): Promise<AccountHistoryListDto> {
-    return this.accountService.getHistory({ ...param, ...query });
+    return this.accountService.getHistory(request.user.id, {
+      ...param,
+      ...query,
+    });
   }
 
   @Get(':stakeAddress/transactions')

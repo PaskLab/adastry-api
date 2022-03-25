@@ -42,7 +42,7 @@ export class RateRepository extends Repository<Rate> {
       .orderBy('epoch.epoch', 'DESC');
 
     if (params.order) {
-      qb.orderBy('epoch', params.order);
+      qb.orderBy('epoch.epoch', params.order);
     }
 
     if (params.limit) {
