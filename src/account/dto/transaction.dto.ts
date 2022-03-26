@@ -31,6 +31,7 @@ export class TransactionDto {
       this.txIndex = props.txIndex;
       this.blockHeight = props.blockHeight;
       this.blockTime = props.blockTime;
+      this.txType = props.txType;
       this.received = props.received;
       this.sent = props.sent;
       this.fees = props.fees;
@@ -80,6 +81,14 @@ export class TransactionDto {
     example: 1616889945,
   })
   blockTime!: number;
+
+  @ApiProperty({
+    title: 'Transaction type',
+    example: 'RX',
+    type: 'string',
+    enum: ['RX', 'TX', 'MX'],
+  })
+  txType!: 'RX' | 'TX' | 'MX';
 
   @ApiProperty({
     title: 'Assets amount received',

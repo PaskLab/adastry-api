@@ -254,7 +254,7 @@ export class TxSyncService {
         newTx.blockHeight = txInfo.blockHeight;
         newTx.blockTime = txInfo.blockTime;
         newTx.txIndex = txInfo.index;
-        newTx.txType = txType;
+        newTx.txType = txType as 'RX' | 'TX' | 'MX';
         newTx.received = JSON.stringify(receivedAmounts);
         newTx.sent = JSON.stringify(sentAmounts);
         newTx.fees = txType == 'RX' ? 0 : txInfo.fees;

@@ -44,6 +44,7 @@ export class TransactionService {
           txIndex: h.txIndex,
           blockHeight: h.blockHeight,
           blockTime: h.blockTime,
+          txType: h.txType,
           received: JSON.parse(h.received).map(
             (v) =>
               new BlockfrostAmountDto({ unit: v.unit, quantity: v.quantity }),

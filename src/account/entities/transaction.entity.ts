@@ -39,8 +39,8 @@ export class Transaction {
   @Column()
   blockTime!: number;
 
-  @Column({ nullable: true })
-  txType!: string;
+  @Column({ type: 'character', length: 2 })
+  txType!: 'RX' | 'TX' | 'MX';
 
   @Column()
   received!: string;
