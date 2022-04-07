@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class MonthlyRewardsDto {
-  constructor(props: MonthlyRewardsDto) {
+export class MonthlyDto {
+  constructor(props: MonthlyDto) {
     if (props) {
       this.month = props.month;
-      this.rewards = props.rewards;
+      this.value = props.value;
     }
   }
 
@@ -15,14 +15,14 @@ export class MonthlyRewardsDto {
   month!: string;
 
   @ApiProperty({
-    title: 'Monthly rewards',
+    title: 'Monthly value',
     example: 3943010786,
   })
-  rewards!: number;
+  value!: number;
 }
 
-export class MonthlyRewardsListDto {
-  constructor(props: MonthlyRewardsListDto) {
+export class MonthlyListDto {
+  constructor(props: MonthlyListDto) {
     if (props) {
       this.from = props.from;
       this.data = props.data;
@@ -36,8 +36,8 @@ export class MonthlyRewardsListDto {
   from!: string;
 
   @ApiProperty({
-    title: 'Monthly rewards',
-    type: [MonthlyRewardsDto],
+    title: 'Monthly values',
+    type: [MonthlyDto],
   })
-  data!: MonthlyRewardsDto[];
+  data!: MonthlyDto[];
 }
