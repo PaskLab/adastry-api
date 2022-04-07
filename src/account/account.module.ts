@@ -18,6 +18,8 @@ import { AccountSyncService } from './sync/account-sync.service';
 import { Asset } from './entities/asset.entity';
 import { TransactionAddress } from './entities/transaction-address.entity';
 import { SpotModule } from '../spot/spot.module';
+import { StatsController } from './stats.controller';
+import { StatsService } from './stats.service';
 
 @Module({
   imports: [
@@ -34,7 +36,7 @@ import { SpotModule } from '../spot/spot.module';
     PoolModule,
     SpotModule,
   ],
-  controllers: [UserAccountController],
+  controllers: [UserAccountController, StatsController],
   providers: [
     AccountService,
     UserAccountService,
@@ -43,6 +45,7 @@ import { SpotModule } from '../spot/spot.module';
     TxSyncService,
     CsvService,
     TransactionService,
+    StatsService,
   ],
   exports: [AccountService, SyncService],
 })
