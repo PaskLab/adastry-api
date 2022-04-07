@@ -93,7 +93,6 @@ export class StatsService {
       .findAllUserAccount(userId);
 
     const monthlyStake: { [key: string]: MonthlyDto } = {};
-    const monthlyCount: { [key: string]: number } = {};
 
     for (const userAccount of userAccounts) {
       const records = await this.em
@@ -104,29 +103,40 @@ export class StatsService {
           order: 'ASC',
         });
 
+      const monthlyAccountStake: { [key: string]: MonthlyDto } = {};
+      const monthlyCount: { [key: string]: number } = {};
+
       for (const record of records[0]) {
         const startTime = new Date(dateFromUnix(record.epoch.startTime));
         const key = `${startTime.getUTCFullYear()}-${(
           '0' + (startTime.getUTCMonth() + 1).toString()
         ).slice(-2)}`;
-        if (monthlyStake[key]) {
+        if (monthlyAccountStake[key]) {
           monthlyCount[key]++;
-          monthlyStake[key].value =
-            monthlyStake[key].value + record.activeStake;
+          monthlyAccountStake[key].value =
+            monthlyAccountStake[key].value + record.activeStake;
         } else {
           monthlyCount[key] = 1;
-          monthlyStake[key] = new MonthlyDto({
+          monthlyAccountStake[key] = new MonthlyDto({
             month: key,
             value: record.activeStake,
           });
         }
       }
-    }
 
-    for (const key in monthlyStake) {
-      monthlyStake[key].value = Math.floor(
-        monthlyStake[key].value / monthlyCount[key],
-      );
+      for (const key in monthlyAccountStake) {
+        // Calculate monthly average
+        monthlyAccountStake[key].value = Math.floor(
+          monthlyAccountStake[key].value / monthlyCount[key],
+        );
+        // Add current account monthly average to monthly total
+        if (monthlyStake[key]) {
+          monthlyStake[key].value =
+            monthlyStake[key].value + monthlyAccountStake[key].value;
+        } else {
+          monthlyStake[key] = monthlyAccountStake[key];
+        }
+      }
     }
 
     const data = Object.keys(monthlyStake).map((key) => monthlyStake[key]);
