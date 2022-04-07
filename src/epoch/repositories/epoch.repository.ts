@@ -47,9 +47,17 @@ export class EpochRepository extends Repository<Epoch> {
     return qb.getManyAndCount();
   }
 
-  async findFromTime(time: number): Promise<Epoch | undefined> {
+  async findOneFromTime(time: number): Promise<Epoch | undefined> {
     return this.createQueryBuilder('epoch')
       .where('epoch.startTime <= :time')
+      .andWhere('epoch.endTime >= :time')
+      .setParameter('time', time)
+      .getOne();
+  }
+
+  async findOneStartAfter(time: number): Promise<Epoch | undefined> {
+    return this.createQueryBuilder('epoch')
+      .where('epoch.startTime >= :time')
       .andWhere('epoch.endTime >= :time')
       .setParameter('time', time)
       .getOne();

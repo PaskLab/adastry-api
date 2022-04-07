@@ -20,9 +20,9 @@ export class CoinGeckoService {
   static formatDate(date: Date): string {
     const zeroLead = (str) => ('0' + str).slice(-2);
     const fDate = {
-      year: date.getFullYear(),
-      month: zeroLead(date.getMonth() + 1),
-      day: zeroLead(date.getDate()),
+      year: date.getUTCFullYear(),
+      month: zeroLead(date.getUTCMonth() + 1),
+      day: zeroLead(date.getUTCDate()),
     };
 
     return `${fDate.day}-${fDate.month}-${fDate.year}`;

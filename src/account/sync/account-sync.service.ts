@@ -237,7 +237,7 @@ export class AccountSyncService {
 
       const epoch = await this.em
         .getCustomRepository(EpochRepository)
-        .findFromTime(withdraw.blockTime);
+        .findOneFromTime(withdraw.blockTime);
 
       if (!epoch) {
         this.logger.error(

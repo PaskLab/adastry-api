@@ -19,11 +19,11 @@ export function dateToUnix(date: Date): number {
 export function createTimestamp(date): string {
   const zeroLead = (str) => ('0' + str).slice(-2);
 
-  return `${date.getFullYear()}-${zeroLead(date.getMonth() + 1)}-${zeroLead(
-    date.getDate(),
-  )} ${zeroLead(date.getHours())}:${zeroLead(date.getMinutes())}:${zeroLead(
-    date.getSeconds(),
-  )}`;
+  return `${date.getUTCFullYear()}-${zeroLead(
+    date.getUTCMonth() + 1,
+  )}-${zeroLead(date.getUTCDate())} ${zeroLead(date.getUTCHours())}:${zeroLead(
+    date.getUTCMinutes(),
+  )}:${zeroLead(date.getUTCSeconds())}Z`;
 }
 
 export function roundTo(num: number, decimals: number): number {
