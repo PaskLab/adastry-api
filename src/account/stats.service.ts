@@ -93,6 +93,7 @@ export class StatsService {
       .findAllUserAccount(userId);
 
     const monthlyStake: { [key: string]: MonthlyDto } = {};
+    const monthlyCount: { [key: string]: number } = {};
 
     for (const userAccount of userAccounts) {
       const records = await this.em
@@ -109,15 +110,23 @@ export class StatsService {
           '0' + (startTime.getUTCMonth() + 1).toString()
         ).slice(-2)}`;
         if (monthlyStake[key]) {
+          monthlyCount[key]++;
           monthlyStake[key].value =
             monthlyStake[key].value + record.activeStake;
         } else {
+          monthlyCount[key] = 1;
           monthlyStake[key] = new MonthlyDto({
             month: key,
             value: record.activeStake,
           });
         }
       }
+    }
+
+    for (const key in monthlyStake) {
+      monthlyStake[key].value = Math.floor(
+        monthlyStake[key].value / monthlyCount[key],
+      );
     }
 
     const data = Object.keys(monthlyStake).map((key) => monthlyStake[key]);
