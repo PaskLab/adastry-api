@@ -231,4 +231,28 @@ export class UserService {
       currency: user.currency.code,
     });
   }
+
+  async updateCurrency(userId: number, code: string): Promise<string> {
+    const user = await this.em
+      .getCustomRepository(UserRepository)
+      .findOne({ id: userId });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const currency = await this.em
+      .getCustomRepository(CurrencyRepository)
+      .findOne({ code: code });
+
+    if (!currency) {
+      throw new BadRequestException(`Currency ${code} doesn't exist.`);
+    }
+
+    user.currency = currency;
+
+    await this.em.save(user);
+
+    return currency.code;
+  }
 }

@@ -26,6 +26,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserDto } from './dto/user.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
+import { UpdateCurrencyDto } from './dto/update-currency.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -73,5 +74,21 @@ export class UserController {
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   getProfile(@Request() request) {
     return this.userService.getUserInfo(request.user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('currency')
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async updateCurrency(
+    @Request() request,
+    @Body() updateCurrency: UpdateCurrencyDto,
+  ): Promise<ResponseDto> {
+    const result = await this.userService.updateCurrency(
+      request.user.id,
+      updateCurrency.code,
+    );
+    return new ResponseDto(`Preferred currency updated to "${result}"`);
   }
 }
