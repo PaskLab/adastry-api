@@ -1,13 +1,13 @@
 {
   "app": {
-    "minLoyalty": 3,
+    "minLoyalty": 4,
     "tmpFileTTL": 600,
     "tmpPath": "public/tmp"
   },
   "sync": {
     "rateLimit": {
-      "accountAddress": 400000000,
-      "accountTransaction": 400000000
+      "accountAddress": 90000000,
+      "accountTransaction": 90000000
     }
   },
   "api": {
