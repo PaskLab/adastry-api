@@ -5,7 +5,7 @@ import { EncryptedTextType } from './types/encrypted-text.type';
 import { ValueTransformer } from 'typeorm';
 
 export function generateUrl(request: Request, ...args: string[]) {
-  return `${request.protocol}://${request.get('host')}/${args.join('/')}`;
+  return `https://${request.get('host')}/${args.join('/')}`;
 }
 
 export function dateFromUnix(unixTimestamp): Date {
