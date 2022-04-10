@@ -31,6 +31,7 @@ import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountHistoryListDto } from './dto/account-history.dto';
 import { EpochDto } from '../epoch/dto/epoch.dto';
 import { SpotService } from '../spot/spot.service';
+import { SpotListDto } from '../spot/dto/spot.dto';
 
 @Injectable()
 export class AccountService {
@@ -98,14 +99,18 @@ export class AccountService {
       .getCustomRepository(AccountHistoryRepository)
       .findAccountHistory(params);
 
-    const priceHistory = await this.spotService.getPriceHistory(
-      {
-        from: history[0][0].epoch.epoch,
-        limit: params.limit,
-        order: params.order,
-      },
-      user.currency.code,
-    );
+    let priceHistory: SpotListDto;
+
+    if (history[0].length) {
+      priceHistory = await this.spotService.getPriceHistory(
+        {
+          from: history[0][0].epoch.epoch,
+          limit: params.limit,
+          order: params.order,
+        },
+        user.currency.code,
+      );
+    }
 
     return new AccountHistoryListDto({
       count: history[1],
