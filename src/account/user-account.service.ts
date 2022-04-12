@@ -17,7 +17,7 @@ import { UserAccountDto } from './dto/user-account.dto';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountDto } from './dto/account.dto';
 import { UserRepository } from '../user/repositories/user.repository';
-import { BlockfrostService } from '../utils/api/blockfrost.service';
+import * as Cardano from '@emurgo/cardano-serialization-lib-nodejs';
 
 @Injectable()
 export class UserAccountService {
@@ -25,7 +25,6 @@ export class UserAccountService {
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
     private readonly accountService: AccountService,
-    private readonly source: BlockfrostService,
   ) {}
 
   async getAll(userId: number): Promise<UserAccountDto[]> {
@@ -88,17 +87,29 @@ export class UserAccountService {
     const isStakeAddr = new RegExp('^stake[a-z0-9]{54}$');
 
     if (!isStakeAddr.test(userAccountDto.address)) {
-      const addressInfo = await this.source.getAddressInfo(
-        userAccountDto.address,
+      const address = Cardano.Address.from_bech32(userAccountDto.address);
+      const baseAddress = Cardano.BaseAddress.from_address(address);
+      const stakeCred = baseAddress?.stake_cred();
+
+      if (!stakeCred) {
+        throw new BadRequestException('Invalid address.');
+      }
+
+      const bytesStakeAddress = new Uint8Array(29);
+      bytesStakeAddress.set([0xe1], 0);
+      bytesStakeAddress.set(stakeCred.to_bytes().slice(4, 32), 1);
+
+      const stakeAddress = Cardano.RewardAddress.from_address(
+        Cardano.Address.from_bytes(bytesStakeAddress),
       );
 
-      if (!addressInfo) {
+      if (!stakeAddress) {
         throw new BadRequestException(
-          'Address invalid or service unavailable.',
+          'Could not extract stake address from the provided address.',
         );
       }
 
-      userAccountDto.address = addressInfo.stakeAddress;
+      userAccountDto.address = stakeAddress.to_address().to_bech32();
     }
 
     let userAccount = await this.em
