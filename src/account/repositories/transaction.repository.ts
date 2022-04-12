@@ -66,9 +66,26 @@ export class TransactionRepository extends Repository<Transaction> {
     return qb.getManyAndCount();
   }
 
-  findByYear(stakeAddress: string, year: number): Promise<Transaction[]> {
-    const firstDay = dateToUnix(new Date(`${year}-01-01T00:00:00Z`));
-    const lastDay = dateToUnix(new Date(`${year}-12-31T23:59:59Z`));
+  findByYear(
+    stakeAddress: string,
+    year: number,
+    quarter?: number,
+  ): Promise<Transaction[]> {
+    let startMonth = '01';
+    let endMonth = '12';
+    let endDay = '31';
+
+    if (quarter) {
+      const zeroLead = (str) => ('0' + str).slice(-2);
+      startMonth = zeroLead((quarter - 1) * 3 + 1);
+      endMonth = zeroLead((quarter - 1) * 3 + 3);
+      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
+    }
+
+    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
+    const lastDay = dateToUnix(
+      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
+    );
 
     return this.createQueryBuilder('transaction')
       .innerJoin('transaction.account', 'account')

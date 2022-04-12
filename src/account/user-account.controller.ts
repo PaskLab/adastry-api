@@ -44,6 +44,7 @@ import { TransactionListDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 import { TxHistoryParam } from './params/tx-history.param';
 import { AccountHistoryListDto } from './dto/account-history.dto';
+import { QuarterParam } from './params/quarter.param';
 
 @ApiTags('User Account')
 @Controller('account')
@@ -175,6 +176,7 @@ export class UserAccountController {
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
     @Query() formatParam: TxCsvFormatParam,
+    @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
     if (
       !(await this.accountService.loyaltyCheck(
@@ -192,6 +194,7 @@ export class UserAccountController {
       stakeAddressParam.stakeAddress,
       yearParam.year,
       formatParam.format,
+      quarterParam.quarter,
     );
   }
 
@@ -206,6 +209,7 @@ export class UserAccountController {
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
     @Query() formatParam: RewardsCsvFormatParam,
+    @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
     if (
       !(await this.accountService.loyaltyCheck(
@@ -224,6 +228,7 @@ export class UserAccountController {
       stakeAddressParam.stakeAddress,
       yearParam.year,
       formatParam.format,
+      quarterParam.quarter,
     );
   }
 }

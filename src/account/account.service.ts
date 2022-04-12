@@ -174,10 +174,11 @@ export class AccountService {
     stakeAddress: string,
     year: number,
     format?: string,
+    quarter?: number,
   ): Promise<CsvFileDto> {
     const history = await this.em
       .getCustomRepository(AccountHistoryRepository)
-      .findByYear(stakeAddress, year);
+      .findByYear(stakeAddress, year, quarter);
 
     if (!history.length) {
       throw new NotFoundException(
@@ -195,9 +196,9 @@ export class AccountService {
 
     const baseCurrency = user.currency ? user.currency.code : 'USD';
 
-    const filename = `${year}-rewards-${stakeAddress.slice(0, 15)}-${
-      format ? format : 'default'
-    }.csv`;
+    const filename = `${year}${
+      quarter ? '-Q' + quarter : ''
+    }-rewards-${stakeAddress.slice(0, 15)}-${format ? format : 'default'}.csv`;
 
     const data: CsvFieldsType[] = [];
 

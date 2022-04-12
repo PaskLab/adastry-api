@@ -76,10 +76,11 @@ export class TransactionService {
     stakeAddress: string,
     year: number,
     format?: string,
+    quarter?: number,
   ): Promise<CsvFileDto> {
     const history = await this.em
       .getCustomRepository(TransactionRepository)
-      .findByYear(stakeAddress, year);
+      .findByYear(stakeAddress, year, quarter);
 
     if (!history.length) {
       throw new NotFoundException(
@@ -87,9 +88,9 @@ export class TransactionService {
       );
     }
 
-    const filename = `${year}-txs-${stakeAddress.slice(0, 15)}-${
-      format ? format : 'default'
-    }.csv`;
+    const filename = `${year}${
+      quarter ? '-Q' + quarter : ''
+    }-txs-${stakeAddress.slice(0, 15)}-${format ? format : 'default'}.csv`;
 
     const data: CsvFieldsType[] = [];
 

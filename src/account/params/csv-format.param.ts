@@ -13,7 +13,6 @@ const TRANSACTION_FORMATS = ['default', 'koinly'];
 export class RewardsCsvFormatParam {
   @ApiPropertyOptional({
     title: 'CSV format',
-    default: 'full',
     type: 'string',
     enum: REWARD_FORMATS,
   })
@@ -25,7 +24,6 @@ export class RewardsCsvFormatParam {
 export class TxCsvFormatParam {
   @ApiPropertyOptional({
     title: 'CSV format',
-    default: 'full',
     type: 'string',
     enum: TRANSACTION_FORMATS,
   })
