@@ -33,6 +33,8 @@ export class SyncService {
   ) {}
 
   async syncMember(): Promise<void> {
+    this.logger.log('Starting PoolSync:syncMember() ...');
+
     const pools = await this.armadaService.getPools();
 
     if (!pools) {

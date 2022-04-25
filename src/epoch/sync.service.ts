@@ -18,6 +18,8 @@ export class SyncService {
   ) {}
 
   async syncEpoch(): Promise<Epoch | null> {
+    this.logger.log('Starting EpochSync:syncEpoch() ...');
+
     const lastEpoch = await this.source.lastEpoch();
 
     if (!lastEpoch) {

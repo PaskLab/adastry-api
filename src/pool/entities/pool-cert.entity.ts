@@ -33,7 +33,12 @@ export class PoolCert {
   @Column({ type: 'float', default: null, nullable: true })
   margin!: number | null;
 
-  @Column({ type: 'int', default: null, nullable: true })
+  @Column({
+    type: 'bigint',
+    transformer: [StrToBigInt],
+    default: null,
+    nullable: true,
+  })
   fixed!: number | null;
 
   @Column({ default: false })

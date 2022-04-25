@@ -47,6 +47,8 @@ export class SyncService {
   }
 
   private async syncPools(lastEpoch: Epoch): Promise<void> {
+    this.logger.log('Starting Sync:syncPools() ...');
+
     const pools = await this.em.getCustomRepository(PoolRepository).findAll();
     for (const pool of pools) {
       await this.poolSyncService.syncPool(pool, lastEpoch);
@@ -54,6 +56,7 @@ export class SyncService {
   }
 
   private async syncAccounts(lastEpoch: Epoch): Promise<void> {
+    this.logger.log('Starting Sync:syncAccounts() ...');
     const accounts = await this.em
       .getCustomRepository(AccountRepository)
       .findAll();
@@ -63,6 +66,7 @@ export class SyncService {
   }
 
   private async syncSpotPrices(lastEpoch: Epoch): Promise<void> {
+    this.logger.log('Starting Sync:syncSpotPrices() ...');
     this.spotSyncService.syncRates(lastEpoch);
     this.spotSyncService.syncSpotPrices(lastEpoch);
   }
