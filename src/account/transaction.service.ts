@@ -122,7 +122,7 @@ export class TransactionService {
             row.receivedCurrency = 'ADA';
           } else {
             row.receivedAmount = BigInt(received[0].quantity).toString();
-            row.receivedCurrency = received[0].unit;
+            row.receivedCurrency = parseAssetHex(received[0].unit).name;
           }
         }
         if (sent.length) {
@@ -133,7 +133,7 @@ export class TransactionService {
             row.feeCurrency = 'ADA';
           } else {
             row.sentAmount = BigInt(sent[0].quantity).toString();
-            row.sentCurrency = sent[0].unit;
+            row.sentCurrency = parseAssetHex(sent[0].unit).name;
           }
         }
 
@@ -148,7 +148,7 @@ export class TransactionService {
           } else {
             const unit = rx.unit;
             row.receivedAmount = BigInt(rx.quantity).toString();
-            row.receivedCurrency = unit;
+            row.receivedCurrency = parseAssetHex(unit).name;
             row.description = `Subpart of txHash: ${row.txHash}`;
             row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
           }
@@ -164,7 +164,7 @@ export class TransactionService {
           } else {
             const unit = tx.unit;
             row.sentAmount = BigInt(tx.quantity).toString();
-            row.sentCurrency = unit;
+            row.sentCurrency = parseAssetHex(unit).name;
             row.description = `Subpart of txHash: ${row.txHash}`;
             row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
           }

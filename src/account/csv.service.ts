@@ -9,7 +9,6 @@ import { CsvFieldsType } from './types/csv-fields.type';
 import { AssetRepository } from './repositories/asset.repository';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { parseAssetHex } from '../utils/utils';
 
 @Injectable()
 export class CsvService {
@@ -300,18 +299,14 @@ export class CsvService {
             : 1;
 
           sentCurrency = 'NULL' + tokenCount[realTxHash];
-          description = `(${sentCurrency} = ${
-            parseAssetHex(row.sentCurrency).name
-          }) ${description}`;
+          description = `(${sentCurrency} = ${row.sentCurrency}) ${description}`;
         } else {
           nftCount[realTxHash] = nftCount[realTxHash]
             ? nftCount[realTxHash] + 1
             : 1;
 
           sentCurrency = 'NFT' + nftCount[realTxHash];
-          description = `(${sentCurrency} = ${
-            parseAssetHex(row.sentCurrency).name
-          }) ${description}`;
+          description = `(${sentCurrency} = ${row.sentCurrency}) ${description}`;
         }
       }
 
@@ -326,18 +321,14 @@ export class CsvService {
             : 1;
 
           receivedCurrency = 'NULL' + tokenCount[realTxHash];
-          description = `(${receivedCurrency} = ${
-            parseAssetHex(row.receivedCurrency).name
-          }) ${description}`;
+          description = `(${receivedCurrency} = ${row.receivedCurrency}) ${description}`;
         } else {
           nftCount[realTxHash] = nftCount[realTxHash]
             ? nftCount[realTxHash] + 1
             : 1;
 
           receivedCurrency = 'NFT' + nftCount[realTxHash];
-          description = `(${receivedCurrency} = ${
-            parseAssetHex(row.receivedCurrency).name
-          }) ${description}`;
+          description = `(${receivedCurrency} = ${row.receivedCurrency}) ${description}`;
         }
       }
 
