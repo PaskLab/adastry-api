@@ -3,6 +3,8 @@ import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { EncryptedTextType } from './types/encrypted-text.type';
 import { ValueTransformer } from 'typeorm';
+import * as CSL from '@emurgo/cardano-serialization-lib-nodejs';
+import { BadRequestException } from '@nestjs/common';
 
 export function generateUrl(request: Request, ...args: string[]) {
   return `https://${request.get('host')}/${args.join('/')}`;
@@ -47,6 +49,33 @@ export const StrToBigInt: ValueTransformer = {
   from: (databaseValue: string): number => parseInt(databaseValue, 10),
 };
 
+export function extractStakeAddress(hexAddress: string): CSL.Address {
+  const baseAddress = CSL.BaseAddress.from_address(
+    CSL.Address.from_bytes(Buffer.from(hexAddress, 'hex')),
+  );
+  const stakeCred = baseAddress?.stake_cred();
+
+  if (!stakeCred) {
+    throw new BadRequestException('Invalid address.');
+  }
+
+  const bytesStakeAddress = new Uint8Array(29);
+  bytesStakeAddress.set([0xe1], 0);
+  bytesStakeAddress.set(stakeCred.to_bytes().slice(4, 32), 1);
+
+  const stakeAddress = CSL.RewardAddress.from_address(
+    CSL.Address.from_bytes(bytesStakeAddress),
+  );
+
+  if (!stakeAddress) {
+    throw new BadRequestException(
+      'Could not extract stake address from the provided address.',
+    );
+  }
+
+  return stakeAddress.to_address();
+}
+
 /**
  * General encryption helper
  * @param data
@@ -90,7 +119,7 @@ export async function decrypt(
   let iv = '';
   let encrypted = data;
 
-  const match = data.match(RegExp('^(.*[=]{2})(.*)$'));
+  const match = data.match(RegExp('^(.*==)(.*==)$'));
 
   if (match) {
     hardened = true;
