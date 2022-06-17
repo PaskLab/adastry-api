@@ -13,7 +13,7 @@ import { CodeParam } from './params/code.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { RateDto, RateListDto } from './dto/rate.dto';
 import { HistoryParam } from '../utils/params/history.param';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Curreny')
 @Controller('currency')

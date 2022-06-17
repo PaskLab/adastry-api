@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -18,6 +17,7 @@ import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountDto } from './dto/account.dto';
 import { UserRepository } from '../user/repositories/user.repository';
 import * as Cardano from '@emurgo/cardano-serialization-lib-nodejs';
+import { extractStakeAddress } from '../utils/utils';
 
 @Injectable()
 export class UserAccountService {
@@ -88,28 +88,12 @@ export class UserAccountService {
 
     if (!isStakeAddr.test(userAccountDto.address)) {
       const address = Cardano.Address.from_bech32(userAccountDto.address);
-      const baseAddress = Cardano.BaseAddress.from_address(address);
-      const stakeCred = baseAddress?.stake_cred();
 
-      if (!stakeCred) {
-        throw new BadRequestException('Invalid address.');
-      }
-
-      const bytesStakeAddress = new Uint8Array(29);
-      bytesStakeAddress.set([0xe1], 0);
-      bytesStakeAddress.set(stakeCred.to_bytes().slice(4, 32), 1);
-
-      const stakeAddress = Cardano.RewardAddress.from_address(
-        Cardano.Address.from_bytes(bytesStakeAddress),
+      const stakeAddress = extractStakeAddress(
+        Buffer.from(address.to_bytes()).toString('hex'),
       );
 
-      if (!stakeAddress) {
-        throw new BadRequestException(
-          'Could not extract stake address from the provided address.',
-        );
-      }
-
-      userAccountDto.address = stakeAddress.to_address().to_bech32();
+      userAccountDto.address = stakeAddress.to_bech32();
     }
 
     let userAccount = await this.em

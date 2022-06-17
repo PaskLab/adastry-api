@@ -10,7 +10,7 @@ import {
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { EpochParam } from './params/epoch.param';
 import { HistoryParam } from '../utils/params/history.param';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Epoch')
 @Controller('epoch')

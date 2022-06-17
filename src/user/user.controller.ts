@@ -22,7 +22,7 @@ import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
 import { UserService } from './user.service';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { VerifyCodeParam } from './params/verify-code.param';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { UserDto } from './dto/user.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';

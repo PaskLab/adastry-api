@@ -30,7 +30,7 @@ import { HistoryParam } from '../utils/params/history.param';
 import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { UserAccountService } from './user-account.service';
 import { UserAccountDto } from './dto/user-account.dto';
 import { YearParam } from './params/year.param';

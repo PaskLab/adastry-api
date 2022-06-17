@@ -14,7 +14,7 @@ import { PoolIdParam } from '../utils/params/pool-id.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { HistoryParam } from '../utils/params/history.param';
 import { PoolHistoryListDto } from './dto/pool-history.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Pool')
 @Controller('pool')

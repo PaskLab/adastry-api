@@ -7,7 +7,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { StatsService } from './stats.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { MonthlyListDto } from './dto/stats/monthly.dto';
 import { MonthParam } from './params/month.param';
