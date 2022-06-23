@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
@@ -19,7 +21,7 @@ import { VerifiedAddressRepository } from '../user/repositories/verified-address
 export class AuthService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
-    private userService: UserService,
+    @Inject(forwardRef(() => UserService)) private userService: UserService,
     private jwtService: JwtService,
   ) {}
 

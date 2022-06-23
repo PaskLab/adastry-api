@@ -49,6 +49,10 @@ export const StrToBigInt: ValueTransformer = {
   from: (databaseValue: string): number => parseInt(databaseValue, 10),
 };
 
+export function randNumber(): number {
+  return Math.floor(Math.random() * Date.now());
+}
+
 export function extractStakeAddress(hexAddress: string): CSL.Address {
   const baseAddress = CSL.BaseAddress.from_address(
     CSL.Address.from_bytes(Buffer.from(hexAddress, 'hex')),
@@ -74,6 +78,22 @@ export function extractStakeAddress(hexAddress: string): CSL.Address {
   }
 
   return stakeAddress.to_address();
+}
+
+export function hexToBech32(
+  address: string,
+  type: 'payment' | 'reward' = 'payment',
+): string {
+  const builder = type === 'payment' ? CSL.BaseAddress : CSL.RewardAddress;
+
+  const addressObject = builder.from_address(
+    CSL.Address.from_bytes(Buffer.from(address, 'hex')),
+  );
+
+  if (!addressObject)
+    throw new BadRequestException(`Wrong ${type} address format`);
+
+  return addressObject.to_address().to_bech32();
 }
 
 /**

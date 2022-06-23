@@ -27,6 +27,7 @@ import { UserDto } from './dto/user.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { UpdateCurrencyDto } from './dto/update-currency.dto';
+import { SignatureDto } from '../auth/dto/signature.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -42,7 +43,21 @@ export class UserController {
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async create(@Body() createUserDto: CreateUserDto): Promise<ResponseDto> {
     const user = await this.userService.createUser(createUserDto);
-    return new ResponseDto(`User ${user.username} created.`);
+    return new ResponseDto(`User ${user.username} successfully created.`);
+  }
+
+  @Post('signature')
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiConflictResponse({
+    type: ConflictErrorDto,
+    description: 'User already exist',
+  })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async createSignature(
+    @Body() signatureDto: SignatureDto,
+  ): Promise<ResponseDto> {
+    const user = await this.userService.createUserSignature(signatureDto);
+    return new ResponseDto(`User "${user.username}" successfully created.`);
   }
 
   @ApiBearerAuth()

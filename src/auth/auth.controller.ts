@@ -50,10 +50,10 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
-  @Get('auth-message/:address')
+  @Get('payload/:address')
   @ApiOkResponse({ type: PayloadDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
-  async getMessage(@Param() param: AddressParam): Promise<PayloadDto> {
+  async getPayload(@Param() param: AddressParam): Promise<PayloadDto> {
     return this.authService.getEphemeralPayload('Adastry Auth', param.address);
   }
 }

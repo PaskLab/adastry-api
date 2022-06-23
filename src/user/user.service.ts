@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -19,13 +21,21 @@ import { readFileSync } from 'fs';
 import ejs = require('ejs');
 import { CurrencyRepository } from '../spot/repositories/currency.repository';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { decrypt, encrypt } from '../utils/utils';
+import { decrypt, encrypt, hexToBech32, randNumber } from '../utils/utils';
+import { SignatureDto } from '../auth/dto/signature.dto';
+import { VerifiedAddressRepository } from './repositories/verified-address.repository';
+import { AuthService } from '../auth/auth.service';
+import { VerifiedAddress } from './entities/verified-address.entity';
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
 
-  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+  constructor(
+    @InjectEntityManager() private readonly em: EntityManager,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
+  ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<UserDto> {
     let user = await this.em
@@ -66,6 +76,60 @@ export class UserService {
       email: '',
       name: user.name,
       currency: user.currency.code,
+    });
+  }
+
+  async createUserSignature(signatureDto: SignatureDto): Promise<UserDto> {
+    let stakeAddress = await this.authService.verify(
+      signatureDto.key,
+      signatureDto.signature,
+    );
+
+    if (!stakeAddress) throw new BadRequestException('Invalid signature');
+
+    stakeAddress = hexToBech32(stakeAddress, 'reward');
+
+    const address = await this.em
+      .getCustomRepository(VerifiedAddressRepository)
+      .findOne({ stakeAddress: stakeAddress });
+
+    if (address) {
+      throw new ConflictException(
+        `User with verified address "${address.stakeAddress}" already exist.`,
+      );
+    }
+
+    const saltRounds = 10;
+    const pwdHash = await bcrypt.hash(randNumber().toString(), saltRounds);
+
+    const currency = await this.em
+      .getCustomRepository(CurrencyRepository)
+      .findOne({
+        code: 'USD',
+      });
+
+    if (!currency) {
+      throw new BadRequestException(`Currency code [USD] not supported.`);
+    }
+
+    const username = 'User-' + randNumber();
+    const user = new User();
+    user.username = username;
+    user.name = username;
+    user.password = pwdHash;
+    user.currency = currency;
+
+    let verifiedAddress = new VerifiedAddress();
+    verifiedAddress.stakeAddress = stakeAddress;
+    verifiedAddress.user = user;
+
+    verifiedAddress = await this.em.save(verifiedAddress);
+
+    return new UserDto({
+      username: verifiedAddress.user.username,
+      email: '',
+      name: verifiedAddress.user.name,
+      currency: verifiedAddress.user.currency.code,
     });
   }
 

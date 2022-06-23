@@ -17,7 +17,7 @@ export class VerifiedAddress {
   @Index({ unique: true })
   stakeAddress!: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE', cascade: true })
   user!: User;
 
   // Special columns
