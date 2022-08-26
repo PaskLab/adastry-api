@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PoolController } from './pool.controller';
 import { SyncService } from './sync.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -7,11 +7,17 @@ import { PoolHistory } from './entities/pool-history.entity';
 import { PoolCert } from './entities/pool-cert.entity';
 import { PoolOwner } from './entities/pool-owner.entity';
 import { PoolService } from './pool.service';
+import { PoolHistoryService } from './pool-history.service';
+import { PoolCertService } from './pool-cert.service';
+import { AccountModule } from '../account/account.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Pool, PoolHistory, PoolCert, PoolOwner])],
+  imports: [
+    TypeOrmModule.forFeature([Pool, PoolHistory, PoolCert, PoolOwner]),
+    forwardRef(() => AccountModule),
+  ],
   controllers: [PoolController],
-  providers: [SyncService, PoolService],
+  providers: [SyncService, PoolService, PoolHistoryService, PoolCertService],
   exports: [SyncService, PoolService],
 })
 export class PoolModule {}

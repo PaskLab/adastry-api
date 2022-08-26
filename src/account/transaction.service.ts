@@ -7,21 +7,25 @@ import {
   TransactionListDto,
 } from './dto/transaction.dto';
 import { TxHistoryParam } from './params/tx-history.param';
-import { TransactionRepository } from './repositories/transaction.repository';
 import { Request } from 'express';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { CsvFieldsType } from './types/csv-fields.type';
 import {
   createTimestamp,
   dateFromUnix,
+  dateToUnix,
   generateUrl,
   parseAssetHex,
   toAda,
 } from '../utils/utils';
 import { CsvService } from './csv.service';
+import config from '../../config.json';
+import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionService {
+  private readonly MAX_LIMIT = config.api.pageLimit;
+
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly csvService: CsvService,
@@ -31,9 +35,7 @@ export class TransactionService {
     stakeAddress: string,
     params: TxHistoryParam,
   ): Promise<TransactionListDto> {
-    const history = await this.em
-      .getCustomRepository(TransactionRepository)
-      .findHistory(stakeAddress, params);
+    const history = await this.findHistory(stakeAddress, params);
 
     return new TransactionListDto({
       count: history[1],
@@ -78,9 +80,7 @@ export class TransactionService {
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
-    const history = await this.em
-      .getCustomRepository(TransactionRepository)
-      .findByYear(stakeAddress, year, quarter);
+    const history = await this.findByYear(stakeAddress, year, quarter);
 
     if (!history.length) {
       throw new NotFoundException(
@@ -191,5 +191,127 @@ export class TransactionService {
       stakeAddress: stakeAddress,
       year: year.toString(),
     });
+  }
+
+  // REPOSITORY
+
+  findLastAddressTx(address: string): Promise<Transaction | null> {
+    return this.em
+      .getRepository(Transaction)
+      .createQueryBuilder('transaction')
+      .innerJoin('transaction.addresses', 'addresses')
+      .innerJoin('addresses.address', 'address')
+      .where('address.address = :address', { address: address })
+      .orderBy('transaction.blockHeight', 'DESC')
+      .addOrderBy('transaction.txIndex', 'DESC')
+      .getOne();
+  }
+
+  async findHistory(
+    stakeAddress: string,
+    params: TxHistoryParam,
+  ): Promise<[Transaction[], number]> {
+    const qb = this.em
+      .getRepository(Transaction)
+      .createQueryBuilder('transaction')
+      .innerJoin('transaction.account', 'account')
+      .innerJoinAndSelect('transaction.addresses', 'addresses')
+      .innerJoinAndSelect('addresses.address', 'address')
+      .innerJoin(
+        'address.account',
+        'addressAccount',
+        'addressAccount.stakeAddress = :stakeAddress',
+        { stakeAddress: stakeAddress },
+      )
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .orderBy({
+        'transaction.blockTime': 'DESC',
+        'transaction.txIndex': 'DESC',
+      });
+
+    if (params.order) {
+      qb.orderBy({
+        'transaction.blockTime': params.order,
+        'transaction.txIndex': params.order,
+      });
+    }
+
+    if (params.from) {
+      qb.andWhere('transaction.blockTime >= :from', { from: params.from });
+    }
+
+    if (params.to) {
+      qb.andWhere('transaction.blockTime <= :to', { to: params.to });
+    }
+
+    qb.take(params.limit ? params.limit : this.MAX_LIMIT);
+
+    if (params.page) {
+      qb.skip(
+        (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
+      );
+    }
+
+    return qb.getManyAndCount();
+  }
+
+  findByYear(
+    stakeAddress: string,
+    year: number,
+    quarter?: number,
+  ): Promise<Transaction[]> {
+    let startMonth = '01';
+    let endMonth = '12';
+    let endDay = '31';
+
+    if (quarter) {
+      const zeroLead = (str) => ('0' + str).slice(-2);
+      startMonth = zeroLead((quarter - 1) * 3 + 1);
+      endMonth = zeroLead((quarter - 1) * 3 + 3);
+      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
+    }
+
+    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
+    const lastDay = dateToUnix(
+      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
+    );
+
+    return this.em
+      .getRepository(Transaction)
+      .createQueryBuilder('transaction')
+      .innerJoin('transaction.account', 'account')
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .andWhere(
+        'transaction.blockTime >= :startTime AND transaction.blockTime <= :endTime',
+        {
+          startTime: firstDay,
+          endTime: lastDay,
+        },
+      )
+      .orderBy('transaction.blockTime', 'ASC')
+      .addOrderBy('transaction.txIndex', 'ASC')
+      .getMany();
+  }
+
+  findOneForAccount(
+    txHash: string,
+    stakeAddress: string,
+  ): Promise<Transaction | null> {
+    return this.em
+      .getRepository(Transaction)
+      .createQueryBuilder('transaction')
+      .innerJoin('transaction.account', 'account')
+      .where(
+        'transaction.txHash = :txHash AND account.stakeAddress = :stakeAddress',
+        {
+          txHash: txHash,
+          stakeAddress: stakeAddress,
+        },
+      )
+      .getOne();
   }
 }

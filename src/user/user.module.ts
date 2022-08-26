@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { VerifiedAddress } from './entities/verified-address.entity';
 import { AuthModule } from '../auth/auth.module';
+import { VerifiedAddressService } from './verified-address.service';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { AuthModule } from '../auth/auth.module';
     TypeOrmModule.forFeature([User, VerifiedAddress]),
   ],
   controllers: [UserController],
-  providers: [UserService],
-  exports: [UserService],
+  providers: [UserService, VerifiedAddressService],
+  exports: [UserService, VerifiedAddressService],
 })
 export class UserModule {}

@@ -15,7 +15,7 @@ import * as CSL from '@emurgo/cardano-serialization-lib-nodejs';
 import { PayloadDto } from './dto/payload.dto';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { VerifiedAddressRepository } from '../user/repositories/verified-address.repository';
+import { VerifiedAddressService } from '../user/verified-address.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +23,7 @@ export class AuthService {
     @InjectEntityManager() private readonly em: EntityManager,
     @Inject(forwardRef(() => UserService)) private userService: UserService,
     private jwtService: JwtService,
+    private readonly verifiedAddressService: VerifiedAddressService,
   ) {}
 
   async validateUser(
@@ -78,9 +79,10 @@ export class AuthService {
       ?.to_address()
       .to_bech32();
 
-    const verifiedAddress = await this.em
-      .getCustomRepository(VerifiedAddressRepository)
-      .findActiveVerifiedAddress(bech32Address!);
+    const verifiedAddress =
+      await this.verifiedAddressService.findActiveVerifiedAddress(
+        bech32Address!,
+      );
 
     if (!verifiedAddress)
       throw new UnauthorizedException('No user match this signature');

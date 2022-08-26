@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import config from '../../config.json';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
@@ -9,15 +9,13 @@ import { PoolCert } from './entities/pool-cert.entity';
 import { PoolOwner } from './entities/pool-owner.entity';
 import { Account } from '../account/entities/account.entity';
 import { EntityManager } from 'typeorm';
-import { PoolRepository } from './repositories/pool.repository';
-import { PoolHistoryRepository } from './repositories/pool-history.repository';
-import { PoolCertRepository } from './repositories/pool-cert.repository';
-import { EpochRepository } from '../epoch/repositories/epoch.repository';
-import { AccountRepository } from '../account/repositories/account.repository';
 import type { PoolHistoryType } from '../utils/api/types/pool-history.type';
 import { ArmadaService } from '../utils/api/armada.service';
 import { SyncConfigPoolsType } from '../utils/types/config.type';
-import { AccountHistoryRepository } from '../account/repositories/account-history.repository';
+import { PoolService } from './pool.service';
+import { PoolCertService } from './pool-cert.service';
+import { PoolHistoryService } from './pool-history.service';
+import { AccountHistoryService } from '../account/account-history.service';
 
 @Injectable()
 export class SyncService {
@@ -30,6 +28,11 @@ export class SyncService {
     private readonly em: EntityManager,
     private readonly source: BlockfrostService,
     private readonly armadaService: ArmadaService,
+    private readonly poolService: PoolService,
+    private readonly poolHistoryService: PoolHistoryService,
+    private readonly poolCertService: PoolCertService,
+    @Inject(forwardRef(() => AccountHistoryService))
+    private readonly accountHistoryService: AccountHistoryService,
   ) {}
 
   async syncMember(): Promise<void> {
@@ -46,13 +49,15 @@ export class SyncService {
 
     this.memberPools = pools;
 
-    this.processNonMember(pools);
+    this.processNonMember(pools).then();
 
-    const poolRepository = this.em.getCustomRepository(PoolRepository);
+    const poolRepository = this.em.getRepository(Pool);
 
     for (const pool of pools) {
       let action = 'Updating';
-      let poolEntity = await poolRepository.findOne({ poolId: pool.id });
+      let poolEntity = await poolRepository.findOne({
+        where: { poolId: pool.id },
+      });
       if (!poolEntity) {
         action = 'Creating';
         poolEntity = new Pool();
@@ -73,9 +78,7 @@ export class SyncService {
       memberIds.push(pool.id);
     }
 
-    const optOutMembers = await this.em
-      .getCustomRepository(PoolRepository)
-      .findOptOutMembers(memberIds);
+    const optOutMembers = await this.poolService.findOptOutMembers(memberIds);
 
     for (const pool of optOutMembers) {
       pool.isMember = false;
@@ -103,9 +106,7 @@ export class SyncService {
     }
 
     if (!pool.epoch || pool.epoch.epoch !== lastEpoch.epoch) {
-      const lastCert = await this.em
-        .getCustomRepository(PoolCertRepository)
-        .findLastCert(pool.poolId);
+      const lastCert = await this.poolCertService.findLastCert(pool.poolId);
 
       pool.name = `${poolCert.name}[${poolCert.ticker}]`;
       pool.blocksMinted = poolCert.blocksMinted;
@@ -118,7 +119,7 @@ export class SyncService {
         (memberPool) => memberPool.id === pool.poolId,
       );
 
-      await this.em.getCustomRepository(PoolRepository).save(pool);
+      await this.em.save(pool);
       this.logger.log(`Pool Sync - Updating Pool ${pool.poolId}`);
     }
   }
@@ -134,9 +135,7 @@ export class SyncService {
       return;
     }
 
-    const lastStoredCert = await this.em
-      .getCustomRepository(PoolCertRepository)
-      .findLastCert(pool.poolId);
+    const lastStoredCert = await this.poolCertService.findLastCert(pool.poolId);
 
     const lastStoredHash = lastStoredCert ? lastStoredCert.txHash : '';
     const lastStoredBlock = lastStoredCert ? lastStoredCert.block : 0;
@@ -150,8 +149,8 @@ export class SyncService {
       pool.poolId,
       lastStoredCert?.txHash,
     );
-    const epochRepository = this.em.getCustomRepository(EpochRepository);
-    const accountRepository = this.em.getCustomRepository(AccountRepository);
+    const epochRepository = this.em.getRepository(Epoch);
+    const accountRepository = this.em.getRepository(Account);
 
     for (const poolCert of poolCerts) {
       if (
@@ -164,7 +163,7 @@ export class SyncService {
         }
 
         const epoch = poolCert.epoch
-          ? await epochRepository.findOne({ epoch: poolCert.epoch })
+          ? await epochRepository.findOne({ where: { epoch: poolCert.epoch } })
           : null;
 
         if (!epoch) {
@@ -190,7 +189,7 @@ export class SyncService {
         if (poolCert.rewardAccount) {
           let rewardAccount = poolCert.rewardAccount
             ? await accountRepository.findOne({
-                stakeAddress: poolCert.rewardAccount,
+                where: { stakeAddress: poolCert.rewardAccount },
               })
             : null;
 
@@ -207,7 +206,7 @@ export class SyncService {
         if (poolCert.owners) {
           for (const certOwner of poolCert.owners) {
             let owner = await accountRepository.findOne({
-              stakeAddress: certOwner,
+              where: { stakeAddress: certOwner },
             });
 
             if (!owner) {
@@ -235,9 +234,7 @@ export class SyncService {
   }
 
   async syncPoolHistory(pool: Pool, lastEpoch: Epoch) {
-    const lastCert = await this.em
-      .getCustomRepository(PoolCertRepository)
-      .findLastCert(pool.poolId);
+    const lastCert = await this.poolCertService.findLastCert(pool.poolId);
 
     if (!lastCert) {
       this.logger.warn(
@@ -246,10 +243,8 @@ export class SyncService {
       return;
     }
 
-    const poolHistoryRepository = this.em.getCustomRepository(
-      PoolHistoryRepository,
-    );
-    const lastStoredEpoch = await poolHistoryRepository.findLastEpoch(
+    const poolHistoryRepository = this.em.getRepository(PoolHistory);
+    const lastStoredEpoch = await this.poolHistoryService.findLastEpoch(
       pool.poolId,
     );
 
@@ -286,12 +281,11 @@ export class SyncService {
       history = history.concat(upstreamHistory);
     }
 
-    const epochRepository = this.em.getCustomRepository(EpochRepository);
-    const poolCertRepository = this.em.getCustomRepository(PoolCertRepository);
+    const epochRepository = this.em.getRepository(Epoch);
 
     for (const record of history) {
       const epoch = record.epoch
-        ? await epochRepository.findOne({ epoch: record.epoch })
+        ? await epochRepository.findOne({ where: { epoch: record.epoch } })
         : null;
 
       if (!epoch) {
@@ -301,7 +295,7 @@ export class SyncService {
         continue;
       }
 
-      let newHistory = await poolHistoryRepository.findOneRecord(
+      let newHistory = await this.poolHistoryService.findOneRecord(
         pool.poolId,
         epoch.epoch,
       );
@@ -313,7 +307,7 @@ export class SyncService {
         continue;
       }
 
-      const lastCert = await poolCertRepository.findLastCert(
+      const lastCert = await this.poolCertService.findLastCert(
         pool.poolId,
         epoch.epoch,
       );
@@ -342,18 +336,12 @@ export class SyncService {
   }
 
   async processMultiOwner() {
-    const accountHistoryRepository = this.em.getCustomRepository(
-      AccountHistoryRepository,
-    );
-
-    const memberPools = await this.em
-      .getCustomRepository(PoolRepository)
-      .findAllMembers();
+    const memberPools = await this.poolService.findAllMembers();
 
     for (const member of memberPools) {
-      const unprocessed = await this.em
-        .getCustomRepository(PoolHistoryRepository)
-        .findUnprocessed(member.poolId);
+      const unprocessed = await this.poolHistoryService.findUnprocessed(
+        member.poolId,
+      );
 
       for (const record of unprocessed) {
         const cert = record.cert;
@@ -363,7 +351,7 @@ export class SyncService {
         );
 
         const ownersAccountHistory =
-          await accountHistoryRepository.findAccountSelection(
+          await this.accountHistoryService.findAccountSelection(
             ownersStakeAddr,
             record.epoch.epoch,
           );
@@ -375,7 +363,7 @@ export class SyncService {
         }
 
         const rewardAccountHistory =
-          await accountHistoryRepository.findOneRecord(
+          await this.accountHistoryService.findOneRecord(
             cert.rewardAccount.stakeAddress,
             record.epoch.epoch,
           );

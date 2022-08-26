@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { UserAccountController } from './user-account.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -20,6 +20,13 @@ import { TransactionAddress } from './entities/transaction-address.entity';
 import { SpotModule } from '../spot/spot.module';
 import { StatsController } from './stats.controller';
 import { StatsService } from './stats.service';
+import { EpochModule } from '../epoch/epoch.module';
+import { UserModule } from '../user/user.module';
+import { AssetService } from './asset.service';
+import { AccountHistoryService } from './account-history.service';
+import { AccountAddressService } from './account-address.service';
+import { AccountWithdrawService } from './account-withdraw.service';
+import { TransactionAddressService } from './transaction-address.service';
 
 @Module({
   imports: [
@@ -33,8 +40,10 @@ import { StatsService } from './stats.service';
       Transaction,
       Asset,
     ]),
-    PoolModule,
+    forwardRef(() => PoolModule),
     SpotModule,
+    EpochModule,
+    UserModule,
   ],
   controllers: [UserAccountController, StatsController],
   providers: [
@@ -46,7 +55,12 @@ import { StatsService } from './stats.service';
     CsvService,
     TransactionService,
     StatsService,
+    AssetService,
+    AccountHistoryService,
+    AccountAddressService,
+    AccountWithdrawService,
+    TransactionAddressService,
   ],
-  exports: [AccountService, SyncService],
+  exports: [AccountService, SyncService, AccountHistoryService],
 })
 export class AccountModule {}

@@ -11,7 +11,6 @@ import {
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserRepository } from './repositories/user.repository';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { UserDto } from './dto/user.dto';
@@ -19,13 +18,12 @@ import * as crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
 import ejs = require('ejs');
-import { CurrencyRepository } from '../spot/repositories/currency.repository';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { decrypt, encrypt, hexToBech32, randNumber } from '../utils/utils';
 import { SignatureDto } from '../auth/dto/signature.dto';
-import { VerifiedAddressRepository } from './repositories/verified-address.repository';
 import { AuthService } from '../auth/auth.service';
 import { VerifiedAddress } from './entities/verified-address.entity';
+import { Currency } from '../spot/entities/currency.entity';
 
 @Injectable()
 export class UserService {
@@ -39,8 +37,8 @@ export class UserService {
 
   async createUser(createUserDto: CreateUserDto): Promise<UserDto> {
     let user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOne({ username: createUserDto.username });
+      .getRepository(User)
+      .findOne({ where: { username: createUserDto.username } });
 
     if (user) {
       throw new ConflictException(
@@ -51,11 +49,9 @@ export class UserService {
     const saltRounds = 10;
     const pwdHash = await bcrypt.hash(createUserDto.password, saltRounds);
 
-    const currency = await this.em
-      .getCustomRepository(CurrencyRepository)
-      .findOne({
-        code: createUserDto.currency ? createUserDto.currency : 'USD',
-      });
+    const currency = await this.em.getRepository(Currency).findOne({
+      where: { code: createUserDto.currency ? createUserDto.currency : 'USD' },
+    });
 
     if (!currency) {
       throw new BadRequestException(
@@ -90,8 +86,8 @@ export class UserService {
     stakeAddress = hexToBech32(stakeAddress, 'reward');
 
     const address = await this.em
-      .getCustomRepository(VerifiedAddressRepository)
-      .findOne({ stakeAddress: stakeAddress });
+      .getRepository(VerifiedAddress)
+      .findOne({ where: { stakeAddress: stakeAddress } });
 
     if (address) {
       throw new ConflictException(
@@ -103,10 +99,8 @@ export class UserService {
     const pwdHash = await bcrypt.hash(randNumber().toString(), saltRounds);
 
     const currency = await this.em
-      .getCustomRepository(CurrencyRepository)
-      .findOne({
-        code: 'USD',
-      });
+      .getRepository(Currency)
+      .findOne({ where: { code: 'USD' } });
 
     if (!currency) {
       throw new BadRequestException(`Currency code [USD] not supported.`);
@@ -135,8 +129,8 @@ export class UserService {
 
   async updateUser(userId: number, updateDto: UpdateUserDto): Promise<User> {
     const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOne({ id: userId });
+      .getRepository(User)
+      .findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException(`User not found.`);
@@ -148,8 +142,8 @@ export class UserService {
 
     if (updateDto.currency) {
       const currency = await this.em
-        .getCustomRepository(CurrencyRepository)
-        .findOne({ code: updateDto.currency });
+        .getRepository(Currency)
+        .findOne({ where: { code: updateDto.currency } });
 
       if (!currency) {
         throw new BadRequestException(
@@ -165,8 +159,8 @@ export class UserService {
 
   async updateEmail(userId: number, email: string): Promise<string> {
     const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOne({ id: userId });
+      .getRepository(User)
+      .findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -198,8 +192,8 @@ export class UserService {
 
   async verifyEmail(code: string): Promise<User> {
     const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOne({ expHash: code });
+      .getRepository(User)
+      .findOne({ where: { expHash: code } });
 
     if (!user) {
       throw new BadRequestException('Verification code invalid.');
@@ -236,9 +230,7 @@ export class UserService {
   }
 
   async getActiveUser(username: string): Promise<User> {
-    const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findActiveUser(username);
+    const user = await this.findActiveUser(username);
 
     if (!user) {
       throw new NotFoundException(`User ${username} not found.`);
@@ -249,8 +241,8 @@ export class UserService {
 
   async getUserEmail(userId: number): Promise<string> {
     const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOne(userId);
+      .getRepository(User)
+      .findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -271,8 +263,8 @@ export class UserService {
 
   async getUserInfo(userId: number): Promise<UserDto> {
     const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOne(userId, { relations: ['currency'] });
+      .getRepository(User)
+      .findOne({ where: { id: userId }, relations: { currency: true } });
 
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -298,16 +290,16 @@ export class UserService {
 
   async updateCurrency(userId: number, code: string): Promise<string> {
     const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOne({ id: userId });
+      .getRepository(User)
+      .findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
     const currency = await this.em
-      .getCustomRepository(CurrencyRepository)
-      .findOne({ code: code });
+      .getRepository(Currency)
+      .findOne({ where: { code: code } });
 
     if (!currency) {
       throw new BadRequestException(`Currency ${code} doesn't exist.`);
@@ -318,5 +310,28 @@ export class UserService {
     await this.em.save(user);
 
     return currency.code;
+  }
+
+  // REPOSITORY
+
+  findActiveUser(username: string): Promise<User | null> {
+    return this.em
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.currency', 'currency')
+      .where('username = :username')
+      .andWhere('active = TRUE')
+      .setParameter('username', username)
+      .getOne();
+  }
+
+  findOneById(id: number): Promise<User | null> {
+    return this.em
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoinAndSelect('user.currency', 'currency')
+      .where('user.id = :id', { id: id })
+      .andWhere('user.active = TRUE')
+      .getOne();
   }
 }

@@ -1,17 +1,22 @@
-import { EntityRepository, Repository } from 'typeorm';
-import { AccountHistory } from '../entities/account-history.entity';
-import { HistoryQueryType } from '../types/history-query.type';
-import config from '../../../config.json';
-import { dateToUnix } from '../../utils/utils';
+import { Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import config from '../../config.json';
+import { AccountHistory } from './entities/account-history.entity';
+import { HistoryQueryType } from './types/history-query.type';
+import { dateToUnix } from '../utils/utils';
 
-@EntityRepository(AccountHistory)
-export class AccountHistoryRepository extends Repository<AccountHistory> {
+@Injectable()
+export class AccountHistoryService {
   private readonly MAX_LIMIT = config.api.pageLimit;
+  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
 
-  async findLastEpoch(
-    stakeAddress: string,
-  ): Promise<AccountHistory | undefined> {
-    return this.createQueryBuilder('history')
+  // REPOSITORY
+
+  async findLastEpoch(stakeAddress: string): Promise<AccountHistory | null> {
+    return this.em
+      .getRepository(AccountHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .where('account.stakeAddress = :stakeAddress')
@@ -23,8 +28,10 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
   async findOneRecord(
     stakeAddress: string,
     epoch: number,
-  ): Promise<AccountHistory | undefined> {
-    return this.createQueryBuilder('history')
+  ): Promise<AccountHistory | null> {
+    return this.em
+      .getRepository(AccountHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .where('account.stakeAddress = :stakeAddress')
@@ -36,7 +43,9 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
   async findAccountHistory(
     params: HistoryQueryType,
   ): Promise<[AccountHistory[], number]> {
-    const qb = this.createQueryBuilder('history')
+    const qb = this.em
+      .getRepository(AccountHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .leftJoinAndSelect('history.pool', 'pool')
@@ -89,7 +98,9 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
       new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
     );
 
-    return this.createQueryBuilder('history')
+    return this.em
+      .getRepository(AccountHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .where('account.stakeAddress = :stakeAddress', {
@@ -107,7 +118,9 @@ export class AccountHistoryRepository extends Repository<AccountHistory> {
     stakeAddresses: string[],
     epoch: number,
   ): Promise<AccountHistory[]> {
-    return this.createQueryBuilder('history')
+    return this.em
+      .getRepository(AccountHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.account', 'account')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .where('account.stakeAddress IN (:...stakeAddresses)', {

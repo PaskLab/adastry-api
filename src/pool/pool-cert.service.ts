@@ -1,13 +1,21 @@
-import { EntityRepository, Repository } from 'typeorm';
-import { PoolCert } from '../entities/pool-cert.entity';
+import { Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { PoolCert } from './entities/pool-cert.entity';
 
-@EntityRepository(PoolCert)
-export class PoolCertRepository extends Repository<PoolCert> {
+@Injectable()
+export class PoolCertService {
+  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+
+  // REPOSITORY
+
   async findLastCert(
     poolId: string,
     untilEpoch?: number,
-  ): Promise<PoolCert | undefined> {
-    const query = this.createQueryBuilder('cert')
+  ): Promise<PoolCert | null> {
+    const query = this.em
+      .getRepository(PoolCert)
+      .createQueryBuilder('cert')
       .innerJoinAndSelect('cert.pool', 'pool')
       .innerJoinAndSelect('cert.epoch', 'epoch')
       .leftJoinAndSelect('cert.rewardAccount', 'rewardAccount')

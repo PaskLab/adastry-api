@@ -4,18 +4,18 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { BlockfrostService } from '../../utils/api/blockfrost.service';
 import { Account } from '../entities/account.entity';
-import { AccountAddressRepository } from '../repositories/account-address.repository';
 import { AccountAddress } from '../entities/account-address.entity';
-import { TransactionRepository } from '../repositories/transaction.repository';
 import { AddressTransactionType } from '../../utils/api/types/address-transaction.type';
 import { BlockfrostAmount } from '../../utils/api/types/transaction-outputs.type';
 import { Transaction } from '../entities/transaction.entity';
-import { AssetRepository } from '../repositories/asset.repository';
 import { Asset } from '../entities/asset.entity';
-import { AccountWithdrawRepository } from '../repositories/account-withdraw.repository';
 import { parseAssetHex, toAda } from '../../utils/utils';
 import { TransactionAddress } from '../entities/transaction-address.entity';
-import { TransactionAddressRepository } from '../repositories/transaction-address.repository';
+import { AccountAddressService } from '../account-address.service';
+import { TransactionService } from '../transaction.service';
+import { TransactionAddressService } from '../transaction-address.service';
+import { AccountWithdrawService } from '../account-withdraw.service';
+import { AssetService } from '../asset.service';
 
 @Injectable()
 export class TxSyncService {
@@ -25,12 +25,17 @@ export class TxSyncService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly source: BlockfrostService,
+    private readonly accountAddressService: AccountAddressService,
+    private readonly transactionService: TransactionService,
+    private readonly transactionAddressService: TransactionAddressService,
+    private readonly accountWithdrawService: AccountWithdrawService,
+    private readonly assetService: AssetService,
   ) {}
 
   async syncAddresses(account: Account): Promise<Account> {
-    const accountAddresses = await this.em
-      .getCustomRepository(AccountAddressRepository)
-      .findAccountAddr(account.stakeAddress);
+    const accountAddresses = await this.accountAddressService.findAccountAddr(
+      account.stakeAddress,
+    );
     let upstreamAddresses: string[] | null = [];
     let page = 1;
 
@@ -66,16 +71,16 @@ export class TxSyncService {
   }
 
   async syncTransactions(account: Account): Promise<Account> {
-    const addressesEntities = await this.em
-      .getCustomRepository(AccountAddressRepository)
-      .findAccountAddr(account.stakeAddress);
+    const addressesEntities = await this.accountAddressService.findAccountAddr(
+      account.stakeAddress,
+    );
 
     const accountAddresses = addressesEntities.map((a) => a.address);
 
     for (const address of addressesEntities) {
-      const lastTransaction = await this.em
-        .getCustomRepository(TransactionRepository)
-        .findLastAddressTx(address.address);
+      const lastTransaction = await this.transactionService.findLastAddressTx(
+        address.address,
+      );
 
       let txs: AddressTransactionType[] = [];
       let upstreamTxs: AddressTransactionType[] | null = [];
@@ -99,14 +104,16 @@ export class TxSyncService {
 
       // For each address transactions, fetch & process the transaction data
       for (const tx of txs) {
-        const accountTx = await this.em
-          .getCustomRepository(TransactionRepository)
-          .findOneForAccount(tx.txHash, account.stakeAddress);
+        const accountTx = await this.transactionService.findOneForAccount(
+          tx.txHash,
+          account.stakeAddress,
+        );
 
         if (accountTx) {
-          const mappingExist = await this.em
-            .getCustomRepository(TransactionAddressRepository)
-            .exist(tx.txHash, address.address);
+          const mappingExist = await this.transactionAddressService.exist(
+            tx.txHash,
+            address.address,
+          );
 
           if (mappingExist) {
             this.logger.warn(
@@ -155,9 +162,10 @@ export class TxSyncService {
         const txAmounts: BlockfrostAmount[] = [];
 
         // Handle withdraw
-        const withdraw = await this.em
-          .getCustomRepository(AccountWithdrawRepository)
-          .findOneByAccountTx(account.stakeAddress, txInfo.txHash);
+        const withdraw = await this.accountWithdrawService.findOneByAccountTx(
+          account.stakeAddress,
+          txInfo.txHash,
+        );
         if (withdraw) {
           txAmounts.push({
             unit: 'lovelace',
@@ -287,9 +295,7 @@ export class TxSyncService {
   }
 
   async syncAsset(hexId: string): Promise<void> {
-    const exist = await this.em
-      .getCustomRepository(AssetRepository)
-      .exist(hexId);
+    const exist = await this.assetService.exist(hexId);
 
     if (exist) return;
 

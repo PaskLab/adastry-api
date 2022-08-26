@@ -3,9 +3,9 @@ import config from '../../config.json';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Epoch } from './entities/epoch.entity';
-import { EpochRepository } from './repositories/epoch.repository';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
 import type { EpochType } from '../utils/api/types/epoch.type';
+import { EpochService } from './epoch.service';
 
 @Injectable()
 export class SyncService {
@@ -15,6 +15,7 @@ export class SyncService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly source: BlockfrostService,
+    private readonly epochService: EpochService,
   ) {}
 
   async syncEpoch(): Promise<Epoch | null> {
@@ -29,8 +30,7 @@ export class SyncService {
       return null;
     }
 
-    const epochRepository = this.em.getCustomRepository(EpochRepository);
-    let lastStoredEpoch = await epochRepository.findLastEpoch();
+    let lastStoredEpoch = await this.epochService.findLastEpoch();
 
     if (!lastStoredEpoch || lastEpoch.epoch !== lastStoredEpoch.epoch) {
       // Last epoch synchronized separately, use -1 or use 208
@@ -66,7 +66,7 @@ export class SyncService {
         epoch.epoch = history[i].epoch;
         epoch.startTime = history[i].startTime;
         epoch.endTime = history[i].endTime;
-        await epochRepository.save(epoch);
+        await this.em.save(epoch);
         this.logger.log(`Epoch Sync - Saving Epoch ${epoch.epoch}`);
       }
 
@@ -74,7 +74,7 @@ export class SyncService {
       epoch.epoch = lastEpoch.epoch;
       epoch.startTime = lastEpoch.startTime;
       epoch.endTime = lastEpoch.endTime;
-      lastStoredEpoch = await epochRepository.save(epoch);
+      lastStoredEpoch = await this.em.save(epoch);
       this.logger.log(`Epoch Sync - Saving Epoch ${epoch.epoch}`);
     }
 

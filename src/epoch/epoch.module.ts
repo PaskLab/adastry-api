@@ -9,6 +9,6 @@ import { EpochService } from './epoch.service';
   imports: [TypeOrmModule.forFeature([Epoch])],
   controllers: [EpochController],
   providers: [SyncService, EpochService],
-  exports: [SyncService],
+  exports: [SyncService, EpochService],
 })
 export class EpochModule {}

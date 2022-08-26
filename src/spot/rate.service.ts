@@ -1,22 +1,32 @@
-import { EntityRepository, Repository } from 'typeorm';
-import { Rate } from '../entities/rate.entity';
-import { RateHistoryType } from '../types/rate-history.type';
-import config from '../../../config.json';
+import { Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import config from '../../config.json';
+import { Rate } from './entities/rate.entity';
+import { RateHistoryType } from './types/rate-history.type';
 
-@EntityRepository(Rate)
-export class RateRepository extends Repository<Rate> {
+@Injectable()
+export class RateService {
   private readonly MAX_LIMIT = config.api.pageLimit;
 
-  async findLastEpoch(): Promise<Rate | undefined> {
-    return this.createQueryBuilder('rate')
+  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+
+  // REPOSITORY
+
+  async findLastEpoch(): Promise<Rate | null> {
+    return this.em
+      .getRepository(Rate)
+      .createQueryBuilder('rate')
       .innerJoinAndSelect('rate.currency', 'currency')
       .innerJoinAndSelect('rate.epoch', 'epoch')
       .orderBy('epoch.epoch', 'DESC')
       .getOne();
   }
 
-  async findLastRate(code: string): Promise<Rate | undefined> {
-    return this.createQueryBuilder('rate')
+  async findLastRate(code: string): Promise<Rate | null> {
+    return this.em
+      .getRepository(Rate)
+      .createQueryBuilder('rate')
       .innerJoinAndSelect('rate.currency', 'currency')
       .innerJoinAndSelect('rate.epoch', 'epoch')
       .where('currency.code = :code', { code: code })
@@ -24,8 +34,10 @@ export class RateRepository extends Repository<Rate> {
       .getOne();
   }
 
-  async findRateEpoch(code: string, epoch: number): Promise<Rate | undefined> {
-    return this.createQueryBuilder('rate')
+  async findRateEpoch(code: string, epoch: number): Promise<Rate | null> {
+    return this.em
+      .getRepository(Rate)
+      .createQueryBuilder('rate')
       .innerJoinAndSelect('rate.currency', 'currency')
       .innerJoinAndSelect('rate.epoch', 'epoch')
       .where('currency.code = :code', { code: code })
@@ -34,7 +46,9 @@ export class RateRepository extends Repository<Rate> {
   }
 
   async findRateHistory(params: RateHistoryType): Promise<[Rate[], number]> {
-    const qb = this.createQueryBuilder('rate')
+    const qb = this.em
+      .getRepository(Rate)
+      .createQueryBuilder('rate')
       .innerJoinAndSelect('rate.currency', 'currency')
       .innerJoinAndSelect('rate.epoch', 'epoch')
       .where('currency.code = :code', { code: params.code })
