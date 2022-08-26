@@ -3,26 +3,33 @@ import { Epoch } from '../epoch/entities/epoch.entity';
 import { Pool } from './entities/pool.entity';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { PoolCertRepository } from './repositories/pool-cert.repository';
-import { PoolRepository } from './repositories/pool.repository';
 import { PoolDto, PoolListDto } from './dto/pool.dto';
 import { PageParam } from '../utils/params/page.param';
 import { HistoryQueryType } from './types/history-query.type';
-import { PoolHistoryRepository } from './repositories/pool-history.repository';
 import { PoolHistoryDto, PoolHistoryListDto } from './dto/pool-history.dto';
+import config from '../../config.json';
+import { PoolCertService } from './pool-cert.service';
+import { PoolHistoryService } from './pool-history.service';
 
 @Injectable()
 export class PoolService {
-  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+  private readonly MAX_LIMIT = config.api.pageLimit;
+
+  constructor(
+    @InjectEntityManager() private readonly em: EntityManager,
+    private readonly poolHistoryService: PoolHistoryService,
+    private readonly poolCertService: PoolCertService,
+  ) {}
 
   async isOwner(
     stakeAddress: string,
     pool: Pool,
     untilEpoch: Epoch,
   ): Promise<boolean> {
-    const cert = await this.em
-      .getCustomRepository(PoolCertRepository)
-      .findLastCert(pool.poolId, untilEpoch.epoch);
+    const cert = await this.poolCertService.findLastCert(
+      pool.poolId,
+      untilEpoch.epoch,
+    );
 
     if (!cert) {
       return false;
@@ -34,9 +41,7 @@ export class PoolService {
   }
 
   async getMemberPools(query: PageParam): Promise<PoolListDto> {
-    const pools = await this.em
-      .getCustomRepository(PoolRepository)
-      .findMembers(query);
+    const pools = await this.findMembers(query);
 
     return new PoolListDto({
       count: pools[1],
@@ -56,9 +61,7 @@ export class PoolService {
   }
 
   async getPoolInfo(poolId: string): Promise<PoolDto> {
-    const pool = await this.em
-      .getCustomRepository(PoolRepository)
-      .findOneMember(poolId);
+    const pool = await this.findOneMember(poolId);
 
     if (!pool) {
       throw new NotFoundException(`Pool ${poolId} not found.`);
@@ -77,9 +80,7 @@ export class PoolService {
   }
 
   async getPoolHistory(params: HistoryQueryType): Promise<PoolHistoryListDto> {
-    const history = await this.em
-      .getCustomRepository(PoolHistoryRepository)
-      .findPoolHistory(params);
+    const history = await this.poolHistoryService.findPoolHistory(params);
 
     return new PoolHistoryListDto({
       count: history[1],
@@ -98,5 +99,66 @@ export class PoolService {
         });
       }),
     });
+  }
+
+  // REPOSITORY
+
+  async findAll(): Promise<Pool[]> {
+    return this.em
+      .getRepository(Pool)
+      .createQueryBuilder('pool')
+      .leftJoinAndSelect('pool.lastCert', 'lastCert')
+      .leftJoinAndSelect('pool.epoch', 'epoch')
+      .getMany();
+  }
+
+  async findAllMembers(): Promise<Pool[]> {
+    return this.em
+      .getRepository(Pool)
+      .createQueryBuilder('pool')
+      .leftJoinAndSelect('pool.epoch', 'epoch')
+      .where('pool.isMember = TRUE')
+      .orderBy('pool.name', 'ASC')
+      .getMany();
+  }
+
+  async findMembers(query: PageParam): Promise<[Pool[], number]> {
+    const qb = this.em
+      .getRepository(Pool)
+      .createQueryBuilder('pool')
+      .leftJoinAndSelect('pool.epoch', 'epoch')
+      .where('pool.isMember = TRUE')
+      .take(this.MAX_LIMIT)
+      .orderBy('pool.name', 'ASC');
+
+    if (query.limit) {
+      qb.take(query.limit);
+    }
+
+    if (query.page) {
+      qb.skip((query.page - 1) * (query.limit ? query.limit : this.MAX_LIMIT));
+    }
+
+    return qb.getManyAndCount();
+  }
+
+  async findOptOutMembers(poolIds: string[]): Promise<Pool[]> {
+    return this.em
+      .getRepository(Pool)
+      .createQueryBuilder('pool')
+      .where('pool.poolId NOT IN (:...poolIds)')
+      .andWhere('pool.isMember = TRUE')
+      .setParameter('poolIds', poolIds)
+      .getMany();
+  }
+
+  async findOneMember(poolId: string): Promise<Pool | null> {
+    return this.em
+      .getRepository(Pool)
+      .createQueryBuilder('pool')
+      .leftJoinAndSelect('pool.epoch', 'epoch')
+      .where('pool.poolId = :poolId')
+      .setParameter('poolId', poolId)
+      .getOne();
   }
 }

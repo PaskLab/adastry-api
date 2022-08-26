@@ -5,14 +5,12 @@ import { EntityManager } from 'typeorm';
 import { Currency } from './entities/currency.entity';
 import type { SyncConfigCurrenciesType } from '../utils/types/config.type';
 import { FixerioService } from '../utils/api/fixerio.service';
-import { CurrencyRepository } from './repositories/currency.repository';
 import { Epoch } from '../epoch/entities/epoch.entity';
-import { RateRepository } from './repositories/rate.repository';
-import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { Rate } from './entities/rate.entity';
-import { SpotRepository } from './repositories/spot.repository';
 import { CoinGeckoService } from '../utils/api/coin-gecko.service';
 import { Spot } from './entities/spot.entity';
+import { RateService } from './rate.service';
+import { SpotService } from './spot.service';
 
 @Injectable()
 export class SyncService {
@@ -24,14 +22,16 @@ export class SyncService {
     private readonly em: EntityManager,
     private readonly rateSource: FixerioService,
     private readonly spotSource: CoinGeckoService,
+    private readonly rateService: RateService,
+    private readonly spotService: SpotService,
   ) {}
 
   async init(): Promise<void> {
-    const currencyRepository = this.em.getCustomRepository(CurrencyRepository);
+    const currencyRepository = this.em.getRepository(Currency);
 
     for (const currency of this.SYMBOLS) {
       let currencyEntity = await currencyRepository.findOne({
-        code: currency.code,
+        where: { code: currency.code },
       });
 
       if (!currencyEntity) {
@@ -50,8 +50,7 @@ export class SyncService {
   }
 
   async syncRates(lastEpoch: Epoch): Promise<void> {
-    const rateRepository = this.em.getCustomRepository(RateRepository);
-    const lastStoredEpoch = await rateRepository.findLastEpoch();
+    const lastStoredEpoch = await this.rateService.findLastEpoch();
 
     const startFromEpoch = lastStoredEpoch
       ? lastStoredEpoch.epoch.epoch + 1
@@ -59,8 +58,8 @@ export class SyncService {
 
     for (let i = startFromEpoch; i <= lastEpoch.epoch; i++) {
       const epoch = await this.em
-        .getCustomRepository(EpochRepository)
-        .findOne({ epoch: i });
+        .getRepository(Epoch)
+        .findOne({ where: { epoch: i } });
 
       if (!epoch) {
         this.logger.error(
@@ -81,8 +80,8 @@ export class SyncService {
 
       for (const rate of rates) {
         let currency = await this.em
-          .getCustomRepository(CurrencyRepository)
-          .findOne({ code: rate.code });
+          .getRepository(Currency)
+          .findOne({ where: { code: rate.code } });
 
         if (!currency) {
           currency = new Currency();
@@ -105,8 +104,7 @@ export class SyncService {
   }
 
   async syncSpotPrices(lastEpoch: Epoch) {
-    const spotRepository = this.em.getCustomRepository(SpotRepository);
-    const lastStoredEpoch = await spotRepository.findLastEpoch();
+    const lastStoredEpoch = await this.spotService.findLastEpoch();
 
     const startFromEpoch = lastStoredEpoch
       ? lastStoredEpoch.epoch.epoch + 1
@@ -114,8 +112,8 @@ export class SyncService {
 
     for (let i = startFromEpoch; i <= lastEpoch.epoch; i++) {
       const epoch = await this.em
-        .getCustomRepository(EpochRepository)
-        .findOne({ epoch: i });
+        .getRepository(Epoch)
+        .findOne({ where: { epoch: i } });
 
       if (!epoch) {
         this.logger.error(

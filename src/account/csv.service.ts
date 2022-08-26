@@ -6,9 +6,9 @@ import fs from 'fs';
 import csvWriter = require('csv-writer');
 import { CsvFileInfoType } from './types/csv-file-info.type';
 import { CsvFieldsType } from './types/csv-fields.type';
-import { AssetRepository } from './repositories/asset.repository';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import { Asset } from './entities/asset.entity';
 
 @Injectable()
 export class CsvService {
@@ -290,8 +290,8 @@ export class CsvService {
 
       if (row.sentCurrency.length && row.sentCurrency !== 'ADA') {
         const asset = await this.em
-          .getCustomRepository(AssetRepository)
-          .findOne({ hexId: row.sentCurrency });
+          .getRepository(Asset)
+          .findOne({ where: { hexId: row.sentCurrency } });
 
         if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
           tokenCount[realTxHash] = tokenCount[realTxHash]
@@ -312,8 +312,8 @@ export class CsvService {
 
       if (row.receivedCurrency.length && row.receivedCurrency !== 'ADA') {
         const asset = await this.em
-          .getCustomRepository(AssetRepository)
-          .findOne({ hexId: row.receivedCurrency });
+          .getRepository(Asset)
+          .findOne({ where: { hexId: row.receivedCurrency } });
 
         if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
           tokenCount[realTxHash] = tokenCount[realTxHash]

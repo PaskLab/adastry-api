@@ -1,15 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { AccountHistoryRepository } from './repositories/account-history.repository';
-import { UserAccountRepository } from './repositories/user-account.repository';
-import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { dateFromUnix, dateToUnix } from '../utils/utils';
 import { MonthlyDto, MonthlyListDto } from './dto/stats/monthly.dto';
+import { EpochService } from '../epoch/epoch.service';
+import { UserAccountService } from './user-account.service';
+import { AccountHistoryService } from './account-history.service';
 
 @Injectable()
 export class StatsService {
-  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+  constructor(
+    @InjectEntityManager() private readonly em: EntityManager,
+    private readonly epochService: EpochService,
+    private readonly userAccountService: UserAccountService,
+    private readonly accountHistoryService: AccountHistoryService,
+  ) {}
 
   async perMonthRewards(
     userId: number,
@@ -20,29 +25,27 @@ export class StatsService {
       `${year}-${('0' + month).slice(-2)}-01T00:00:00.000Z`,
     );
 
-    const fromEpoch = await this.em
-      .getCustomRepository(EpochRepository)
-      .findOneStartAfter(dateToUnix(fromDate));
+    const fromEpoch = await this.epochService.findOneStartAfter(
+      dateToUnix(fromDate),
+    );
 
     if (!fromEpoch)
       throw new NotFoundException(
         `Epoch not found for ${fromDate.toISOString()}`,
       );
 
-    const userAccounts = await this.em
-      .getCustomRepository(UserAccountRepository)
-      .findAllUserAccount(userId);
+    const userAccounts = await this.userAccountService.findAllUserAccount(
+      userId,
+    );
 
     const monthlyRewards: { [key: string]: MonthlyDto } = {};
 
     for (const userAccount of userAccounts) {
-      const records = await this.em
-        .getCustomRepository(AccountHistoryRepository)
-        .findAccountHistory({
-          stakeAddress: userAccount.account.stakeAddress,
-          from: fromEpoch.epoch,
-          order: 'ASC',
-        });
+      const records = await this.accountHistoryService.findAccountHistory({
+        stakeAddress: userAccount.account.stakeAddress,
+        from: fromEpoch.epoch,
+        order: 'ASC',
+      });
 
       for (const record of records[0]) {
         const startTime = new Date(dateFromUnix(record.epoch.startTime));
@@ -79,29 +82,27 @@ export class StatsService {
       `${year}-${('0' + month).slice(-2)}-01T00:00:00.000Z`,
     );
 
-    const fromEpoch = await this.em
-      .getCustomRepository(EpochRepository)
-      .findOneStartAfter(dateToUnix(fromDate));
+    const fromEpoch = await this.epochService.findOneStartAfter(
+      dateToUnix(fromDate),
+    );
 
     if (!fromEpoch)
       throw new NotFoundException(
         `Epoch not found for ${fromDate.toISOString()}`,
       );
 
-    const userAccounts = await this.em
-      .getCustomRepository(UserAccountRepository)
-      .findAllUserAccount(userId);
+    const userAccounts = await this.userAccountService.findAllUserAccount(
+      userId,
+    );
 
     const monthlyStake: { [key: string]: MonthlyDto } = {};
 
     for (const userAccount of userAccounts) {
-      const records = await this.em
-        .getCustomRepository(AccountHistoryRepository)
-        .findAccountHistory({
-          stakeAddress: userAccount.account.stakeAddress,
-          from: fromEpoch.epoch,
-          order: 'ASC',
-        });
+      const records = await this.accountHistoryService.findAccountHistory({
+        stakeAddress: userAccount.account.stakeAddress,
+        from: fromEpoch.epoch,
+        order: 'ASC',
+      });
 
       const monthlyAccountStake: { [key: string]: MonthlyDto } = {};
       const monthlyCount: { [key: string]: number } = {};

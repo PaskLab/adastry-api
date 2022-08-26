@@ -1,14 +1,22 @@
-import { EntityRepository, Repository } from 'typeorm';
-import { PoolHistory } from '../entities/pool-history.entity';
-import { HistoryQueryType } from '../types/history-query.type';
-import config from '../../../config.json';
+import { Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import config from '../../config.json';
+import { PoolHistory } from './entities/pool-history.entity';
+import { HistoryQueryType } from './types/history-query.type';
 
-@EntityRepository(PoolHistory)
-export class PoolHistoryRepository extends Repository<PoolHistory> {
+@Injectable()
+export class PoolHistoryService {
   private readonly MAX_LIMIT = config.api.pageLimit;
 
-  async findLastEpoch(poolId: string): Promise<PoolHistory | undefined> {
-    return this.createQueryBuilder('history')
+  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+
+  // REPOSITORY
+
+  async findLastEpoch(poolId: string): Promise<PoolHistory | null> {
+    return this.em
+      .getRepository(PoolHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.pool', 'pool')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .where('pool.poolId = :poolId')
@@ -21,8 +29,10 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
   async findOneRecord(
     poolId: string,
     epoch: number,
-  ): Promise<PoolHistory | undefined> {
-    return this.createQueryBuilder('history')
+  ): Promise<PoolHistory | null> {
+    return this.em
+      .getRepository(PoolHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.pool', 'pool')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .where('pool.poolId = :poolId')
@@ -34,7 +44,9 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
   async findPoolHistory(
     params: HistoryQueryType,
   ): Promise<[PoolHistory[], number]> {
-    const qb = this.createQueryBuilder('history')
+    const qb = this.em
+      .getRepository(PoolHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.pool', 'pool')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .innerJoinAndSelect('history.cert', 'cert')
@@ -73,7 +85,9 @@ export class PoolHistoryRepository extends Repository<PoolHistory> {
   }
 
   async findUnprocessed(poolId: string): Promise<PoolHistory[]> {
-    return this.createQueryBuilder('history')
+    return this.em
+      .getRepository(PoolHistory)
+      .createQueryBuilder('history')
       .innerJoinAndSelect('history.pool', 'pool')
       .innerJoinAndSelect('history.epoch', 'epoch')
       .innerJoinAndSelect('history.cert', 'cert')

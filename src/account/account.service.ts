@@ -5,16 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { AccountRepository } from './repositories/account.repository';
 import { Account } from './entities/account.entity';
 import { HistoryQueryType } from './types/history-query.type';
-import { AccountHistoryRepository } from './repositories/account-history.repository';
 import { AccountHistoryDto, HistorySpotDto } from './dto/account-history.dto';
 import { SyncService } from './sync.service';
-import { EpochRepository } from '../epoch/repositories/epoch.repository';
 import { Request } from 'express';
 import { CsvFileDto } from './dto/csv-file.dto';
-import { UserRepository } from '../user/repositories/user.repository';
 import {
   createTimestamp,
   dateFromUnix,
@@ -24,28 +20,34 @@ import {
 } from '../utils/utils';
 import crypto from 'crypto';
 import { CsvFieldsType } from './types/csv-fields.type';
-import { SpotRepository } from '../spot/repositories/spot.repository';
-import { RateRepository } from '../spot/repositories/rate.repository';
 import { CsvService } from './csv.service';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountHistoryListDto } from './dto/account-history.dto';
 import { EpochDto } from '../epoch/dto/epoch.dto';
 import { SpotService } from '../spot/spot.service';
 import { SpotListDto } from '../spot/dto/spot.dto';
+import { UserService } from '../user/user.service';
+import { EpochService } from '../epoch/epoch.service';
+import { RateService } from '../spot/rate.service';
+import { AccountHistoryService } from './account-history.service';
 
 @Injectable()
 export class AccountService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
+    private readonly accountHistoryService: AccountHistoryService,
     private readonly syncService: SyncService,
     private readonly csvService: CsvService,
     private readonly spotService: SpotService,
+    private readonly userService: UserService,
+    private readonly epochService: EpochService,
+    private readonly rateService: RateService,
   ) {}
 
   async create(stakeAddress: string): Promise<Account> {
     let account = await this.em
-      .getCustomRepository(AccountRepository)
-      .findOne({ stakeAddress: stakeAddress });
+      .getRepository(Account)
+      .findOne({ where: { stakeAddress: stakeAddress } });
 
     if (account) {
       throw new ConflictException('Stake account already exist.');
@@ -56,12 +58,10 @@ export class AccountService {
 
     account = await this.em.save(account);
 
-    const lastEpoch = await this.em
-      .getCustomRepository(EpochRepository)
-      .findLastEpoch();
+    const lastEpoch = await this.epochService.findLastEpoch();
 
     if (lastEpoch) {
-      this.syncService.syncAccount(account, lastEpoch);
+      this.syncService.syncAccount(account, lastEpoch).then();
     }
 
     return account;
@@ -69,8 +69,8 @@ export class AccountService {
 
   async remove(stakeAddress: string): Promise<void> {
     const account = await this.em
-      .getCustomRepository(AccountRepository)
-      .findOne({ stakeAddress: stakeAddress });
+      .getRepository(Account)
+      .findOne({ where: { stakeAddress: stakeAddress } });
 
     if (!account) {
       throw new NotFoundException(`Account ${stakeAddress} not found.`);
@@ -87,17 +87,13 @@ export class AccountService {
     userId: number,
     params: HistoryQueryType,
   ): Promise<AccountHistoryListDto> {
-    const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOneById(userId);
+    const user = await this.userService.findOneById(userId);
 
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
-    const history = await this.em
-      .getCustomRepository(AccountHistoryRepository)
-      .findAccountHistory(params);
+    const history = await this.accountHistoryService.findAccountHistory(params);
 
     let priceHistory: SpotListDto;
 
@@ -158,8 +154,8 @@ export class AccountService {
 
   async loyaltyCheck(stakeAddress: string, minScore: number): Promise<boolean> {
     const account = await this.em
-      .getCustomRepository(AccountRepository)
-      .findOne({ stakeAddress: stakeAddress });
+      .getRepository(Account)
+      .findOne({ where: { stakeAddress: stakeAddress } });
 
     if (!account) {
       throw new NotFoundException(`Account ${stakeAddress} not found.`);
@@ -176,9 +172,11 @@ export class AccountService {
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
-    const history = await this.em
-      .getCustomRepository(AccountHistoryRepository)
-      .findByYear(stakeAddress, year, quarter);
+    const history = await this.accountHistoryService.findByYear(
+      stakeAddress,
+      year,
+      quarter,
+    );
 
     if (!history.length) {
       throw new NotFoundException(
@@ -186,9 +184,7 @@ export class AccountService {
       );
     }
 
-    const user = await this.em
-      .getCustomRepository(UserRepository)
-      .findOneById(userId);
+    const user = await this.userService.findOneById(userId);
 
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -284,12 +280,11 @@ export class AccountService {
     baseCurrency: string,
     epoch: number,
   ): Promise<number> {
-    const spotPrice = await this.em
-      .getCustomRepository(SpotRepository)
-      .findEpoch(epoch);
-    const baseCurrencyRate = await this.em
-      .getCustomRepository(RateRepository)
-      .findRateEpoch(baseCurrency, epoch);
+    const spotPrice = await this.spotService.findEpoch(epoch);
+    const baseCurrencyRate = await this.rateService.findRateEpoch(
+      baseCurrency,
+      epoch,
+    );
 
     let netWorthAmount = 0;
 
@@ -299,5 +294,28 @@ export class AccountService {
     }
 
     return netWorthAmount;
+  }
+
+  // CUSTOM REPOSITORY
+
+  async findAll(): Promise<Account[]> {
+    return this.em
+      .getRepository(Account)
+      .createQueryBuilder('account')
+      .leftJoinAndSelect('account.epoch', 'epoch')
+      .leftJoinAndSelect('account.pool', 'pool')
+      .getMany();
+  }
+
+  async findOneWithJoin(stakeAddress: string): Promise<Account | null> {
+    return this.em
+      .getRepository(Account)
+      .createQueryBuilder('account')
+      .leftJoinAndSelect('account.epoch', 'epoch')
+      .leftJoinAndSelect('account.pool', 'pool')
+      .leftJoinAndSelect('pool.epoch', 'poolEpoch')
+      .where('account.stakeAddress = :stakeAddress')
+      .setParameter('stakeAddress', stakeAddress)
+      .getOne();
   }
 }

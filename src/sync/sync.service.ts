@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { AccountRepository } from '../account/repositories/account.repository';
-import { PoolRepository } from '../pool/repositories/pool.repository';
 import { SyncService as AccountSyncService } from '../account/sync.service';
 import { SyncService as PoolSyncService } from '../pool/sync.service';
 import { SyncService as EpochSyncService } from '../epoch/sync.service';
 import { SyncService as SpotSyncService } from '../spot/sync.service';
 import { Epoch } from '../epoch/entities/epoch.entity';
 import { Cron } from '@nestjs/schedule';
+import { PoolService } from '../pool/pool.service';
+import { AccountService } from '../account/account.service';
 
 @Injectable()
 export class SyncService {
@@ -20,16 +20,18 @@ export class SyncService {
     private readonly poolSyncService: PoolSyncService,
     private readonly epochSyncService: EpochSyncService,
     private readonly spotSyncService: SpotSyncService,
+    private readonly poolService: PoolService,
+    private readonly accountService: AccountService,
   ) {
     if (!process.env.SKIP_SYNC) {
-      this.init();
+      this.init().then();
     }
   }
 
   async init(): Promise<void> {
     this.logger.log('Init sync data ...');
     await this.spotSyncService.init();
-    this.sync();
+    this.sync().then();
   }
 
   @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
@@ -49,7 +51,7 @@ export class SyncService {
   private async syncPools(lastEpoch: Epoch): Promise<void> {
     this.logger.log('Starting Sync:syncPools() ...');
 
-    const pools = await this.em.getCustomRepository(PoolRepository).findAll();
+    const pools = await this.poolService.findAll();
     for (const pool of pools) {
       await this.poolSyncService.syncPool(pool, lastEpoch);
     }
@@ -57,9 +59,7 @@ export class SyncService {
 
   private async syncAccounts(lastEpoch: Epoch): Promise<void> {
     this.logger.log('Starting Sync:syncAccounts() ...');
-    const accounts = await this.em
-      .getCustomRepository(AccountRepository)
-      .findAll();
+    const accounts = await this.accountService.findAll();
     for (const account of accounts) {
       await this.accountSyncService.syncAccount(account, lastEpoch);
     }
@@ -67,7 +67,7 @@ export class SyncService {
 
   private async syncSpotPrices(lastEpoch: Epoch): Promise<void> {
     this.logger.log('Starting Sync:syncSpotPrices() ...');
-    this.spotSyncService.syncRates(lastEpoch);
-    this.spotSyncService.syncSpotPrices(lastEpoch);
+    this.spotSyncService.syncRates(lastEpoch).then();
+    this.spotSyncService.syncSpotPrices(lastEpoch).then();
   }
 }

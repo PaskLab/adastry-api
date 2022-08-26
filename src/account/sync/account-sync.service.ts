@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import config from '../../../config.json';
 import { BlockfrostService } from '../../utils/api/blockfrost.service';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -7,15 +7,13 @@ import { Account } from '../entities/account.entity';
 import { AccountHistory } from '../entities/account-history.entity';
 import { Epoch } from '../../epoch/entities/epoch.entity';
 import { Pool } from '../../pool/entities/pool.entity';
-import { AccountRepository } from '../repositories/account.repository';
-import { PoolRepository } from '../../pool/repositories/pool.repository';
-import { EpochRepository } from '../../epoch/repositories/epoch.repository';
-import { AccountHistoryRepository } from '../repositories/account-history.repository';
 import type { AccountHistoryType } from '../../utils/api/types/account-history.type';
 import type { AccountRewardsHistoryType } from '../../utils/api/types/account-rewards-history.type';
 import { PoolService } from '../../pool/pool.service';
-import { AccountWithdrawRepository } from '../repositories/account-withdraw.repository';
 import { AccountWithdraw } from '../entities/account-withdraw.entity';
+import { AccountHistoryService } from '../account-history.service';
+import { AccountWithdrawService } from '../account-withdraw.service';
+import { EpochService } from '../../epoch/epoch.service';
 
 @Injectable()
 export class AccountSyncService {
@@ -25,7 +23,11 @@ export class AccountSyncService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly source: BlockfrostService,
+    @Inject(forwardRef(() => PoolService))
     private readonly poolService: PoolService,
+    private readonly accountHistoryService: AccountHistoryService,
+    private readonly accountWithdrawService: AccountWithdrawService,
+    private readonly epochService: EpochService,
   ) {}
 
   async syncInfo(account: Account, lastEpoch: Epoch): Promise<Account> {
@@ -48,8 +50,8 @@ export class AccountSyncService {
     if (account.pool?.poolId !== accountUpdate.poolId) {
       let pool = accountUpdate.poolId
         ? await this.em
-            .getCustomRepository(PoolRepository)
-            .findOne({ poolId: accountUpdate.poolId })
+            .getRepository(Pool)
+            .findOne({ where: { poolId: accountUpdate.poolId } })
         : null;
 
       if (pool === undefined) {
@@ -62,18 +64,17 @@ export class AccountSyncService {
       account.pool = pool;
     }
 
-    account = await this.em
-      .getCustomRepository(AccountRepository)
-      .save(account);
+    account = await this.em.save(account);
+
     this.logger.log(`Account Sync - Updating account ${account.stakeAddress}`);
 
     return account;
   }
 
   async syncHistory(account: Account, lastEpoch: Epoch): Promise<void> {
-    const lastStoredEpoch = await this.em
-      .getCustomRepository(AccountHistoryRepository)
-      .findLastEpoch(account.stakeAddress);
+    const lastStoredEpoch = await this.accountHistoryService.findLastEpoch(
+      account.stakeAddress,
+    );
 
     if (lastStoredEpoch?.epoch.epoch === lastEpoch.epoch) return;
 
@@ -126,16 +127,16 @@ export class AccountSyncService {
       rewardsHistory = rewardsHistory.concat(upstreamRewardsHistory);
     }
 
-    const epochRepository = this.em.getCustomRepository(EpochRepository);
-    const poolRepository = this.em.getCustomRepository(PoolRepository);
+    const epochRepository = this.em.getRepository(Epoch);
+    const poolRepository = this.em.getRepository(Pool);
 
     for (let i = 0; i < history.length; i++) {
       const rh = rewardsHistory.find((rh) => rh.epoch === history[i].epoch);
       const epoch = history[i].epoch
-        ? await epochRepository.findOne({ epoch: history[i].epoch })
+        ? await epochRepository.findOne({ where: { epoch: history[i].epoch } })
         : null;
       let pool = history[i].poolId
-        ? await poolRepository.findOne({ poolId: history[i].poolId })
+        ? await poolRepository.findOne({ where: { poolId: history[i].poolId } })
         : null;
 
       if (!epoch) {
@@ -145,9 +146,10 @@ export class AccountSyncService {
         continue;
       }
 
-      let newHistory = await this.em
-        .getCustomRepository(AccountHistoryRepository)
-        .findOneRecord(account.stakeAddress, epoch.epoch);
+      let newHistory = await this.accountHistoryService.findOneRecord(
+        account.stakeAddress,
+        epoch.epoch,
+      );
 
       if (newHistory) {
         this.logger.log(
@@ -163,15 +165,19 @@ export class AccountSyncService {
         pool = await this.em.save(pool);
       }
 
-      const previousEpoch = await this.em
-        .getCustomRepository(AccountHistoryRepository)
-        .findOneRecord(account.stakeAddress, epoch.epoch - 1);
-      const snapshotEpoch = await this.em
-        .getCustomRepository(AccountHistoryRepository)
-        .findOneRecord(account.stakeAddress, epoch.epoch - 3);
-      const withdrawals = await this.em
-        .getCustomRepository(AccountWithdrawRepository)
-        .findEpochWithdrawals(account.stakeAddress, epoch.epoch);
+      const previousEpoch = await this.accountHistoryService.findOneRecord(
+        account.stakeAddress,
+        epoch.epoch - 1,
+      );
+      const snapshotEpoch = await this.accountHistoryService.findOneRecord(
+        account.stakeAddress,
+        epoch.epoch - 3,
+      );
+      const withdrawals =
+        await this.accountWithdrawService.findEpochWithdrawals(
+          account.stakeAddress,
+          epoch.epoch,
+        );
 
       let totalWithdraw = 0;
       for (const withdraw of withdrawals) {
@@ -217,9 +223,7 @@ export class AccountSyncService {
   }
 
   async syncAccountWithdrawal(account: Account): Promise<Account> {
-    const lastWithdraw = await this.em
-      .getCustomRepository(AccountWithdrawRepository)
-      .findLastWithdraw();
+    const lastWithdraw = await this.accountWithdrawService.findLastWithdraw();
 
     const withdrawals = await this.source.getAllAccountWithdrawal(
       account.stakeAddress,
@@ -228,16 +232,14 @@ export class AccountSyncService {
 
     for (const withdraw of withdrawals) {
       const storedWithdrawal = await this.em
-        .getCustomRepository(AccountWithdrawRepository)
-        .findOne({ txHash: withdraw.txHash });
+        .getRepository(AccountWithdraw)
+        .findOne({ where: { txHash: withdraw.txHash } });
 
       if (storedWithdrawal) {
         continue;
       }
 
-      const epoch = await this.em
-        .getCustomRepository(EpochRepository)
-        .findOneFromTime(withdraw.blockTime);
+      const epoch = await this.epochService.findOneFromTime(withdraw.blockTime);
 
       if (!epoch) {
         this.logger.error(
