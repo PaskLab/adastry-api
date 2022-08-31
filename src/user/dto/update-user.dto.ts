@@ -1,8 +1,8 @@
-import { IsAlpha, IsNotEmpty, IsOptional, Matches } from 'class-validator';
+import { IsAlpha, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserDto {
-  @IsNotEmpty()
+  @IsString()
   @IsOptional()
   @ApiPropertyOptional({
     title: 'Full name',

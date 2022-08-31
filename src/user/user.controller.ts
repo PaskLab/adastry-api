@@ -28,6 +28,7 @@ import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { UpdateCurrencyDto } from './dto/update-currency.dto';
 import { SignatureDto } from '../auth/dto/signature.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -58,6 +59,19 @@ export class UserController {
   ): Promise<ResponseDto> {
     const user = await this.userService.createUserSignature(signatureDto);
     return new ResponseDto(`User "${user.username}" successfully created.`);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch()
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async updateUser(
+    @Request() request,
+    @Body() updateUser: UpdateUserDto,
+  ): Promise<ResponseDto> {
+    await this.userService.updateUser(request.user.id, updateUser);
+    return new ResponseDto(`User updated.`);
   }
 
   @ApiBearerAuth()
