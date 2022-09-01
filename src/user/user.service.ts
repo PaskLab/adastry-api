@@ -125,6 +125,26 @@ export class UserService {
     });
   }
 
+  async deleteUser(userId: number): Promise<boolean> {
+    const user = await this.em
+      .getRepository(User)
+      .findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User not found.`);
+    }
+
+    let success = true;
+
+    try {
+      await this.em.remove(user);
+    } catch (e) {
+      success = false;
+    }
+
+    return success;
+  }
+
   async updateUser(userId: number, updateDto: UpdateUserDto): Promise<User> {
     const user = await this.em
       .getRepository(User)
@@ -132,6 +152,16 @@ export class UserService {
 
     if (!user) {
       throw new NotFoundException(`User not found.`);
+    }
+
+    if (updateDto.username && updateDto.username !== user.username) {
+      const used = await this.findByUsername(updateDto.username);
+      if (used) {
+        throw new ConflictException(
+          `Username ${updateDto.username} is already in use.`,
+        );
+      }
+      user.username = updateDto.username;
     }
 
     if (updateDto.name) {

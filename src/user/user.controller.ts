@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  InternalServerErrorException,
   Param,
   Patch,
   Post,
@@ -66,12 +68,25 @@ export class UserController {
   @Patch()
   @ApiOkResponse({ type: ResponseDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  @ApiConflictResponse({ type: ConflictErrorDto })
   async updateUser(
     @Request() request,
     @Body() updateUser: UpdateUserDto,
   ): Promise<ResponseDto> {
     await this.userService.updateUser(request.user.id, updateUser);
     return new ResponseDto(`User updated.`);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  @ApiOkResponse({ type: ResponseDto })
+  async deleteUser(@Request() request): Promise<ResponseDto> {
+    if (!(await this.userService.deleteUser(request.user.id))) {
+      throw new InternalServerErrorException('Failed to remove user.');
+    }
+
+    return new ResponseDto(`User deleted.`);
   }
 
   @ApiBearerAuth()
