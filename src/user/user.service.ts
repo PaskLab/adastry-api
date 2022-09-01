@@ -36,9 +36,7 @@ export class UserService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<UserDto> {
-    let user = await this.em
-      .getRepository(User)
-      .findOne({ where: { username: createUserDto.username } });
+    let user = await this.findByUsername(createUserDto.username);
 
     if (user) {
       throw new ConflictException(
@@ -314,12 +312,22 @@ export class UserService {
 
   // REPOSITORY
 
+  findByUsername(username: string): Promise<User | null> {
+    return this.em
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.currency', 'currency')
+      .where('LOWER(user.username) = LOWER(:username)')
+      .setParameter('username', username)
+      .getOne();
+  }
+
   findActiveUser(username: string): Promise<User | null> {
     return this.em
       .getRepository(User)
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.currency', 'currency')
-      .where('username = :username')
+      .where('LOWER(user.username) = LOWER(:username)')
       .andWhere('active = TRUE')
       .setParameter('username', username)
       .getOne();
