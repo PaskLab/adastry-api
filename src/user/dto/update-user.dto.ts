@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Length,
   Matches,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -34,4 +35,27 @@ export class UpdateUserDto {
     example: 'EUR',
   })
   currency?: string;
+
+  @ApiPropertyOptional({
+    title: 'User old password',
+    example: 'mYuNsAfEpWd!',
+  })
+  @IsOptional()
+  @IsString()
+  oldPassword?: string;
+
+  @ApiPropertyOptional({
+    title: 'User new password',
+    example: 'mYuNsAfEpWd!',
+  })
+  @IsOptional()
+  @Length(8, 50)
+  @Matches(
+    new RegExp('((?=.*\\d)|(?=.*\\W+))(?![.\\n])(?=.*[A-Z])(?=.*[a-z]).*$'),
+    {
+      message:
+        'Passwords must contain at least: 1 upper case letter, 1 lower case letter, 1 number or special character',
+    },
+  )
+  newPassword?: string;
 }

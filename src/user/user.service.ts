@@ -44,8 +44,7 @@ export class UserService {
       );
     }
 
-    const saltRounds = 10;
-    const pwdHash = await bcrypt.hash(createUserDto.password, saltRounds);
+    const pwdHash = await this.hashPWD(createUserDto.password);
 
     const currency = await this.em.getRepository(Currency).findOne({
       where: { code: createUserDto.currency ? createUserDto.currency : 'USD' },
@@ -154,6 +153,7 @@ export class UserService {
       throw new NotFoundException(`User not found.`);
     }
 
+    // Update username
     if (updateDto.username && updateDto.username !== user.username) {
       const used = await this.findByUsername(updateDto.username);
       if (used) {
@@ -164,10 +164,28 @@ export class UserService {
       user.username = updateDto.username;
     }
 
+    // Update password
+    if (updateDto.oldPassword && updateDto.newPassword) {
+      if (
+        null ===
+        (await this.authService.validateUser(
+          user.username,
+          updateDto.oldPassword,
+        ))
+      ) {
+        throw new BadRequestException(
+          'Old Password does not match current password.',
+        );
+      }
+      user.password = await this.hashPWD(updateDto.newPassword);
+    }
+
+    // Update name
     if (updateDto.name) {
       user.name = updateDto.name;
     }
 
+    // Update currency
     if (updateDto.currency) {
       const currency = await this.em
         .getRepository(Currency)
@@ -338,6 +356,11 @@ export class UserService {
     await this.em.save(user);
 
     return currency.code;
+  }
+
+  private async hashPWD(pwd: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(pwd, saltRounds);
   }
 
   // REPOSITORY
