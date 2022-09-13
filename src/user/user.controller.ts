@@ -31,11 +31,19 @@ import { UpdateEmailDto } from './dto/update-email.dto';
 import { UpdateCurrencyDto } from './dto/update-currency.dto';
 import { SignatureDto } from '../auth/dto/signature.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { VerifiedAddressDto } from './dto/verified-address.dto';
+import { VerifiedAddressService } from './verified-address.service';
+import { AddVerifiedAddressDto } from './dto/add-verified-address.dto';
+import { StakeAddressParam } from '../utils/params/stake-address.param';
+import { UpdateVerifiedAddressDto } from './dto/update-verified-address.dto';
 
 @ApiTags('User')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly verifiedAddressService: VerifiedAddressService,
+  ) {}
 
   @Post()
   @ApiOkResponse({ type: ResponseDto })
@@ -134,5 +142,75 @@ export class UserController {
       updateCurrency.code,
     );
     return new ResponseDto(`Preferred currency updated to "${result}"`);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-address')
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  @ApiConflictResponse({ type: ConflictErrorDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  async addVerifiedAddress(
+    @Request() request,
+    @Body() addVerifiedAddressDto: AddVerifiedAddressDto,
+  ): Promise<ResponseDto> {
+    const verifiedAddress =
+      await this.verifiedAddressService.addVerifiedAddress(
+        request.user.id,
+        addVerifiedAddressDto,
+      );
+
+    return new ResponseDto(
+      `"${verifiedAddress.stakeAddress}" added to verified addresses.`,
+    );
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('verified-addresses')
+  @ApiOkResponse({ type: [VerifiedAddressDto] })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async getVerifiedAddress(@Request() request): Promise<VerifiedAddressDto[]> {
+    return this.verifiedAddressService.getUserVerifiedAddresses(
+      request.user.id,
+    );
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('verified-addresses')
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async updateVerifiedAddress(
+    @Request() request,
+    @Body() updateDto: UpdateVerifiedAddressDto,
+  ): Promise<ResponseDto> {
+    const verifiedAddress =
+      await this.verifiedAddressService.updateVerifiedAddress(
+        request.user.id,
+        updateDto,
+      );
+
+    return new ResponseDto(`"${verifiedAddress.stakeAddress}" updated.`);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete('verified-addresses/:stakeAddress')
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  async removeVerifiedAddress(
+    @Request() request,
+    @Param() params: StakeAddressParam,
+  ): Promise<ResponseDto> {
+    const verifiedAddress =
+      await this.verifiedAddressService.removeVerifiedAddress(
+        request.user.id,
+        params.stakeAddress,
+      );
+
+    return new ResponseDto(`"${verifiedAddress.stakeAddress}" removed.`);
   }
 }
