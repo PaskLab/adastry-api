@@ -6,8 +6,8 @@
   },
   "sync": {
     "rateLimit": {
-      "accountAddress": 90000000,
-      "accountTransaction": 90000000
+      "accountAddress": 43200000,
+      "accountTransaction": 45000000
     }
   },
   "api": {
