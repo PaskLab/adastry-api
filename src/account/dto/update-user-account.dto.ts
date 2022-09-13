@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsOptional, Matches } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserAccountDto {
   @IsNotEmpty()
@@ -12,10 +12,9 @@ export class UpdateUserAccountDto {
   stakeAddress!: string;
 
   @IsNotEmpty()
-  @IsOptional()
-  @ApiPropertyOptional({
+  @ApiProperty({
     title: 'Account name',
     example: 'Alice primary account',
   })
-  name?: string;
+  name!: string;
 }
