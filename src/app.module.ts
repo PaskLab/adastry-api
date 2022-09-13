@@ -28,7 +28,7 @@ import { join } from 'path';
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'Adastry',
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: process.env.NODE_ENV === 'development',
     }),
     ApiModule,
     SyncModule,
