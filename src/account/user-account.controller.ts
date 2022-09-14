@@ -231,4 +231,25 @@ export class UserAccountController {
       quarterParam.quarter,
     );
   }
+
+  @Get('export-rewards/:year')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: CsvFileDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async exportBulkRewards(
+    @Request() request,
+    @Param() yearParam: YearParam,
+    @Query() formatParam: RewardsCsvFormatParam,
+    @Query() quarterParam: QuarterParam,
+  ): Promise<CsvFileDto> {
+    return this.userAccountService.getBulkRewardsCSV(
+      request,
+      request.user.id,
+      yearParam.year,
+      formatParam.format,
+      quarterParam.quarter,
+    );
+  }
 }

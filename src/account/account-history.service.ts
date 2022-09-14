@@ -114,6 +114,44 @@ export class AccountHistoryService {
       .getMany();
   }
 
+  findByYearSelection(
+    stakeAddresses: string[],
+    year: number,
+    quarter?: number,
+  ): Promise<AccountHistory[]> {
+    let startMonth = '01';
+    let endMonth = '12';
+    let endDay = '31';
+
+    if (quarter) {
+      const zeroLead = (str) => ('0' + str).slice(-2);
+      startMonth = zeroLead((quarter - 1) * 3 + 1);
+      endMonth = zeroLead((quarter - 1) * 3 + 3);
+      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
+    }
+
+    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
+    const lastDay = dateToUnix(
+      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
+    );
+
+    return this.em
+      .getRepository(AccountHistory)
+      .createQueryBuilder('history')
+      .innerJoinAndSelect('history.account', 'account')
+      .innerJoinAndSelect('history.epoch', 'epoch')
+      .where('account.stakeAddress IN (:...stakeAddresses)', {
+        stakeAddresses: stakeAddresses,
+      })
+      .andWhere(
+        'epoch.startTime >= :startTime AND epoch.startTime <= :endTime',
+        { startTime: firstDay, endTime: lastDay },
+      )
+      .orderBy('epoch.startTime', 'ASC')
+      .addOrderBy('account.id', 'ASC')
+      .getMany();
+  }
+
   async findAccountSelection(
     stakeAddresses: string[],
     epoch: number,

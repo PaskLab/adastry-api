@@ -14,16 +14,25 @@ import { UserAccountDto } from './dto/user-account.dto';
 import { PoolDto } from '../pool/dto/pool.dto';
 import { AccountDto } from './dto/account.dto';
 import * as Cardano from '@emurgo/cardano-serialization-lib-nodejs';
-import { extractStakeAddress } from '../utils/utils';
+import { extractStakeAddress, generateUrl } from '../utils/utils';
 import { User } from '../user/entities/user.entity';
 import { Account } from './entities/account.entity';
+import { Request } from 'express';
+import { CsvFileDto } from './dto/csv-file.dto';
+import { AccountHistoryService } from './account-history.service';
+import { UserService } from '../user/user.service';
+import config from '../../config.json';
 
 @Injectable()
 export class UserAccountService {
+  private readonly MIN_LOYALTY = config.app.minLoyalty;
+
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
     private readonly accountService: AccountService,
+    private readonly accountHistoryService: AccountHistoryService,
+    private readonly userService: UserService,
   ) {}
 
   async getAll(userId: number): Promise<UserAccountDto[]> {
@@ -163,6 +172,80 @@ export class UserAccountService {
     } catch (e) {
       throw new ConflictException(`Account ${stakeAddress} cannot be deleted.`);
     }
+  }
+
+  async getBulkRewardsCSV(
+    request: Request,
+    userId: number,
+    year: number,
+    format?: string,
+    quarter?: number,
+  ): Promise<CsvFileDto> {
+    const user = await this.userService.findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const userAccounts = await this.getAll(userId);
+
+    if (!userAccounts.length) {
+      throw new NotFoundException(`No accounts found for this user.`);
+    }
+
+    const stakeAddresses: string[] = [];
+
+    // LOYALTY CHECK
+    for (const account of userAccounts) {
+      if (
+        await this.accountService.loyaltyCheck(
+          account.stakeAddress,
+          this.MIN_LOYALTY,
+        )
+      ) {
+        stakeAddresses.push(account.stakeAddress);
+      }
+    }
+
+    if (!stakeAddresses.length) {
+      throw new NotFoundException(
+        'No accounts meet the Armada loyalty requirement for export.',
+      );
+    }
+
+    const history = await this.accountHistoryService.findByYearSelection(
+      stakeAddresses,
+      year,
+      quarter,
+    );
+
+    if (!history.length) {
+      throw new NotFoundException(
+        `No reward history found for this user in year ${year}`,
+      );
+    }
+
+    const baseCurrency = user.currency ? user.currency.code : 'USD';
+
+    const filename = `${year}${quarter ? '-Q' + quarter : ''}-bulk-rewards-${
+      format ? format : 'default'
+    }.csv`;
+
+    const fileInfo = await this.accountService.generateRewardCSV(
+      filename,
+      history,
+      baseCurrency,
+      format,
+    );
+
+    return new CsvFileDto({
+      filename: filename,
+      fileExpireAt: fileInfo.expireAt.toUTCString(),
+      url: generateUrl(request, 'public/tmp', filename),
+      format: format ? format : 'default',
+      stakeAddress: stakeAddresses.join(', '),
+      year: year.toString(),
+    });
   }
 
   // REPOSITORY

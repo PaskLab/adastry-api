@@ -30,6 +30,8 @@ import { UserService } from '../user/user.service';
 import { EpochService } from '../epoch/epoch.service';
 import { RateService } from '../spot/rate.service';
 import { AccountHistoryService } from './account-history.service';
+import { CsvFileInfoType } from './types/csv-file-info.type';
+import { AccountHistory } from './entities/account-history.entity';
 
 @Injectable()
 export class AccountService {
@@ -172,6 +174,12 @@ export class AccountService {
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
+    const user = await this.userService.findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
     const history = await this.accountHistoryService.findByYear(
       stakeAddress,
       year,
@@ -184,18 +192,56 @@ export class AccountService {
       );
     }
 
-    const user = await this.userService.findOneById(userId);
-
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
-
     const baseCurrency = user.currency ? user.currency.code : 'USD';
 
     const filename = `${year}${
       quarter ? '-Q' + quarter : ''
     }-rewards-${stakeAddress.slice(0, 15)}-${format ? format : 'default'}.csv`;
 
+    const fileInfo = await this.generateRewardCSV(
+      filename,
+      history,
+      baseCurrency,
+      format,
+    );
+
+    return new CsvFileDto({
+      filename: filename,
+      fileExpireAt: fileInfo.expireAt.toUTCString(),
+      url: generateUrl(request, 'public/tmp', filename),
+      format: format ? format : 'default',
+      stakeAddress: stakeAddress,
+      year: year.toString(),
+    });
+  }
+
+  private async getNetWorth(
+    amount: number,
+    baseCurrency: string,
+    epoch: number,
+  ): Promise<number> {
+    const spotPrice = await this.spotService.findEpoch(epoch);
+    const baseCurrencyRate = await this.rateService.findRateEpoch(
+      baseCurrency,
+      epoch,
+    );
+
+    let netWorthAmount = 0;
+
+    if (spotPrice && baseCurrencyRate) {
+      netWorthAmount = amount * spotPrice.price * baseCurrencyRate.rate;
+      netWorthAmount = roundTo(netWorthAmount, 2);
+    }
+
+    return netWorthAmount;
+  }
+
+  async generateRewardCSV(
+    filename: string,
+    history: AccountHistory[],
+    baseCurrency: string,
+    format?: string,
+  ): Promise<CsvFileInfoType> {
     const data: CsvFieldsType[] = [];
 
     for (const record of history) {
@@ -265,35 +311,7 @@ export class AccountService {
         fileInfo = await this.csvService.writeHistoryCSV(filename, data);
     }
 
-    return new CsvFileDto({
-      filename: filename,
-      fileExpireAt: fileInfo.expireAt.toUTCString(),
-      url: generateUrl(request, 'public/tmp', filename),
-      format: format ? format : 'default',
-      stakeAddress: stakeAddress,
-      year: year.toString(),
-    });
-  }
-
-  private async getNetWorth(
-    amount: number,
-    baseCurrency: string,
-    epoch: number,
-  ): Promise<number> {
-    const spotPrice = await this.spotService.findEpoch(epoch);
-    const baseCurrencyRate = await this.rateService.findRateEpoch(
-      baseCurrency,
-      epoch,
-    );
-
-    let netWorthAmount = 0;
-
-    if (spotPrice && baseCurrencyRate) {
-      netWorthAmount = amount * spotPrice.price * baseCurrencyRate.rate;
-      netWorthAmount = roundTo(netWorthAmount, 2);
-    }
-
-    return netWorthAmount;
+    return fileInfo;
   }
 
   // CUSTOM REPOSITORY
