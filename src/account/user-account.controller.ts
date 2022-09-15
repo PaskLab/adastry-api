@@ -198,6 +198,27 @@ export class UserAccountController {
     );
   }
 
+  @Get('export-transactions/:year')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: CsvFileDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async exportBulkTransactions(
+    @Request() request,
+    @Param() yearParam: YearParam,
+    @Query() formatParam: TxCsvFormatParam,
+    @Query() quarterParam: QuarterParam,
+  ): Promise<CsvFileDto> {
+    return this.userAccountService.getBulkTransactionsCSV(
+      request,
+      request.user.id,
+      yearParam.year,
+      formatParam.format,
+      quarterParam.quarter,
+    );
+  }
+
   @Get(':stakeAddress/export-rewards/:year')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

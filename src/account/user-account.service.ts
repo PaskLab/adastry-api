@@ -22,6 +22,7 @@ import { CsvFileDto } from './dto/csv-file.dto';
 import { AccountHistoryService } from './account-history.service';
 import { UserService } from '../user/user.service';
 import config from '../../config.json';
+import { TransactionService } from './transaction.service';
 
 @Injectable()
 export class UserAccountService {
@@ -32,6 +33,7 @@ export class UserAccountService {
     private readonly syncService: SyncService,
     private readonly accountService: AccountService,
     private readonly accountHistoryService: AccountHistoryService,
+    private readonly transactionService: TransactionService,
     private readonly userService: UserService,
   ) {}
 
@@ -235,6 +237,77 @@ export class UserAccountService {
       filename,
       history,
       baseCurrency,
+      format,
+    );
+
+    return new CsvFileDto({
+      filename: filename,
+      fileExpireAt: fileInfo.expireAt.toUTCString(),
+      url: generateUrl(request, 'public/tmp', filename),
+      format: format ? format : 'default',
+      stakeAddress: stakeAddresses.join(', '),
+      year: year.toString(),
+    });
+  }
+
+  async getBulkTransactionsCSV(
+    request: Request,
+    userId: number,
+    year: number,
+    format?: string,
+    quarter?: number,
+  ): Promise<CsvFileDto> {
+    const user = await this.userService.findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const userAccounts = await this.getAll(userId);
+
+    if (!userAccounts.length) {
+      throw new NotFoundException(`No accounts found for this user.`);
+    }
+
+    const stakeAddresses: string[] = [];
+
+    // LOYALTY CHECK
+    for (const account of userAccounts) {
+      if (
+        await this.accountService.loyaltyCheck(
+          account.stakeAddress,
+          this.MIN_LOYALTY,
+        )
+      ) {
+        stakeAddresses.push(account.stakeAddress);
+      }
+    }
+
+    if (!stakeAddresses.length) {
+      throw new NotFoundException(
+        'No accounts meet the Armada loyalty requirement for export.',
+      );
+    }
+
+    const history = await this.transactionService.findByYearSelection(
+      stakeAddresses,
+      year,
+      quarter,
+    );
+
+    if (!history.length) {
+      throw new NotFoundException(
+        `No transaction history found for this user in year ${year}`,
+      );
+    }
+
+    const filename = `${year}${quarter ? '-Q' + quarter : ''}-bulk-txs-${
+      format ? format : 'default'
+    }.csv`;
+
+    const fileInfo = await this.transactionService.generateTransactionsCSV(
+      filename,
+      history,
       format,
     );
 

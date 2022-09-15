@@ -21,6 +21,7 @@ import {
 import { CsvService } from './csv.service';
 import config from '../../config.json';
 import { Transaction } from './entities/transaction.entity';
+import { CsvFileInfoType } from './types/csv-file-info.type';
 
 @Injectable()
 export class TransactionService {
@@ -92,6 +93,27 @@ export class TransactionService {
       quarter ? '-Q' + quarter : ''
     }-txs-${stakeAddress.slice(0, 15)}-${format ? format : 'default'}.csv`;
 
+    const fileInfo = await this.generateTransactionsCSV(
+      filename,
+      history,
+      format,
+    );
+
+    return new CsvFileDto({
+      filename: filename,
+      fileExpireAt: fileInfo.expireAt.toUTCString(),
+      url: generateUrl(request, 'public/tmp', filename),
+      format: format ? format : 'default',
+      stakeAddress: stakeAddress,
+      year: year.toString(),
+    });
+  }
+
+  async generateTransactionsCSV(
+    filename: string,
+    history: Transaction[],
+    format?: string,
+  ): Promise<CsvFileInfoType> {
     const data: CsvFieldsType[] = [];
 
     for (const record of history) {
@@ -183,14 +205,7 @@ export class TransactionService {
         fileInfo = await this.csvService.writeTransactionCSV(filename, data);
     }
 
-    return new CsvFileDto({
-      filename: filename,
-      fileExpireAt: fileInfo.expireAt.toUTCString(),
-      url: generateUrl(request, 'public/tmp', filename),
-      format: format ? format : 'default',
-      stakeAddress: stakeAddress,
-      year: year.toString(),
-    });
+    return fileInfo;
   }
 
   // REPOSITORY
@@ -294,6 +309,47 @@ export class TransactionService {
       )
       .orderBy('transaction.blockTime', 'ASC')
       .addOrderBy('transaction.txIndex', 'ASC')
+      .getMany();
+  }
+
+  findByYearSelection(
+    stakeAddresses: string[],
+    year: number,
+    quarter?: number,
+  ): Promise<Transaction[]> {
+    let startMonth = '01';
+    let endMonth = '12';
+    let endDay = '31';
+
+    if (quarter) {
+      const zeroLead = (str) => ('0' + str).slice(-2);
+      startMonth = zeroLead((quarter - 1) * 3 + 1);
+      endMonth = zeroLead((quarter - 1) * 3 + 3);
+      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
+    }
+
+    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
+    const lastDay = dateToUnix(
+      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
+    );
+
+    return this.em
+      .getRepository(Transaction)
+      .createQueryBuilder('transaction')
+      .innerJoin('transaction.account', 'account')
+      .where('account.stakeAddress IN (:...stakeAddresses)', {
+        stakeAddresses: stakeAddresses,
+      })
+      .andWhere(
+        'transaction.blockTime >= :startTime AND transaction.blockTime <= :endTime',
+        {
+          startTime: firstDay,
+          endTime: lastDay,
+        },
+      )
+      .orderBy('transaction.blockTime', 'ASC')
+      .addOrderBy('transaction.txIndex', 'ASC')
+      .addOrderBy('transaction.txType', 'DESC')
       .getMany();
   }
 
