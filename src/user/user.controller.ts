@@ -73,6 +73,24 @@ export class UserController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Post('signature/reset-password')
+  @ApiOkResponse({ type: ResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async resetPasswordSignature(
+    @Request() request,
+    @Body() signatureDto: SignatureDto,
+  ): Promise<ResponseDto> {
+    const pwd = await this.userService.resetPassword(
+      request.user.id,
+      signatureDto,
+    );
+
+    return new ResponseDto(pwd);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Patch()
   @ApiOkResponse({ type: ResponseDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })

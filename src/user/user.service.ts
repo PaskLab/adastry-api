@@ -19,7 +19,13 @@ import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
 import ejs = require('ejs');
 import { UpdateUserDto } from './dto/update-user.dto';
-import { decrypt, encrypt, hexToBech32, randNumber } from '../utils/utils';
+import {
+  decrypt,
+  encrypt,
+  hexToBech32,
+  randNumber,
+  randomString,
+} from '../utils/utils';
 import { SignatureDto } from '../auth/dto/signature.dto';
 import { AuthService } from '../auth/auth.service';
 import { VerifiedAddress } from './entities/verified-address.entity';
@@ -201,6 +207,42 @@ export class UserService {
     }
 
     return this.em.save(user);
+  }
+
+  async resetPassword(
+    userId: number,
+    signatureDto: SignatureDto,
+  ): Promise<string> {
+    const user = await this.em
+      .getRepository(User)
+      .findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User not found.`);
+    }
+
+    const validatedUserId = await this.authService.validateSignature(
+      signatureDto.key,
+      signatureDto.signature,
+    );
+
+    if (null === validatedUserId) {
+      throw new BadRequestException('Wallet validation failed.');
+    }
+
+    if (validatedUserId !== user.id) {
+      throw new BadRequestException(
+        'Unauthorized wallet. Make sure to verify the wallet first.',
+      );
+    }
+
+    // Update password
+    const pwd = `Ada${randomString(6, 'aA#')}!`;
+    user.password = await this.hashPWD(pwd);
+
+    await this.em.save(user);
+
+    return pwd;
   }
 
   async updateEmail(userId: number, email: string): Promise<string> {
