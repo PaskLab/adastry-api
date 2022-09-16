@@ -7,7 +7,8 @@
   "sync": {
     "rateLimit": {
       "accountAddress": 43200000,
-      "accountTransaction": 45000000
+      "accountTransaction": 45000000,
+      "accountMIRTransaction": 400000000
     }
   },
   "api": {

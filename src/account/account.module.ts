@@ -27,6 +27,9 @@ import { AccountHistoryService } from './account-history.service';
 import { AccountAddressService } from './account-address.service';
 import { AccountWithdrawService } from './account-withdraw.service';
 import { TransactionAddressService } from './transaction-address.service';
+import { MirTransaction } from './entities/mir-transaction.entity';
+import { MirSyncService } from './sync/mir-sync.service';
+import { MirTransactionService } from './mir-transaction.service';
 
 @Module({
   imports: [
@@ -38,6 +41,7 @@ import { TransactionAddressService } from './transaction-address.service';
       AccountAddress,
       TransactionAddress,
       Transaction,
+      MirTransaction,
       Asset,
     ]),
     forwardRef(() => PoolModule),
@@ -52,8 +56,10 @@ import { TransactionAddressService } from './transaction-address.service';
     SyncService,
     AccountSyncService,
     TxSyncService,
+    MirSyncService,
     CsvService,
     TransactionService,
+    MirTransactionService,
     StatsService,
     AssetService,
     AccountHistoryService,

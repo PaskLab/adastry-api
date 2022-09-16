@@ -15,6 +15,7 @@ import { AddressTransactionType } from './types/address-transaction.type';
 import { TransactionType } from './types/transaction.type';
 import { TransactionOutputsType } from './types/transaction-outputs.type';
 import { AssetInfoType } from './types/asset-info.type';
+import { MirTransactionType } from './types/mir-transaction.type';
 
 @Injectable()
 export class BlockfrostService {
@@ -77,10 +78,16 @@ export class BlockfrostService {
       result = await this.request(
         `/pools/${poolId}/updates?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
       );
-      if (result) certs = certs.concat(result);
-      if (afterTxHash && certs.some((cert) => cert.tx_hash === afterTxHash)) {
-        break;
+      if (result) {
+        certs = certs.concat(result);
+        if (
+          afterTxHash &&
+          result.some((cert) => cert.tx_hash === afterTxHash)
+        ) {
+          break;
+        }
       }
+
       page++;
     } while (result && result.length === this.PROVIDER_LIMIT);
 
@@ -391,10 +398,11 @@ export class BlockfrostService {
         `/accounts/${stakeAddress}/withdrawals?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
       );
 
-      if (result) withdrawTxs = withdrawTxs.concat(result);
-
-      if (afterTxHash && withdrawTxs.some((tx) => tx.tx_hash === afterTxHash)) {
-        break;
+      if (result) {
+        withdrawTxs = withdrawTxs.concat(result);
+        if (afterTxHash && result.some((tx) => tx.tx_hash === afterTxHash)) {
+          break;
+        }
       }
 
       page++;
@@ -442,6 +450,56 @@ export class BlockfrostService {
           metadata: JSON.stringify(assetInfo.metadata),
         }
       : null;
+  }
+
+  async getAllAccountMIRs(
+    stakeAddress: string,
+    afterTxHash?: string,
+  ): Promise<MirTransactionType[]> {
+    let accountMIRs: { tx_hash: string; amount: string }[] = [];
+    let page = 1;
+    let result: { tx_hash: string; amount: string }[] = [];
+
+    do {
+      result = await this.request(
+        `/accounts/${stakeAddress}/mirs?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
+      );
+
+      if (result) {
+        accountMIRs = accountMIRs.concat(result);
+        if (afterTxHash && result.some((tx) => tx.tx_hash === afterTxHash)) {
+          break;
+        }
+      }
+      page++;
+    } while (result && result.length === this.PROVIDER_LIMIT);
+
+    accountMIRs.reverse();
+
+    if (afterTxHash) {
+      // Remove everything before 'afterTxHash'
+      const index = accountMIRs.findIndex((tx) => tx.tx_hash === afterTxHash);
+      if (index >= 0) {
+        accountMIRs = accountMIRs.slice(index + 1);
+      }
+    }
+
+    const mirTransactions: MirTransactionType[] = [];
+
+    for (const mir of accountMIRs) {
+      const txInfo = await this.request(`/txs/${mir.tx_hash}`);
+      if (txInfo) {
+        mirTransactions.push({
+          txHash: mir.tx_hash,
+          txIndex: txInfo.index,
+          blockHeight: parseInt(txInfo.block_height) || 0,
+          blockTime: parseInt(txInfo.block_time) || 0,
+          amount: parseInt(mir.amount) || 0,
+        });
+      }
+    }
+
+    return mirTransactions;
   }
 
   async request(

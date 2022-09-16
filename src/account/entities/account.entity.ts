@@ -15,6 +15,7 @@ import { AccountAddress } from './account-address.entity';
 import { Transaction } from './transaction.entity';
 import { AccountWithdraw } from './account-withdraw.entity';
 import { StrToBigInt } from '../../utils/utils';
+import { MirTransaction } from './mir-transaction.entity';
 
 @Entity()
 export class Account {
@@ -51,6 +52,12 @@ export class Account {
 
   @Column({ type: 'timestamp', nullable: true })
   transactionsLastSync!: Date | null;
+
+  @OneToMany(() => MirTransaction, (mirTransaction) => mirTransaction.account)
+  mirTransactions!: MirTransaction[];
+
+  @Column({ type: 'timestamp', nullable: true })
+  mirTransactionsLastSync!: Date | null;
 
   @OneToMany(() => AccountWithdraw, (withdraw) => withdraw.account)
   withdraw!: AccountWithdraw[];
