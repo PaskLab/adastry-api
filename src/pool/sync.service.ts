@@ -276,7 +276,8 @@ export class SyncService {
       }
 
       // Rewards are 2 epoch backwards, ignore 2 last history records
-      upstreamHistory = upstreamHistory.slice(i === 1 ? 2 : 0);
+      // Pool history on Blockfrost is already 1 epoch backwards, so slice 1
+      upstreamHistory = upstreamHistory.slice(i === 1 ? 1 : 0);
       upstreamHistory.reverse();
       history = history.concat(upstreamHistory);
     }
