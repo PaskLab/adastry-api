@@ -14,6 +14,7 @@ import { AccountWithdraw } from '../entities/account-withdraw.entity';
 import { AccountHistoryService } from '../account-history.service';
 import { AccountWithdrawService } from '../account-withdraw.service';
 import { EpochService } from '../../epoch/epoch.service';
+import { MirTransactionService } from '../mir-transaction.service';
 
 @Injectable()
 export class AccountSyncService {
@@ -28,6 +29,7 @@ export class AccountSyncService {
     private readonly accountHistoryService: AccountHistoryService,
     private readonly accountWithdrawService: AccountWithdrawService,
     private readonly epochService: EpochService,
+    private readonly mirTransactionService: MirTransactionService,
   ) {}
 
   async syncInfo(account: Account, lastEpoch: Epoch): Promise<Account> {
@@ -165,14 +167,19 @@ export class AccountSyncService {
         pool = await this.em.save(pool);
       }
 
+      // Fetch previous epoch ( Current epoch - 1 )
       const previousEpoch = await this.accountHistoryService.findOneRecord(
         account.stakeAddress,
         epoch.epoch - 1,
       );
+
+      // Fetch snapshot epoch ( Current epoch - 3 )
       const snapshotEpoch = await this.accountHistoryService.findOneRecord(
         account.stakeAddress,
         epoch.epoch - 3,
       );
+
+      // Epoch Withdrawals
       const withdrawals =
         await this.accountWithdrawService.findEpochWithdrawals(
           account.stakeAddress,
@@ -184,6 +191,19 @@ export class AccountSyncService {
         totalWithdraw += withdraw.amount;
       }
 
+      // Epoch MIR Transactions
+      const mirTransactions =
+        await this.mirTransactionService.findEpochMIRTransactions(
+          account.stakeAddress,
+          epoch.epoch,
+        );
+
+      let totalMIR = 0;
+      for (const mir of mirTransactions) {
+        totalMIR += mir.amount;
+      }
+
+      // Create new history
       newHistory = new AccountHistory();
 
       newHistory.account = account;
@@ -191,12 +211,14 @@ export class AccountSyncService {
       newHistory.activeStake = history[i].amount;
       newHistory.revisedRewards = 0;
       newHistory.rewards = rh ? rh.rewards : 0;
+      newHistory.mir = totalMIR;
       newHistory.pool = pool;
       newHistory.withdrawable = previousEpoch
         ? previousEpoch.withdrawable -
           previousEpoch.withdrawn +
-          newHistory.rewards
-        : newHistory.rewards;
+          newHistory.rewards +
+          totalMIR
+        : newHistory.rewards + totalMIR;
       newHistory.balance = snapshotEpoch
         ? newHistory.activeStake - snapshotEpoch.withdrawable
         : newHistory.activeStake;

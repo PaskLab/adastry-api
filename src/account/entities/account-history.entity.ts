@@ -29,6 +29,9 @@ export class AccountHistory {
   rewards!: number;
 
   @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
+  mir!: number;
+
+  @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
   activeStake!: number;
 
   @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })

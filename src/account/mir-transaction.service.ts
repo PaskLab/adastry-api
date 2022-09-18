@@ -20,4 +20,20 @@ export class MirTransactionService {
       .addOrderBy('transaction.txIndex', 'DESC')
       .getOne();
   }
+
+  async findEpochMIRTransactions(
+    stakeAddress: string,
+    epoch: number,
+  ): Promise<MirTransaction[]> {
+    return this.em
+      .getRepository(MirTransaction)
+      .createQueryBuilder('transaction')
+      .innerJoinAndSelect('transaction.epoch', 'epoch')
+      .innerJoinAndSelect('transaction.account', 'account')
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .andWhere('epoch.epoch = :epoch', { epoch: epoch })
+      .getMany();
+  }
 }

@@ -13,8 +13,10 @@ export type CsvFieldsType = {
   txHash: string;
   accountBalance?: number | string;
   realRewards?: number | string;
+  calculatedRewards?: number | string;
   revisedRewards?: number | string;
   opRewards?: number | string;
+  mirRewards?: number | string;
   stakeShare?: number | string;
   withdrawable?: number | string;
   withdrawn?: number | string;

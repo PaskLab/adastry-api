@@ -32,6 +32,7 @@ export class AccountHistoryDto {
       this.activeStake = props.activeStake;
       this.balance = props.balance;
       this.rewards = props.rewards;
+      this.mir = props.mir;
       this.revisedRewards = props.revisedRewards;
       this.opRewards = props.opRewards;
       this.withdrawable = props.withdrawable;
@@ -72,6 +73,12 @@ export class AccountHistoryDto {
     example: 15000000,
   })
   rewards!: number;
+
+  @ApiProperty({
+    title: 'Move Instantaneous Rewards',
+    example: 15000000,
+  })
+  mir!: number;
 
   @ApiProperty({
     title: 'Epoch pool owner revised rewards',

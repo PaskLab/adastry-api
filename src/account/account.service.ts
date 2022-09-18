@@ -127,6 +127,7 @@ export class AccountService {
           activeStake: h.activeStake,
           balance: h.balance,
           rewards: h.rewards,
+          mir: h.mir,
           revisedRewards: h.revisedRewards,
           opRewards: h.opRewards,
           withdrawable: h.withdrawable,
@@ -247,15 +248,21 @@ export class AccountService {
     for (const record of history) {
       if (
         record.rewards < 1 &&
+        record.mir < 1 &&
         record.revisedRewards < 1 &&
         record.opRewards < 1
       )
         continue;
 
-      const receivedAmount =
+      const calculatedRewards =
         record.revisedRewards || record.opRewards
           ? record.revisedRewards + record.opRewards
           : record.rewards;
+
+      const receivedAmount =
+        record.revisedRewards || record.opRewards
+          ? record.revisedRewards + record.opRewards + record.mir
+          : record.rewards + record.mir;
 
       const netWorthAmount = await this.getNetWorth(
         toAda(receivedAmount),
@@ -281,6 +288,8 @@ export class AccountService {
           .digest('hex'),
         accountBalance: toAda(record.balance),
         realRewards: toAda(record.rewards),
+        calculatedRewards: toAda(calculatedRewards),
+        mirRewards: toAda(record.mir),
         revisedRewards: toAda(record.revisedRewards),
         opRewards: toAda(record.opRewards),
         stakeShare: record.stakeShare,
