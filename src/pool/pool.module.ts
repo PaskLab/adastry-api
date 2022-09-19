@@ -11,9 +11,11 @@ import { PoolHistoryService } from './pool-history.service';
 import { PoolCertService } from './pool-cert.service';
 import { AccountModule } from '../account/account.module';
 
+export const entities = [Pool, PoolHistory, PoolCert, PoolOwner];
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Pool, PoolHistory, PoolCert, PoolOwner]),
+    TypeOrmModule.forFeature(entities),
     forwardRef(() => AccountModule),
   ],
   controllers: [PoolController],

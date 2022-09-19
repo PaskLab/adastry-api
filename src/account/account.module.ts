@@ -31,19 +31,21 @@ import { MirTransaction } from './entities/mir-transaction.entity';
 import { MirSyncService } from './sync/mir-sync.service';
 import { MirTransactionService } from './mir-transaction.service';
 
+export const entities = [
+  Account,
+  AccountHistory,
+  UserAccount,
+  AccountWithdraw,
+  AccountAddress,
+  TransactionAddress,
+  Transaction,
+  MirTransaction,
+  Asset,
+];
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Account,
-      AccountHistory,
-      UserAccount,
-      AccountWithdraw,
-      AccountAddress,
-      TransactionAddress,
-      Transaction,
-      MirTransaction,
-      Asset,
-    ]),
+    TypeOrmModule.forFeature(entities),
     forwardRef(() => PoolModule),
     SpotModule,
     EpochModule,

@@ -5,8 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Epoch } from './entities/epoch.entity';
 import { EpochService } from './epoch.service';
 
+export const entities = [Epoch];
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Epoch])],
+  imports: [TypeOrmModule.forFeature(entities)],
   controllers: [EpochController],
   providers: [SyncService, EpochService],
   exports: [SyncService, EpochService],

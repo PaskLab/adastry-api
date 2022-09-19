@@ -9,8 +9,10 @@ import { Rate } from './entities/rate.entity';
 import { CurrencyController } from './currency.controller';
 import { RateService } from './rate.service';
 
+export const entities = [Currency, Spot, Rate];
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Currency, Spot, Rate])],
+  imports: [TypeOrmModule.forFeature(entities)],
   controllers: [SpotController, CurrencyController],
   providers: [SyncService, SpotService, RateService],
   exports: [SyncService, SpotService, RateService],
