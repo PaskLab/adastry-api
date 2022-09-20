@@ -22,4 +22,5 @@ export type CsvFieldsType = {
   withdrawn?: number | string;
   activeStake?: number | string;
   epoch?: number | string;
+  metadata?: string;
 };

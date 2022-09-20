@@ -278,6 +278,7 @@ export class TxSyncService {
         newTx.validContract = txInfo.validContract;
         newTx.tags = JSON.stringify(comments);
         newTx.needReview = txType === 'MX';
+        newTx.metadata = txInfo.metadata;
 
         newTx = await this.em.save(newTx);
 
@@ -346,5 +347,24 @@ export class TxSyncService {
     this.logger.log(
       `Transaction Sync - Mapped transaction ${tx.txHash} to address ${address.address}`,
     );
+  }
+
+  async fetchMissingMetadata(): Promise<void> {
+    const transactions = await this.transactionService.findAllMissingMetadata();
+
+    if (transactions.length === 0) {
+      this.logger.log('Transaction Metadata integrity check: OK');
+      return;
+    }
+
+    for (const tx of transactions) {
+      tx.metadata = await this.source.getTransactionMetadata(tx.txHash);
+
+      await this.em.save(tx);
+
+      this.logger.log(
+        `Transaction Sync - Added missing metadata to transaction  ${tx.txHash}`,
+      );
+    }
   }
 }

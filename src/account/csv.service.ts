@@ -97,6 +97,7 @@ export class CsvService {
         { id: 'label', title: 'Label' }, // reward
         { id: 'description', title: 'Description' },
         { id: 'txHash', title: 'TxHash' },
+        { id: 'metadata', title: 'Metadata' },
       ],
     });
 
@@ -116,6 +117,7 @@ export class CsvService {
         label: row.label,
         description: row.description,
         txHash: row.txHash,
+        metadata: row.metadata ? row.metadata : '',
       };
 
       records.push(record);

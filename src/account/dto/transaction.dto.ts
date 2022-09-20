@@ -46,6 +46,7 @@ export class TransactionDto {
       this.redeemerCount = props.redeemerCount;
       this.validContract = props.validContract;
       this.tags = props.tags;
+      this.metadata = props.metadata;
       this.needReview = props.needReview;
     }
   }
@@ -173,6 +174,12 @@ export class TransactionDto {
     example: 1,
   })
   tags!: string[];
+
+  @ApiProperty({
+    title: 'Transaction metadata',
+    example: '[{"label":"674","json_metadata":{"msg":["Welcome world"]}}]',
+  })
+  metadata!: string;
 
   @ApiProperty({
     title: 'Transaction need verification',

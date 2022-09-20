@@ -84,6 +84,9 @@ export class Transaction {
   @Column()
   tags!: string;
 
+  @Column({ default: '' })
+  metadata!: string;
+
   @Column({ default: false })
   needReview!: boolean;
 

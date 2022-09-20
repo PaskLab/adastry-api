@@ -68,6 +68,7 @@ export class TransactionService {
           redeemerCount: h.redeemerCount,
           validContract: h.validContract,
           tags: JSON.parse(h.tags),
+          metadata: h.metadata,
           needReview: h.needReview,
         });
       }),
@@ -133,6 +134,7 @@ export class TransactionService {
         label: '',
         description: JSON.parse(record.tags).join(', '),
         txHash: record.txHash,
+        metadata: record.metadata,
       };
 
       if (received.length < 2 && sent.length < 2) {
@@ -369,5 +371,13 @@ export class TransactionService {
         },
       )
       .getOne();
+  }
+
+  findAllMissingMetadata(): Promise<Transaction[]> {
+    return this.em
+      .getRepository(Transaction)
+      .createQueryBuilder('transaction')
+      .where('transaction.metadata = :empty', { empty: '' })
+      .getMany();
   }
 }

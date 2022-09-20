@@ -42,6 +42,10 @@ export class SyncService {
     }
   }
 
+  async integrityCheck(): Promise<void> {
+    await this.txSync.fetchMissingMetadata();
+  }
+
   private requireSync(lastSync: Date | null, rateLimit: number): boolean {
     if (!lastSync) return true;
     const nextSync = new Date(lastSync.valueOf() + rateLimit);

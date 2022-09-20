@@ -300,6 +300,8 @@ export class BlockfrostService {
   async getTransactionInfo(txHash: string): Promise<TransactionType | null> {
     const result = await this.request(`/txs/${txHash}`);
 
+    const metadata = await this.getTransactionMetadata(txHash);
+
     return result
       ? {
           txHash: result.hash,
@@ -319,8 +321,15 @@ export class BlockfrostService {
           assetMintCount: parseInt(result.asset_mint_or_burn_count) || 0,
           redeemerCount: parseInt(result.redeemer_count) || 0,
           validContract: result.valid_contract,
+          metadata,
         }
       : null;
+  }
+
+  async getTransactionMetadata(txHash: string): Promise<string> {
+    const metadata = await this.request(`/txs/${txHash}/metadata`);
+
+    return metadata ? JSON.stringify(metadata) : '';
   }
 
   async getTransactionUTxOs(

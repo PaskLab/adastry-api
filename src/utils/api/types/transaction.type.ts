@@ -16,4 +16,5 @@ export type TransactionType = {
   assetMintCount: number;
   redeemerCount: number;
   validContract: boolean;
+  metadata: string;
 };

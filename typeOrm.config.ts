@@ -27,4 +27,5 @@ export default new DataSource({
   password: configService.get('DB_PASSWORD'),
   database: configService.get('DB_NAME'),
   entities,
+  migrations: [],
 });

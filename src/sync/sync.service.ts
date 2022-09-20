@@ -29,9 +29,15 @@ export class SyncService {
   }
 
   async init(): Promise<void> {
+    await this.integrityCheck();
     this.logger.log('Init sync data ...');
     await this.spotSyncService.init();
     this.sync().then();
+  }
+
+  private async integrityCheck(): Promise<void> {
+    this.logger.log('Starting integrity check ...');
+    await this.accountSyncService.integrityCheck();
   }
 
   @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
