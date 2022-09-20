@@ -3,8 +3,9 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import config from '../../config.json';
 import { AccountHistory } from './entities/account-history.entity';
-import { HistoryQueryType } from './types/history-query.type';
+import { AccountHistoryQueryType } from './types/account-history-query.type';
 import { dateToUnix } from '../utils/utils';
+import { FromQueryType } from '../utils/types/from-query.type';
 
 @Injectable()
 export class AccountHistoryService {
@@ -41,7 +42,7 @@ export class AccountHistoryService {
   }
 
   async findAccountHistory(
-    params: HistoryQueryType,
+    params: AccountHistoryQueryType,
   ): Promise<[AccountHistory[], number]> {
     const qb = this.em
       .getRepository(AccountHistory)
@@ -72,6 +73,37 @@ export class AccountHistoryService {
       qb.skip(
         (params.page - 1) * (params.limit ? params.limit : this.MAX_LIMIT),
       );
+    }
+
+    return qb.getManyAndCount();
+  }
+
+  async findAccountHistorySelection(
+    stakeAddresses: string[],
+    params: FromQueryType,
+  ): Promise<[AccountHistory[], number]> {
+    const qb = this.em
+      .getRepository(AccountHistory)
+      .createQueryBuilder('history')
+      .innerJoinAndSelect('history.account', 'account')
+      .innerJoinAndSelect('history.epoch', 'epoch')
+      .leftJoinAndSelect('history.pool', 'pool')
+      .where('account.stakeAddress IN (:...stakeAddresses)', {
+        stakeAddresses: stakeAddresses,
+      })
+      .orderBy('epoch.epoch', 'ASC');
+
+    if (params.order) {
+      qb.orderBy('epoch.epoch', params.order);
+    }
+
+    if (params.from) {
+      if (params.order && params.order === 'DESC') {
+        qb.andWhere('epoch.epoch <= :from');
+      } else {
+        qb.andWhere('epoch.epoch >= :from');
+      }
+      qb.setParameter('from', params.from);
     }
 
     return qb.getManyAndCount();
@@ -152,7 +184,7 @@ export class AccountHistoryService {
       .getMany();
   }
 
-  async findAccountSelection(
+  async findEpochHistorySelection(
     stakeAddresses: string[],
     epoch: number,
   ): Promise<AccountHistory[]> {

@@ -6,7 +6,7 @@ import {
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { Account } from './entities/account.entity';
-import { HistoryQueryType } from './types/history-query.type';
+import { AccountHistoryQueryType } from './types/account-history-query.type';
 import { AccountHistoryDto, HistorySpotDto } from './dto/account-history.dto';
 import { SyncService } from './sync.service';
 import { Request } from 'express';
@@ -87,7 +87,7 @@ export class AccountService {
 
   async getHistory(
     userId: number,
-    params: HistoryQueryType,
+    params: AccountHistoryQueryType,
   ): Promise<AccountHistoryListDto> {
     const user = await this.userService.findOneById(userId);
 

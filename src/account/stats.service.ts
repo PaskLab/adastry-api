@@ -6,6 +6,8 @@ import { MonthlyDto, MonthlyListDto } from './dto/stats/monthly.dto';
 import { EpochService } from '../epoch/epoch.service';
 import { UserAccountService } from './user-account.service';
 import { AccountHistoryService } from './account-history.service';
+import { PoolROSDto } from './dto/stats/pool-ros.dto';
+import { FromParam } from '../utils/params/from.param';
 
 @Injectable()
 export class StatsService {
@@ -147,5 +149,74 @@ export class StatsService {
       from: fromDate.toISOString(),
       data: data,
     });
+  }
+
+  async poolsROS(userId: number, params: FromParam): Promise<PoolROSDto[]> {
+    const userAccounts = await this.userAccountService.findAllUserAccount(
+      userId,
+    );
+
+    const flatAccountsList = userAccounts.map(
+      (userAccount) => userAccount.account.stakeAddress,
+    );
+
+    const accountsHistory =
+      await this.accountHistoryService.findAccountHistorySelection(
+        flatAccountsList,
+        params,
+      );
+
+    // Reverse to get most recent pool name first
+    accountsHistory[0].reverse();
+
+    const poolsEpochsROS: {
+      [key: string]: { name: string; epochsROS: number[]; epochsROO: number[] };
+    } = {};
+
+    for (const history of accountsHistory[0]) {
+      if (!history.pool) continue;
+
+      if (!poolsEpochsROS[history.pool.poolId]) {
+        poolsEpochsROS[history.pool.poolId] = {
+          name: history.pool.name,
+          epochsROS: [],
+          epochsROO: [],
+        };
+      }
+
+      if (history.rewards || history.revisedRewards) {
+        const rewards = history.revisedRewards
+          ? history.revisedRewards
+          : history.rewards;
+
+        poolsEpochsROS[history.pool.poolId].epochsROS.push(
+          (rewards / history.activeStake) * 73,
+        );
+      }
+
+      if (history.opRewards) {
+        poolsEpochsROS[history.pool.poolId].epochsROO.push(
+          (history.opRewards / history.activeStake) * 73,
+        );
+      }
+    }
+
+    const poolsROS: PoolROSDto[] = [];
+
+    for (const poolId in poolsEpochsROS) {
+      const pool = poolsEpochsROS[poolId];
+
+      const ros = pool.epochsROS.length
+        ? pool.epochsROS.reduce((a, b) => a + b) / pool.epochsROS.length
+        : 0;
+
+      const roo = pool.epochsROO.length
+        ? pool.epochsROO.reduce((a, b) => a + b) / pool.epochsROO.length
+        : 0;
+
+      poolsROS.push(new PoolROSDto({ poolName: pool.name, poolId, ros, roo }));
+    }
+
+    return poolsROS;
   }
 }

@@ -13,6 +13,8 @@ import { MonthlyListDto } from './dto/stats/monthly.dto';
 import { MonthParam } from './params/month.param';
 import { YearParam } from './params/year.param';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
+import { PoolROSDto } from './dto/stats/pool-ros.dto';
+import { FromParam } from '../utils/params/from.param';
 
 @ApiTags('Account Stats')
 @Controller('stats')
@@ -53,5 +55,17 @@ export class StatsController {
       yearQuery.year,
       monthQuery.month,
     );
+  }
+
+  @Get('pools-ros')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: [PoolROSDto] })
+  @ApiBadRequestResponse({ type: BadRequestErrorDto })
+  async poolsROS(
+    @Request() request,
+    @Query() params: FromParam,
+  ): Promise<PoolROSDto[]> {
+    return this.statsService.poolsROS(request.user.id, params);
   }
 }

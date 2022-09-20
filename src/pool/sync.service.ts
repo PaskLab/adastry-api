@@ -90,9 +90,7 @@ export class SyncService {
   async syncPool(pool: Pool, lastEpoch: Epoch) {
     await this.syncPoolCert(pool, lastEpoch);
     await this.syncPoolInfo(pool, lastEpoch);
-    if (pool.isMember) {
-      await this.syncPoolHistory(pool, lastEpoch);
-    }
+    await this.syncPoolHistory(pool, lastEpoch);
   }
 
   async syncPoolInfo(pool: Pool, lastEpoch: Epoch): Promise<void> {
@@ -352,7 +350,7 @@ export class SyncService {
         );
 
         const ownersAccountHistory =
-          await this.accountHistoryService.findAccountSelection(
+          await this.accountHistoryService.findEpochHistorySelection(
             ownersStakeAddr,
             record.epoch.epoch,
           );

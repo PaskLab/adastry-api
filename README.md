@@ -31,6 +31,17 @@ $ npm run start:prod
 
 Not implemented yet.
 
+## Environments
+
+#### TypeORM
+
+To prevent production data lost, database schema synchronization is disable 
+by default. To enable entities **auto-synchronization**, set the node environment to the following:
+
+```bash
+NODE_ENV=development
+```
+
 ## TypeORM CLI
 
 Since he TypeORM cli cannot read from the Nest app configuration, it requires a datasource file named `typeOrm.config.ts` located at the project root.

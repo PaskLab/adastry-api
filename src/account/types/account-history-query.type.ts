@@ -1,4 +1,4 @@
-export type HistoryQueryType = {
+export type AccountHistoryQueryType = {
   stakeAddress: string;
   page?: number | undefined;
   limit?: number | undefined;
