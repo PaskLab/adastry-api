@@ -5,6 +5,7 @@ export class UserAccountDto {
     if (props) {
       this.stakeAddress = props.stakeAddress;
       this.name = props.name;
+      this.syncing = props.syncing;
       this.createdAt = props.createdAt;
       this.updatedAt = props.updatedAt;
     }
@@ -21,6 +22,12 @@ export class UserAccountDto {
     example: 'Alice primary account',
   })
   name!: string;
+
+  @ApiProperty({
+    title: 'Synchronization Status',
+    example: true,
+  })
+  syncing!: boolean;
 
   @ApiProperty({
     title: 'Created at',

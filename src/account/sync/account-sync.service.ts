@@ -15,6 +15,7 @@ import { AccountHistoryService } from '../account-history.service';
 import { AccountWithdrawService } from '../account-withdraw.service';
 import { EpochService } from '../../epoch/epoch.service';
 import { MirTransactionService } from '../mir-transaction.service';
+import { SyncService } from '../../pool/sync.service';
 
 @Injectable()
 export class AccountSyncService {
@@ -26,6 +27,7 @@ export class AccountSyncService {
     private readonly source: BlockfrostService,
     @Inject(forwardRef(() => PoolService))
     private readonly poolService: PoolService,
+    private readonly poolSyncService: SyncService,
     private readonly accountHistoryService: AccountHistoryService,
     private readonly accountWithdrawService: AccountWithdrawService,
     private readonly epochService: EpochService,
@@ -61,6 +63,7 @@ export class AccountSyncService {
         pool.poolId = accountUpdate.poolId;
         pool.isMember = false;
         pool = await this.em.save(pool);
+        await this.poolSyncService.syncPool(pool, lastEpoch);
       }
 
       account.pool = pool;

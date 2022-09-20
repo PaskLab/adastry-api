@@ -62,6 +62,9 @@ export class Account {
   @OneToMany(() => AccountWithdraw, (withdraw) => withdraw.account)
   withdraw!: AccountWithdraw[];
 
+  @Column({ default: false })
+  syncing!: boolean;
+
   // Special columns
   @CreateDateColumn()
   createdAt!: string;

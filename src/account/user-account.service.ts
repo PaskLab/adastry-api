@@ -45,6 +45,7 @@ export class UserAccountService {
         new UserAccountDto({
           stakeAddress: a.account.stakeAddress,
           name: a.name,
+          syncing: a.account.syncing,
           createdAt: a.createdAt,
           updatedAt: a.updatedAt,
         }),
@@ -86,6 +87,7 @@ export class UserAccountService {
       loyalty: account.loyalty,
       epoch: account.epoch ? account.epoch.epoch : null,
       pool: poolDto,
+      syncing: account.syncing,
     });
   }
 

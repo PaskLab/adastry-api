@@ -5,6 +5,8 @@ import { TxSyncService } from './sync/tx-sync.service';
 import { AccountSyncService } from './sync/account-sync.service';
 import config from '../../config.json';
 import { MirSyncService } from './sync/mir-sync.service';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class SyncService {
@@ -14,12 +16,16 @@ export class SyncService {
     config.sync.rateLimit.accountMIRTransaction;
 
   constructor(
+    @InjectEntityManager() private readonly em: EntityManager,
     private readonly accountSync: AccountSyncService,
     private readonly txSync: TxSyncService,
     private readonly mirSync: MirSyncService,
   ) {}
 
   async syncAccount(account: Account, lastEpoch: Epoch): Promise<void> {
+    account.syncing = true;
+    account = await this.em.save(account);
+
     account = await this.accountSync.syncInfo(account, lastEpoch);
     if (account.pool?.isMember) {
       account = await this.accountSync.syncAccountWithdrawal(account);
@@ -40,6 +46,8 @@ export class SyncService {
 
       await this.accountSync.syncHistory(account, lastEpoch);
     }
+    account.syncing = false;
+    this.em.save(account);
   }
 
   async integrityCheck(): Promise<void> {

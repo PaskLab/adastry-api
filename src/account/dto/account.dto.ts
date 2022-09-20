@@ -10,6 +10,7 @@ export class AccountDto {
       this.loyalty = props.loyalty;
       this.epoch = props.epoch;
       this.pool = props.pool;
+      this.syncing = props.syncing;
     }
   }
   @ApiProperty({
@@ -48,4 +49,10 @@ export class AccountDto {
     nullable: true,
   })
   pool!: PoolDto | null;
+
+  @ApiProperty({
+    title: 'Synchronization Status',
+    example: true,
+  })
+  syncing!: boolean;
 }
