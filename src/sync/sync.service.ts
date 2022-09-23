@@ -42,7 +42,12 @@ export class SyncService {
 
   @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
   private async sync(): Promise<void> {
-    this.logger.log('Starting daily sync ...');
+    if (process.env.SKIP_SYNC) {
+      this.logger.log('SKIP_SYNC enabled, skipping daily sync ...');
+      return;
+    }
+
+    this.logger.log('*** Starting daily sync ... ***');
     await this.poolSyncService.syncMember();
     const lastEpoch = await this.epochSyncService.syncEpoch();
 
@@ -52,6 +57,7 @@ export class SyncService {
       await this.syncSpotPrices(lastEpoch);
       await this.poolSyncService.processMultiOwner();
     }
+    this.logger.log('*** Daily sync completed! ***');
   }
 
   private async syncPools(lastEpoch: Epoch): Promise<void> {
