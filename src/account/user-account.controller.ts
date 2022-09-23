@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
-  BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { AddUserAccountDto } from './dto/add-user-account.dto';
@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
@@ -45,6 +46,7 @@ import { TransactionService } from './transaction.service';
 import { TxHistoryParam } from './params/tx-history.param';
 import { AccountHistoryListDto } from './dto/account-history.dto';
 import { QuarterParam } from './params/quarter.param';
+import { ForbiddenErrorDto } from '../utils/dto/forbidden-error.dto';
 
 @ApiTags('User Account')
 @Controller('account')
@@ -170,6 +172,7 @@ export class UserAccountController {
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: CsvFileDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiForbiddenResponse({ type: ForbiddenErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async exportTransactions(
     @Request() request,
@@ -184,8 +187,8 @@ export class UserAccountController {
         this.MIN_LOYALTY,
       ))
     ) {
-      throw new BadRequestException(
-        `Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
+      throw new ForbiddenException(
+        `Premium feature. Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
       );
     }
 
@@ -224,6 +227,7 @@ export class UserAccountController {
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: CsvFileDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiForbiddenResponse({ type: ForbiddenErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async exportRewards(
     @Request() request,
@@ -238,8 +242,8 @@ export class UserAccountController {
         this.MIN_LOYALTY,
       ))
     ) {
-      throw new BadRequestException(
-        `Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
+      throw new ForbiddenException(
+        `Premium feature. Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
       );
     }
 

@@ -27,25 +27,25 @@ export class SyncService {
     account = await this.em.save(account);
 
     account = await this.accountSync.syncInfo(account, lastEpoch);
-    if (account.pool?.isMember) {
-      account = await this.accountSync.syncAccountWithdrawal(account);
 
-      if (this.requireSync(account.addressesLastSync, this.ADDRESS_SYNC_RATE)) {
-        account = await this.txSync.syncAddresses(account);
-      }
+    account = await this.accountSync.syncAccountWithdrawal(account);
 
-      if (this.requireSync(account.transactionsLastSync, this.TX_SYNC_RATE)) {
-        account = await this.txSync.syncTransactions(account);
-      }
-
-      if (
-        this.requireSync(account.mirTransactionsLastSync, this.MIR_TX_SYNC_RATE)
-      ) {
-        account = await this.mirSync.syncTransactions(account);
-      }
-
-      await this.accountSync.syncHistory(account, lastEpoch);
+    if (this.requireSync(account.addressesLastSync, this.ADDRESS_SYNC_RATE)) {
+      account = await this.txSync.syncAddresses(account);
     }
+
+    if (this.requireSync(account.transactionsLastSync, this.TX_SYNC_RATE)) {
+      account = await this.txSync.syncTransactions(account);
+    }
+
+    if (
+      this.requireSync(account.mirTransactionsLastSync, this.MIR_TX_SYNC_RATE)
+    ) {
+      account = await this.mirSync.syncTransactions(account);
+    }
+
+    await this.accountSync.syncHistory(account, lastEpoch);
+
     account.syncing = false;
     this.em.save(account);
   }
