@@ -58,7 +58,7 @@ export class AccountSyncService {
             .findOne({ where: { poolId: accountUpdate.poolId } })
         : null;
 
-      if (pool === undefined) {
+      if (!pool && accountUpdate.poolId) {
         pool = new Pool();
         pool.poolId = accountUpdate.poolId;
         pool.isMember = false;
@@ -163,11 +163,12 @@ export class AccountSyncService {
         continue;
       }
 
-      if (pool === undefined) {
+      if (!pool && history[i].poolId) {
         pool = new Pool();
         pool.poolId = history[i].poolId;
         pool.isMember = false;
         pool = await this.em.save(pool);
+        await this.poolSyncService.syncPool(pool, lastEpoch);
       }
 
       // Fetch previous epoch ( Current epoch - 1 )
