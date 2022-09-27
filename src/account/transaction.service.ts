@@ -314,11 +314,13 @@ export class TransactionService {
       .getMany();
   }
 
-  findByYearSelection(
+  async findByYearSelection(
     stakeAddresses: string[],
     year: number,
     quarter?: number,
   ): Promise<Transaction[]> {
+    if (!stakeAddresses.length) return [];
+
     let startMonth = '01';
     let endMonth = '12';
     let endDay = '31';

@@ -82,6 +82,8 @@ export class AccountHistoryService {
     stakeAddresses: string[],
     params: FromQueryType,
   ): Promise<[AccountHistory[], number]> {
+    if (!stakeAddresses.length) return [[], 0];
+
     const qb = this.em
       .getRepository(AccountHistory)
       .createQueryBuilder('history')
@@ -146,11 +148,13 @@ export class AccountHistoryService {
       .getMany();
   }
 
-  findByYearSelection(
+  async findByYearSelection(
     stakeAddresses: string[],
     year: number,
     quarter?: number,
   ): Promise<AccountHistory[]> {
+    if (!stakeAddresses.length) return [];
+
     let startMonth = '01';
     let endMonth = '12';
     let endDay = '31';
@@ -188,6 +192,8 @@ export class AccountHistoryService {
     stakeAddresses: string[],
     epoch: number,
   ): Promise<AccountHistory[]> {
+    if (!stakeAddresses.length) return [];
+
     return this.em
       .getRepository(AccountHistory)
       .createQueryBuilder('history')

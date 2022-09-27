@@ -335,11 +335,13 @@ export class SyncService {
   }
 
   async processMultiOwner() {
-    const memberPools = await this.poolService.findAllMembers();
+    this.logger.log(`*** Starting Multi-Owner calculation ***`);
 
-    for (const member of memberPools) {
+    const pools = await this.poolService.findAll();
+
+    for (const pool of pools) {
       const unprocessed = await this.poolHistoryService.findUnprocessed(
-        member.poolId,
+        pool.poolId,
       );
 
       for (const record of unprocessed) {
