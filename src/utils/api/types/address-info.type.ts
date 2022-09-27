@@ -2,9 +2,9 @@ export type AddressInfoType = {
   address: string;
   amount: {
     unit: string;
-    quantity: number;
+    quantity: string;
   }[];
-  stakeAddress: string;
+  stakeAddress: string | null;
   type: string;
   script: boolean;
 };

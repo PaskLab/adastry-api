@@ -4,5 +4,5 @@ export type AccountInfoType = {
   withdrawalsSum: number;
   rewardsSum: number;
   withdrawableAmount: number;
-  poolId: string;
+  poolId: string | null;
 };

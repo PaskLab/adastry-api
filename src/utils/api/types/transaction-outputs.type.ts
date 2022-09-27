@@ -5,13 +5,12 @@ export type TransactionOutputsType = {
     amount: BlockfrostAmount[];
     txHash: string;
     outputIndex: number;
-    dataHash: string;
+    dataHash: string | null;
     collateral: boolean;
   }[];
   outputs: {
     address: string;
     amount: BlockfrostAmount[];
-    txHash: string;
     outputIndex: number;
   }[];
 };

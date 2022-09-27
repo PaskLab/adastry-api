@@ -16,6 +16,7 @@ import { TransactionType } from './types/transaction.type';
 import { TransactionOutputsType } from './types/transaction-outputs.type';
 import { AssetInfoType } from './types/asset-info.type';
 import { MirTransactionType } from './types/mir-transaction.type';
+import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 
 @Injectable()
 export class BlockfrostService {
@@ -23,45 +24,55 @@ export class BlockfrostService {
   private readonly PROVIDER_URL: string = config.provider.blockfrost.url;
   private readonly PROVIDER_RATE: number = config.provider.blockfrost.rate;
   private nextCallTime = new Date();
+  private api: BlockFrostAPI;
+
+  constructor() {
+    this.api = new BlockFrostAPI({
+      projectId: process.env.BLOCKFROST_API_KEY!,
+      debug: process.env.NODE_ENV === 'development',
+    });
+  }
 
   async getPoolHistory(
     poolId: string,
     page = 1,
     limit = 100,
   ): Promise<PoolHistoryType[] | null> {
-    const result = await this.request(
-      `/pools/${poolId}/history?order=desc&page=${page}&count=${limit}`,
-    );
+    const result = await this.api.poolsByIdHistory(poolId, {
+      order: 'desc',
+      count: limit,
+      page: page,
+    });
 
     return result
       ? result.map((res) => ({
-          epoch: parseInt(res.epoch) || 0,
+          epoch: res.epoch || 0,
           rewards: parseInt(res.rewards) || 0,
           fees: parseInt(res.fees) || 0,
-          blocks: parseInt(res.blocks) || 0,
+          blocks: res.blocks || 0,
           activeStake: parseInt(res.active_stake) || 0,
         }))
       : null;
   }
 
   async getPoolInfo(poolId: string): Promise<PoolInfoType | null> {
-    const cert = await this.request(`/pools/${poolId}`);
-    const metadata = await this.request(`/pools/${poolId}/metadata`);
+    const cert = await this.api.poolsById(poolId);
+    const metadata = await this.api.poolMetadata(poolId);
 
     return cert && metadata
       ? {
           poolId: cert.pool_id,
           hex: cert.hex,
-          name: metadata.name,
-          ticker: metadata.ticker,
-          blocksMinted: parseInt(cert.blocks_minted) || 0,
-          liveStake: parseInt(cert.live_stake) || 0,
-          liveSaturation: parseFloat(cert.live_saturation) || 0,
-          liveDelegators: parseInt(cert.live_delegators) || 0,
+          name: metadata.name ? metadata.name : 'null',
+          ticker: metadata.ticker ? metadata.ticker : 'null',
+          blocksMinted: cert.blocks_minted,
+          liveStake: parseInt(cert.live_stake),
+          liveSaturation: cert.live_saturation,
+          liveDelegators: cert.live_delegators,
           rewardAccount: cert.reward_account,
           owners: cert.owners,
-          margin: parseFloat(cert.margin_cost) || 0,
-          fixed: parseInt(cert.fixed_cost) || 0,
+          margin: cert.margin_cost,
+          fixed: parseInt(cert.fixed_cost),
         }
       : null;
   }
@@ -75,9 +86,12 @@ export class BlockfrostService {
     let result: { tx_hash: string; cert_index: number; action: string }[] = [];
 
     do {
-      result = await this.request(
-        `/pools/${poolId}/updates?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
-      );
+      result = await this.api.poolsByIdUpdates(poolId, {
+        order: 'desc',
+        page: page,
+        count: this.PROVIDER_LIMIT,
+      });
+
       if (result) {
         certs = certs.concat(result);
         if (
@@ -104,19 +118,19 @@ export class BlockfrostService {
     const infos: PoolCertType[] = [];
 
     for (const cert of certs) {
-      const txInfo = await this.request(`/txs/${cert.tx_hash}`);
+      const txInfo = await this.api.txs(cert.tx_hash);
       if (cert.action === 'registered') {
         const info = await this.getRegistration(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = parseInt(txInfo.block_height) || 0;
+          info.block = txInfo.block_height;
           infos.push(info);
         }
       } else {
         const info = await this.getRetirement(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = parseInt(txInfo.block_height) || 0;
+          info.block = txInfo.block_height;
           infos.push(info);
         }
       }
@@ -126,14 +140,15 @@ export class BlockfrostService {
   }
 
   async getLastPoolCert(poolId: string): Promise<LastPoolCertType | null> {
-    const result = await this.request(
-      `/pools/${poolId}/updates?order=desc&count=1`,
-    );
+    const result = await this.api.poolsByIdUpdates(poolId, {
+      order: 'desc',
+      count: 1,
+    });
 
     return result
       ? {
           txHash: result[0].tx_hash,
-          certIndex: parseInt(result[0].cert_index) || 0,
+          certIndex: result[0].cert_index,
           action: result[0].action,
         }
       : null;
@@ -143,20 +158,20 @@ export class BlockfrostService {
     hash: string,
     certIndex: number,
   ): Promise<PoolCertType | null> {
-    let result = await this.request(`/txs/${hash}/pool_updates`);
+    const result = await this.api.txsPoolUpdates(hash);
 
     if (result) {
-      result = result.find((el) => el.cert_index === certIndex);
-      if (result)
+      const filtered = result.find((el) => el.cert_index === certIndex);
+      if (filtered)
         return {
           txHash: '',
           block: 0,
           active: true,
-          epoch: parseInt(result.active_epoch) || 0,
-          margin: parseFloat(result.margin_cost) || 0,
-          fixed: parseInt(result.fixed_cost) || 0,
-          rewardAccount: result.reward_account,
-          owners: result.owners,
+          epoch: filtered.active_epoch,
+          margin: filtered.margin_cost,
+          fixed: parseInt(filtered.fixed_cost) || 0,
+          rewardAccount: filtered.reward_account,
+          owners: filtered.owners,
         };
     }
 
@@ -167,16 +182,16 @@ export class BlockfrostService {
     hash: string,
     certIndex: number,
   ): Promise<PoolCertType | null> {
-    let result = await this.request(`/txs/${hash}/pool_retires`);
+    const result = await this.api.txsPoolRetires(hash);
 
     if (result) {
-      result = result.find((el) => el.cert_index == certIndex);
-      if (result)
+      const filtered = result.find((el) => el.cert_index == certIndex);
+      if (filtered)
         return {
           txHash: '',
           block: 0,
           active: false,
-          epoch: parseInt(result.retiring_epoch) || 0,
+          epoch: filtered.retiring_epoch,
           margin: null,
           fixed: null,
           rewardAccount: null,
@@ -188,7 +203,7 @@ export class BlockfrostService {
   }
 
   async getAccountInfo(stakeAddress: string): Promise<AccountInfoType | null> {
-    const result = await this.request(`/accounts/${stakeAddress}`);
+    const result = await this.api.accounts(stakeAddress);
 
     return result
       ? {
@@ -207,13 +222,15 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountHistoryType | null> {
-    const result = await this.request(
-      `/accounts/${stakeAddr}/history?order=desc&page=${page}&count=${limit}`,
-    );
+    const result = await this.api.accountsHistory(stakeAddr, {
+      order: 'desc',
+      page: page,
+      count: limit,
+    });
     return result
       ? result.map((r) => {
           return {
-            epoch: parseInt(r.active_epoch) || 0,
+            epoch: r.active_epoch,
             amount: parseInt(r.amount) || 0,
             poolId: r.pool_id,
           };
@@ -226,13 +243,15 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountRewardsHistoryType | null> {
-    const result = await this.request(
-      `/accounts/${stakeAddr}/rewards?order=desc&page=${page}&count=${limit}`,
-    );
+    const result = await this.api.accountsRewards(stakeAddr, {
+      order: 'desc',
+      page: page,
+      count: limit,
+    });
     return result
       ? result.map((r) => {
           return {
-            epoch: parseInt(r.epoch) || 0,
+            epoch: r.epoch,
             rewards: parseInt(r.amount) || 0,
             poolId: r.pool_id,
           };
@@ -248,9 +267,11 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<string[] | null> {
-    const result = await this.request(
-      `/accounts/${stakeAddr}/addresses?page=${page}&count=${limit}&order=desc`,
-    );
+    const result = await this.api.accountsAddresses(stakeAddr, {
+      page: page,
+      count: limit,
+      order: 'desc',
+    });
 
     return result && result.length
       ? result.map((value) => value.address)
@@ -258,7 +279,7 @@ export class BlockfrostService {
   }
 
   async getAddressInfo(address: string): Promise<AddressInfoType | null> {
-    const result = await this.request(`/addresses/${address}`);
+    const result = await this.api.addresses(address);
 
     return result
       ? {
@@ -282,23 +303,25 @@ export class BlockfrostService {
     fromIndex: number | null = null,
   ): Promise<AddressTransactionType[] | null> {
     const fromStr = fromBlock
-      ? `&from=${fromBlock}${fromIndex ? ':' + fromIndex : ''}`
-      : '';
-    const result = await this.request(
-      `/addresses/${address}/transactions?page=${page}&count=${limit}${fromStr}`,
+      ? `${fromBlock}${fromIndex ? ':' + fromIndex : ''}`
+      : undefined;
+    const result = await this.api.addressesTransactions(
+      address,
+      { page: page, count: limit },
+      { from: fromStr },
     );
     return result && result.length
       ? result.map((t) => ({
           txHash: t.tx_hash,
-          txIndex: parseInt(t.tx_index) || 0,
-          blockHeight: parseInt(t.block_height) || 0,
-          blockTime: parseInt(t.block_time) || 0,
+          txIndex: t.tx_index,
+          blockHeight: t.block_height,
+          blockTime: t.block_time,
         }))
       : null;
   }
 
   async getTransactionInfo(txHash: string): Promise<TransactionType | null> {
-    const result = await this.request(`/txs/${txHash}`);
+    const result = await this.api.txs(txHash);
 
     const metadata = await this.getTransactionMetadata(txHash);
 
@@ -306,20 +329,20 @@ export class BlockfrostService {
       ? {
           txHash: result.hash,
           blockHash: result.block,
-          blockHeight: parseInt(result.block_height) || 0,
-          blockTime: parseInt(result.block_time) || 0,
-          slot: parseInt(result.slot) || 0,
-          index: parseInt(result.index) || 0,
+          blockHeight: result.block_height,
+          blockTime: result.block_time,
+          slot: result.slot,
+          index: result.index,
           fees: parseInt(result.fees) || 0,
           deposit: parseInt(result.deposit) || 0,
-          withdrawalCount: parseInt(result.withdrawal_count) || 0,
-          mirCertCount: parseInt(result.mir_cert_count) || 0,
-          delegationCount: parseInt(result.delegation_count) || 0,
-          stakeCertCount: parseInt(result.stake_cert_count) || 0,
-          poolUpdateCount: parseInt(result.pool_update_count) || 0,
-          poolRetireCount: parseInt(result.pool_retire_count) || 0,
-          assetMintCount: parseInt(result.asset_mint_or_burn_count) || 0,
-          redeemerCount: parseInt(result.redeemer_count) || 0,
+          withdrawalCount: result.withdrawal_count,
+          mirCertCount: result.mir_cert_count,
+          delegationCount: result.delegation_count,
+          stakeCertCount: result.stake_cert_count,
+          poolUpdateCount: result.pool_update_count,
+          poolRetireCount: result.pool_retire_count,
+          assetMintCount: result.asset_mint_or_burn_count,
+          redeemerCount: result.redeemer_count,
           validContract: result.valid_contract,
           metadata,
         }
@@ -327,7 +350,7 @@ export class BlockfrostService {
   }
 
   async getTransactionMetadata(txHash: string): Promise<string> {
-    const metadata = await this.request(`/txs/${txHash}/metadata`);
+    const metadata = await this.api.txsMetadata(txHash);
 
     return metadata ? JSON.stringify(metadata) : '';
   }
@@ -335,7 +358,7 @@ export class BlockfrostService {
   async getTransactionUTxOs(
     txHash: string,
   ): Promise<TransactionOutputsType | null> {
-    const result = await this.request(`/txs/${txHash}/utxos`);
+    const result = await this.api.txsUtxos(txHash);
 
     return result
       ? {
@@ -347,7 +370,7 @@ export class BlockfrostService {
               quantity: ria.quantity,
             })),
             txHash: ri.tx_hash,
-            outputIndex: parseInt(ri.output_index) || 0,
+            outputIndex: ri.output_index,
             dataHash: ri.data_hash,
             collateral: ri.collateral,
           })),
@@ -357,20 +380,19 @@ export class BlockfrostService {
               unit: ria.unit,
               quantity: ria.quantity,
             })),
-            txHash: ri.tx_hash,
-            outputIndex: parseInt(ri.output_index) || 0,
+            outputIndex: ri.output_index,
           })),
         }
       : null;
   }
 
   async lastEpoch(): Promise<EpochType | null> {
-    const result = await this.request(`/epochs/latest`);
+    const result = await this.api.epochsLatest();
     return result
       ? {
-          epoch: parseInt(result.epoch) || 0,
-          startTime: parseInt(result.start_time) || 0,
-          endTime: parseInt(result.end_time) || 0,
+          epoch: result.epoch,
+          startTime: result.start_time,
+          endTime: result.end_time,
         }
       : null;
   }
@@ -380,15 +402,16 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<EpochType[] | null> {
-    const result = await this.request(
-      `/epochs/${beforeEpoch}/previous?page=${page}&count=${limit}`,
-    );
+    const result = await this.api.epochsPrevious(beforeEpoch, {
+      page: page,
+      count: limit,
+    });
     return result
       ? result.map((r) => {
           return {
-            epoch: parseInt(r.epoch) || 0,
-            startTime: parseInt(r.start_time) || 0,
-            endTime: parseInt(r.end_time) || 0,
+            epoch: r.epoch,
+            startTime: r.start_time,
+            endTime: r.end_time,
           };
         })
       : null;
@@ -403,9 +426,11 @@ export class BlockfrostService {
     let result: { tx_hash: string; amount: string }[] = [];
 
     do {
-      result = await this.request(
-        `/accounts/${stakeAddress}/withdrawals?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
-      );
+      result = await this.api.accountsWithdrawals(stakeAddress, {
+        order: 'desc',
+        page: page,
+        count: this.PROVIDER_LIMIT,
+      });
 
       if (result) {
         withdrawTxs = withdrawTxs.concat(result);
@@ -430,12 +455,12 @@ export class BlockfrostService {
     const withdrawals: AccountWithdrawType[] = [];
 
     for (const tx of withdrawTxs) {
-      const txInfo = await this.request(`/txs/${tx.tx_hash}`);
+      const txInfo = await this.getTransactionInfo(tx.tx_hash);
       if (txInfo) {
         withdrawals.push({
           txHash: tx.tx_hash,
-          block: parseInt(txInfo.block_height) || 0,
-          blockTime: parseInt(txInfo.block_time) || 0,
+          block: txInfo.blockHeight,
+          blockTime: txInfo.blockTime,
           amount: parseInt(tx.amount) || 0,
         });
       }
@@ -445,13 +470,13 @@ export class BlockfrostService {
   }
 
   async getAssetInfo(hex: string): Promise<AssetInfoType | null> {
-    const assetInfo = await this.request(`/assets/${hex}`);
+    const assetInfo = await this.api.assetsById(hex);
 
     return assetInfo
       ? {
           hexId: assetInfo.asset,
           policyId: assetInfo.policy_id,
-          name: assetInfo.asset_name,
+          name: assetInfo.asset_name ? assetInfo.asset_name : '',
           fingerprint: assetInfo.fingerprint,
           quantity: assetInfo.quantity,
           mintTxHash: assetInfo.initial_mint_tx_hash,
@@ -470,9 +495,11 @@ export class BlockfrostService {
     let result: { tx_hash: string; amount: string }[] = [];
 
     do {
-      result = await this.request(
-        `/accounts/${stakeAddress}/mirs?order=desc&page=${page}&count=${this.PROVIDER_LIMIT}`,
-      );
+      result = await this.api.accountsMirs(stakeAddress, {
+        order: 'desc',
+        page: page,
+        count: this.PROVIDER_LIMIT,
+      });
 
       if (result) {
         accountMIRs = accountMIRs.concat(result);
@@ -496,13 +523,13 @@ export class BlockfrostService {
     const mirTransactions: MirTransactionType[] = [];
 
     for (const mir of accountMIRs) {
-      const txInfo = await this.request(`/txs/${mir.tx_hash}`);
+      const txInfo = await this.getTransactionInfo(mir.tx_hash);
       if (txInfo) {
         mirTransactions.push({
           txHash: mir.tx_hash,
           txIndex: txInfo.index,
-          blockHeight: parseInt(txInfo.block_height) || 0,
-          blockTime: parseInt(txInfo.block_time) || 0,
+          blockHeight: txInfo.blockHeight,
+          blockTime: txInfo.blockTime,
           amount: parseInt(mir.amount) || 0,
         });
       }
