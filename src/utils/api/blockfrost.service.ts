@@ -16,7 +16,11 @@ import { TransactionType } from './types/transaction.type';
 import { TransactionOutputsType } from './types/transaction-outputs.type';
 import { AssetInfoType } from './types/asset-info.type';
 import { MirTransactionType } from './types/mir-transaction.type';
-import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
+import {
+  BlockFrostAPI,
+  BlockfrostServerError,
+} from '@blockfrost/blockfrost-js';
+import { components } from '@blockfrost/blockfrost-js/lib/types/OpenApi';
 
 @Injectable()
 export class BlockfrostService {
@@ -38,11 +42,21 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<PoolHistoryType[] | null> {
-    const result = await this.api.poolsByIdHistory(poolId, {
-      order: 'desc',
-      count: limit,
-      page: page,
-    });
+    let result: components['schemas']['pool_history'] | null;
+
+    try {
+      result = await this.api.poolsByIdHistory(poolId, {
+        order: 'desc',
+        count: limit,
+        page: page,
+      });
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     return result
       ? result.map((res) => ({
@@ -56,8 +70,20 @@ export class BlockfrostService {
   }
 
   async getPoolInfo(poolId: string): Promise<PoolInfoType | null> {
-    const cert = await this.api.poolsById(poolId);
-    const metadata = await this.api.poolMetadata(poolId);
+    let cert: components['schemas']['pool'] | null;
+    let metadata: components['schemas']['pool_metadata'] | null;
+
+    try {
+      cert = await this.api.poolsById(poolId);
+      metadata = await this.api.poolMetadata(poolId);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        cert = null;
+        metadata = null;
+      } else {
+        throw e;
+      }
+    }
 
     return cert && metadata
       ? {
@@ -81,16 +107,24 @@ export class BlockfrostService {
     poolId: string,
     afterTxHash?: string,
   ): Promise<PoolCertType[]> {
-    let certs: { tx_hash: string; cert_index: number; action: string }[] = [];
+    let certs: components['schemas']['pool_updates'] = [];
     let page = 1;
-    let result: { tx_hash: string; cert_index: number; action: string }[] = [];
+    let result: components['schemas']['pool_updates'] | null = [];
 
     do {
-      result = await this.api.poolsByIdUpdates(poolId, {
-        order: 'desc',
-        page: page,
-        count: this.PROVIDER_LIMIT,
-      });
+      try {
+        result = await this.api.poolsByIdUpdates(poolId, {
+          order: 'desc',
+          page: page,
+          count: this.PROVIDER_LIMIT,
+        });
+      } catch (e) {
+        if (e instanceof BlockfrostServerError && e.status_code === 404) {
+          result = null;
+        } else {
+          throw e;
+        }
+      }
 
       if (result) {
         certs = certs.concat(result);
@@ -118,19 +152,19 @@ export class BlockfrostService {
     const infos: PoolCertType[] = [];
 
     for (const cert of certs) {
-      const txInfo = await this.api.txs(cert.tx_hash);
+      const txInfo = await this.getTransactionInfo(cert.tx_hash);
       if (cert.action === 'registered') {
         const info = await this.getRegistration(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = txInfo.block_height;
+          info.block = txInfo.blockHeight;
           infos.push(info);
         }
       } else {
         const info = await this.getRetirement(cert.tx_hash, cert.cert_index);
         if (info && txInfo) {
           info.txHash = cert.tx_hash;
-          info.block = txInfo.block_height;
+          info.block = txInfo.blockHeight;
           infos.push(info);
         }
       }
@@ -140,10 +174,20 @@ export class BlockfrostService {
   }
 
   async getLastPoolCert(poolId: string): Promise<LastPoolCertType | null> {
-    const result = await this.api.poolsByIdUpdates(poolId, {
-      order: 'desc',
-      count: 1,
-    });
+    let result: components['schemas']['pool_updates'] | null;
+
+    try {
+      result = await this.api.poolsByIdUpdates(poolId, {
+        order: 'desc',
+        count: 1,
+      });
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     return result
       ? {
@@ -158,7 +202,17 @@ export class BlockfrostService {
     hash: string,
     certIndex: number,
   ): Promise<PoolCertType | null> {
-    const result = await this.api.txsPoolUpdates(hash);
+    let result: components['schemas']['tx_content_pool_certs'] | null;
+
+    try {
+      result = await this.api.txsPoolUpdates(hash);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     if (result) {
       const filtered = result.find((el) => el.cert_index === certIndex);
@@ -182,7 +236,17 @@ export class BlockfrostService {
     hash: string,
     certIndex: number,
   ): Promise<PoolCertType | null> {
-    const result = await this.api.txsPoolRetires(hash);
+    let result: components['schemas']['tx_content_pool_retires'] | null;
+
+    try {
+      result = await this.api.txsPoolRetires(hash);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     if (result) {
       const filtered = result.find((el) => el.cert_index == certIndex);
@@ -203,7 +267,17 @@ export class BlockfrostService {
   }
 
   async getAccountInfo(stakeAddress: string): Promise<AccountInfoType | null> {
-    const result = await this.api.accounts(stakeAddress);
+    let result: components['schemas']['account_content'] | null;
+
+    try {
+      result = await this.api.accounts(stakeAddress);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     return result
       ? {
@@ -222,11 +296,22 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountHistoryType | null> {
-    const result = await this.api.accountsHistory(stakeAddr, {
-      order: 'desc',
-      page: page,
-      count: limit,
-    });
+    let result: components['schemas']['account_history_content'] | null;
+
+    try {
+      result = await this.api.accountsHistory(stakeAddr, {
+        order: 'desc',
+        page: page,
+        count: limit,
+      });
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
+
     return result
       ? result.map((r) => {
           return {
@@ -243,11 +328,22 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<AccountRewardsHistoryType | null> {
-    const result = await this.api.accountsRewards(stakeAddr, {
-      order: 'desc',
-      page: page,
-      count: limit,
-    });
+    let result: components['schemas']['account_reward_content'] | null;
+
+    try {
+      result = await this.api.accountsRewards(stakeAddr, {
+        order: 'desc',
+        page: page,
+        count: limit,
+      });
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
+
     return result
       ? result.map((r) => {
           return {
@@ -267,11 +363,21 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<string[] | null> {
-    const result = await this.api.accountsAddresses(stakeAddr, {
-      page: page,
-      count: limit,
-      order: 'desc',
-    });
+    let result: components['schemas']['account_addresses_content'] | null;
+
+    try {
+      result = await this.api.accountsAddresses(stakeAddr, {
+        page: page,
+        count: limit,
+        order: 'desc',
+      });
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     return result && result.length
       ? result.map((value) => value.address)
@@ -279,7 +385,17 @@ export class BlockfrostService {
   }
 
   async getAddressInfo(address: string): Promise<AddressInfoType | null> {
-    const result = await this.api.addresses(address);
+    let result: components['schemas']['address_content'] | null;
+
+    try {
+      result = await this.api.addresses(address);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     return result
       ? {
@@ -305,11 +421,23 @@ export class BlockfrostService {
     const fromStr = fromBlock
       ? `${fromBlock}${fromIndex ? ':' + fromIndex : ''}`
       : undefined;
-    const result = await this.api.addressesTransactions(
-      address,
-      { page: page, count: limit },
-      { from: fromStr },
-    );
+
+    let result: components['schemas']['address_transactions_content'] | null;
+
+    try {
+      result = await this.api.addressesTransactions(
+        address,
+        { page: page, count: limit },
+        { from: fromStr },
+      );
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
+
     return result && result.length
       ? result.map((t) => ({
           txHash: t.tx_hash,
@@ -321,11 +449,21 @@ export class BlockfrostService {
   }
 
   async getTransactionInfo(txHash: string): Promise<TransactionType | null> {
-    const result = await this.api.txs(txHash);
+    let result: components['schemas']['tx_content'] | null;
+
+    try {
+      result = await this.api.txs(txHash);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     const metadata = await this.getTransactionMetadata(txHash);
 
-    return result
+    return result && metadata
       ? {
           txHash: result.hash,
           blockHash: result.block,
@@ -350,7 +488,17 @@ export class BlockfrostService {
   }
 
   async getTransactionMetadata(txHash: string): Promise<string> {
-    const metadata = await this.api.txsMetadata(txHash);
+    let metadata: components['schemas']['tx_content_metadata'] | null;
+
+    try {
+      metadata = await this.api.txsMetadata(txHash);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        metadata = null;
+      } else {
+        throw e;
+      }
+    }
 
     return metadata ? JSON.stringify(metadata) : '';
   }
@@ -358,7 +506,17 @@ export class BlockfrostService {
   async getTransactionUTxOs(
     txHash: string,
   ): Promise<TransactionOutputsType | null> {
-    const result = await this.api.txsUtxos(txHash);
+    let result: components['schemas']['tx_content_utxo'] | null;
+
+    try {
+      result = await this.api.txsUtxos(txHash);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
 
     return result
       ? {
@@ -387,7 +545,18 @@ export class BlockfrostService {
   }
 
   async lastEpoch(): Promise<EpochType | null> {
-    const result = await this.api.epochsLatest();
+    let result: components['schemas']['epoch_content'] | null;
+
+    try {
+      result = await this.api.epochsLatest();
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
+
     return result
       ? {
           epoch: result.epoch,
@@ -402,10 +571,21 @@ export class BlockfrostService {
     page = 1,
     limit = 100,
   ): Promise<EpochType[] | null> {
-    const result = await this.api.epochsPrevious(beforeEpoch, {
-      page: page,
-      count: limit,
-    });
+    let result: components['schemas']['epoch_content_array'] | null;
+
+    try {
+      result = await this.api.epochsPrevious(beforeEpoch, {
+        page: page,
+        count: limit,
+      });
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
+
     return result
       ? result.map((r) => {
           return {
@@ -423,14 +603,22 @@ export class BlockfrostService {
   ): Promise<AccountWithdrawType[]> {
     let withdrawTxs: { tx_hash: string; amount: string }[] = [];
     let page = 1;
-    let result: { tx_hash: string; amount: string }[] = [];
+    let result: components['schemas']['account_withdrawal_content'] | null = [];
 
     do {
-      result = await this.api.accountsWithdrawals(stakeAddress, {
-        order: 'desc',
-        page: page,
-        count: this.PROVIDER_LIMIT,
-      });
+      try {
+        result = await this.api.accountsWithdrawals(stakeAddress, {
+          order: 'desc',
+          page: page,
+          count: this.PROVIDER_LIMIT,
+        });
+      } catch (e) {
+        if (e instanceof BlockfrostServerError && e.status_code === 404) {
+          result = null;
+        } else {
+          throw e;
+        }
+      }
 
       if (result) {
         withdrawTxs = withdrawTxs.concat(result);
@@ -470,18 +658,28 @@ export class BlockfrostService {
   }
 
   async getAssetInfo(hex: string): Promise<AssetInfoType | null> {
-    const assetInfo = await this.api.assetsById(hex);
+    let result: components['schemas']['asset'] | null;
 
-    return assetInfo
+    try {
+      result = await this.api.assetsById(hex);
+    } catch (e) {
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        result = null;
+      } else {
+        throw e;
+      }
+    }
+
+    return result
       ? {
-          hexId: assetInfo.asset,
-          policyId: assetInfo.policy_id,
-          name: assetInfo.asset_name ? assetInfo.asset_name : '',
-          fingerprint: assetInfo.fingerprint,
-          quantity: assetInfo.quantity,
-          mintTxHash: assetInfo.initial_mint_tx_hash,
-          onChainMetadata: JSON.stringify(assetInfo.onchain_metadata),
-          metadata: JSON.stringify(assetInfo.metadata),
+          hexId: result.asset,
+          policyId: result.policy_id,
+          name: result.asset_name ? result.asset_name : '',
+          fingerprint: result.fingerprint,
+          quantity: result.quantity,
+          mintTxHash: result.initial_mint_tx_hash,
+          onChainMetadata: JSON.stringify(result.onchain_metadata),
+          metadata: JSON.stringify(result.metadata),
         }
       : null;
   }
@@ -492,14 +690,22 @@ export class BlockfrostService {
   ): Promise<MirTransactionType[]> {
     let accountMIRs: { tx_hash: string; amount: string }[] = [];
     let page = 1;
-    let result: { tx_hash: string; amount: string }[] = [];
+    let result: components['schemas']['account_mir_content'] | null = [];
 
     do {
-      result = await this.api.accountsMirs(stakeAddress, {
-        order: 'desc',
-        page: page,
-        count: this.PROVIDER_LIMIT,
-      });
+      try {
+        result = await this.api.accountsMirs(stakeAddress, {
+          order: 'desc',
+          page: page,
+          count: this.PROVIDER_LIMIT,
+        });
+      } catch (e) {
+        if (e instanceof BlockfrostServerError && e.status_code === 404) {
+          result = null;
+        } else {
+          throw e;
+        }
+      }
 
       if (result) {
         accountMIRs = accountMIRs.concat(result);
