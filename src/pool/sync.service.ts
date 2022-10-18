@@ -347,9 +347,14 @@ export class SyncService {
       for (const record of unprocessed) {
         const cert = record.cert;
 
-        const ownersStakeAddr = cert.owners.map(
+        const pledgeStakeAddr = cert.owners.map(
           (owner) => owner.account.stakeAddress,
         );
+
+        // Making sure pool reward account is part of the owners addresses
+        const ownersStakeAddr = [
+          ...new Set([cert.rewardAccount.stakeAddress, ...pledgeStakeAddr]),
+        ];
 
         const ownersAccountHistory =
           await this.accountHistoryService.findEpochHistorySelection(
