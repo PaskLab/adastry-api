@@ -8,6 +8,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '6G',
+      node_args: '--max-old-space-size=6144',
       env: {
         NODE_ENV: 'production',
       },
