@@ -1,5 +1,5 @@
 import config from '../../../config.json';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { request as apiRequest } from './api.helper';
 import type { AccountInfoType } from './types/account-info.type';
 import type { AccountHistoryType } from './types/account-history.type';
@@ -18,12 +18,14 @@ import { AssetInfoType } from './types/asset-info.type';
 import { MirTransactionType } from './types/mir-transaction.type';
 import {
   BlockFrostAPI,
+  BlockfrostClientError,
   BlockfrostServerError,
 } from '@blockfrost/blockfrost-js';
 import { components } from '@blockfrost/blockfrost-js/lib/types/OpenApi';
 
 @Injectable()
 export class BlockfrostService {
+  private readonly logger = new Logger(BlockfrostService.name);
   private readonly PROVIDER_LIMIT: number = config.provider.blockfrost.limit;
   private readonly PROVIDER_URL: string = config.provider.blockfrost.url;
   private readonly PROVIDER_RATE: number = config.provider.blockfrost.rate;
@@ -51,8 +53,12 @@ export class BlockfrostService {
         page: page,
       });
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -77,9 +83,13 @@ export class BlockfrostService {
       cert = await this.api.poolsById(poolId);
       metadata = await this.api.poolMetadata(poolId);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         cert = null;
         metadata = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -119,8 +129,12 @@ export class BlockfrostService {
           count: this.PROVIDER_LIMIT,
         });
       } catch (e) {
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        if (
+          e instanceof BlockfrostServerError ||
+          e instanceof BlockfrostClientError
+        ) {
           result = null;
+          this.logger.error(e.message, e.stack);
         } else {
           throw e;
         }
@@ -182,8 +196,12 @@ export class BlockfrostService {
         count: 1,
       });
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -207,8 +225,12 @@ export class BlockfrostService {
     try {
       result = await this.api.txsPoolUpdates(hash);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -241,8 +263,12 @@ export class BlockfrostService {
     try {
       result = await this.api.txsPoolRetires(hash);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -272,8 +298,12 @@ export class BlockfrostService {
     try {
       result = await this.api.accounts(stakeAddress);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -305,8 +335,12 @@ export class BlockfrostService {
         count: limit,
       });
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -337,8 +371,12 @@ export class BlockfrostService {
         count: limit,
       });
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -372,8 +410,12 @@ export class BlockfrostService {
         order: 'desc',
       });
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -390,8 +432,12 @@ export class BlockfrostService {
     try {
       result = await this.api.addresses(address);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -431,8 +477,12 @@ export class BlockfrostService {
         { from: fromStr },
       );
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -454,8 +504,12 @@ export class BlockfrostService {
     try {
       result = await this.api.txs(txHash);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -493,8 +547,12 @@ export class BlockfrostService {
     try {
       metadata = await this.api.txsMetadata(txHash);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         metadata = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -511,8 +569,12 @@ export class BlockfrostService {
     try {
       result = await this.api.txsUtxos(txHash);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -550,8 +612,12 @@ export class BlockfrostService {
     try {
       result = await this.api.epochsLatest();
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -579,8 +645,12 @@ export class BlockfrostService {
         count: limit,
       });
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -613,8 +683,12 @@ export class BlockfrostService {
           count: this.PROVIDER_LIMIT,
         });
       } catch (e) {
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        if (
+          e instanceof BlockfrostServerError ||
+          e instanceof BlockfrostClientError
+        ) {
           result = null;
+          this.logger.error(e.message, e.stack);
         } else {
           throw e;
         }
@@ -663,8 +737,12 @@ export class BlockfrostService {
     try {
       result = await this.api.assetsById(hex);
     } catch (e) {
-      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+      if (
+        e instanceof BlockfrostServerError ||
+        e instanceof BlockfrostClientError
+      ) {
         result = null;
+        this.logger.error(e.message, e.stack);
       } else {
         throw e;
       }
@@ -700,8 +778,12 @@ export class BlockfrostService {
           count: this.PROVIDER_LIMIT,
         });
       } catch (e) {
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        if (
+          e instanceof BlockfrostServerError ||
+          e instanceof BlockfrostClientError
+        ) {
           result = null;
+          this.logger.error(e.message, e.stack);
         } else {
           throw e;
         }
