@@ -136,7 +136,18 @@ export class AccountSyncService {
     const poolRepository = this.em.getRepository(Pool);
 
     for (let i = 0; i < history.length; i++) {
-      const rh = rewardsHistory.find((rh) => rh.epoch === history[i].epoch);
+      // Combine leader and member rewards if needed
+      const epochRHs = rewardsHistory.filter(
+        (rh) => rh.epoch === history[i].epoch,
+      );
+      const rh = epochRHs.length
+        ? epochRHs.reduce((result, next) => ({
+            epoch: next.epoch,
+            rewards: result.rewards + next.rewards,
+            poolId: result.poolId,
+          }))
+        : null;
+
       const epoch = history[i].epoch
         ? await epochRepository.findOne({ where: { epoch: history[i].epoch } })
         : null;

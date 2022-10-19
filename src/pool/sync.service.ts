@@ -388,9 +388,14 @@ export class SyncService {
           accountHistory.stakeShare = totalStake
             ? accountHistory.balance / totalStake
             : 0;
-          accountHistory.opRewards = Math.floor(
-            record.fees / ownersAccountHistory.length,
-          );
+
+          // OpRewards equally shared among pledge addresses only
+          if (pledgeStakeAddr.includes(accountHistory.account.stakeAddress)) {
+            accountHistory.opRewards = Math.floor(
+              record.fees / pledgeStakeAddr.length,
+            );
+          }
+
           accountHistory.revisedRewards = Math.floor(
             accountHistory.stakeShare * netRewards,
           );
