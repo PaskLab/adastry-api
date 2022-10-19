@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -38,6 +40,7 @@ export class AccountService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly accountHistoryService: AccountHistoryService,
+    @Inject(forwardRef(() => SyncService))
     private readonly syncService: SyncService,
     private readonly csvService: CsvService,
     private readonly spotService: SpotService,
@@ -344,5 +347,18 @@ export class AccountService {
       .where('account.stakeAddress = :stakeAddress')
       .setParameter('stakeAddress', stakeAddress)
       .getOne();
+  }
+
+  async findAllWithNegativeBalance(): Promise<Account[]> {
+    return this.em
+      .getRepository(Account)
+      .createQueryBuilder('account')
+      .innerJoin('account.history', 'history')
+      .innerJoinAndSelect('account.epoch', 'epoch')
+      .where('history.balance < 0')
+      .orWhere('history.withdrawable < 0')
+      .orWhere('history.opRewards < 0')
+      .orWhere('history.revisedRewards < 0')
+      .getMany();
   }
 }

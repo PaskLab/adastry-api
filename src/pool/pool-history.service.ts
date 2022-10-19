@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager } from 'typeorm';
+import { EntityManager, UpdateResult } from 'typeorm';
 import config from '../../config.json';
 import { PoolHistory } from './entities/pool-history.entity';
 import { HistoryQueryType } from './types/history-query.type';
@@ -99,5 +99,14 @@ export class PoolHistoryService {
       .andWhere('history.rewards > 0')
       .andWhere('history.rewardsRevised = FALSE')
       .getMany();
+  }
+
+  async resetCalculation(poolId: number): Promise<UpdateResult> {
+    return this.em
+      .createQueryBuilder()
+      .update(PoolHistory)
+      .set({ rewardsRevised: false })
+      .where('pool = :poolId', { poolId: poolId })
+      .execute();
   }
 }

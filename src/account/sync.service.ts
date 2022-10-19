@@ -52,6 +52,7 @@ export class SyncService {
 
   async integrityCheck(): Promise<void> {
     await this.txSync.fetchMissingMetadata();
+    await this.accountSync.clearNegativeBalance();
   }
 
   private requireSync(lastSync: Date | null, rateLimit: number): boolean {

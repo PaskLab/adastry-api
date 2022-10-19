@@ -16,6 +16,8 @@ import { AccountWithdrawService } from '../account-withdraw.service';
 import { EpochService } from '../../epoch/epoch.service';
 import { MirTransactionService } from '../mir-transaction.service';
 import { SyncService } from '../../pool/sync.service';
+import { AccountService } from '../account.service';
+import { PoolHistoryService } from '../../pool/pool-history.service';
 
 @Injectable()
 export class AccountSyncService {
@@ -27,7 +29,10 @@ export class AccountSyncService {
     private readonly source: BlockfrostService,
     @Inject(forwardRef(() => PoolService))
     private readonly poolService: PoolService,
+    private readonly poolHistoryService: PoolHistoryService,
     private readonly poolSyncService: SyncService,
+    @Inject(forwardRef(() => AccountService))
+    private readonly accountService: AccountService,
     private readonly accountHistoryService: AccountHistoryService,
     private readonly accountWithdrawService: AccountWithdrawService,
     private readonly epochService: EpochService,
@@ -300,5 +305,66 @@ export class AccountSyncService {
     }
 
     return account;
+  }
+
+  async clearNegativeBalance(): Promise<void> {
+    const accounts = await this.accountService.findAllWithNegativeBalance();
+
+    if (accounts.length === 0) {
+      this.logger.log('Account History balance integrity check: OK');
+      return;
+    }
+
+    for (const account of accounts) {
+      this.logger.warn(
+        `Account History integrity check: Account ${account.stakeAddress} history corrupted!`,
+      );
+
+      const history = await this.em
+        .getRepository(AccountHistory)
+        .createQueryBuilder('history')
+        .innerJoinAndSelect('history.pool', 'pool')
+        .innerJoin('history.epoch', 'epoch')
+        .where('history.account = :accountId', { accountId: account.id })
+        .orderBy('epoch', 'ASC')
+        .getMany();
+
+      const poolToReset: number[] = [];
+
+      // Add pool to reset list
+      for (const h of history) {
+        if (
+          h.balance < 0 ||
+          h.withdrawable < 0 ||
+          h.opRewards < 0 ||
+          h.revisedRewards < 0
+        ) {
+          if (h.pool?.id) poolToReset.push(h.pool.id);
+        }
+
+        // Delete record
+        await this.em.remove(h);
+      }
+
+      const uniqPoolToReset = new Set(poolToReset);
+
+      for (const id of uniqPoolToReset) {
+        await this.poolHistoryService.resetCalculation(id);
+        this.logger.warn(
+          `Account History integrity check: Pool id: ${id} calculation reset`,
+        );
+      }
+
+      this.logger.warn(
+        `Account History integrity check: Account ${account.stakeAddress} history deleted!`,
+      );
+
+      if (account.epoch) {
+        this.logger.log(
+          `Account History integrity check: Syncing Account ${account.stakeAddress} history ...`,
+        );
+        await this.syncHistory(account, account.epoch);
+      }
+    }
   }
 }

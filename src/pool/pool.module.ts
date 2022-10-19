@@ -20,6 +20,6 @@ export const entities = [Pool, PoolHistory, PoolCert, PoolOwner];
   ],
   controllers: [PoolController],
   providers: [SyncService, PoolService, PoolHistoryService, PoolCertService],
-  exports: [SyncService, PoolService],
+  exports: [SyncService, PoolService, PoolHistoryService],
 })
 export class PoolModule {}
