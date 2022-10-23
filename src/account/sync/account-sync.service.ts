@@ -245,7 +245,7 @@ export class AccountSyncService {
       newHistory.withdrawn = totalWithdraw;
 
       // Tracking user loyalty to configured pools
-      account.loyalty = account.pool?.isMember ? account.loyalty + 1 : 0;
+      account.loyalty = newHistory.pool?.isMember ? account.loyalty + 1 : 0;
 
       if (pool) {
         newHistory.owner = await this.poolService.isOwner(
@@ -346,6 +346,11 @@ export class AccountSyncService {
         await this.em.remove(h);
       }
 
+      // Reset account loyalty score
+      account.loyalty = 0;
+      await this.em.save(account);
+
+      // Reset pools calculation
       const uniqPoolToReset = new Set(poolToReset);
 
       for (const id of uniqPoolToReset) {
