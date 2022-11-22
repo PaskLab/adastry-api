@@ -91,30 +91,40 @@ export class AccountSyncService {
     const epochToSync = lastStoredEpoch
       ? lastEpoch.epoch - lastStoredEpoch.epoch.epoch
       : lastEpoch.epoch - 207;
-    const pages = Math.ceil(epochToSync / this.PROVIDER_LIMIT);
+    /**
+     * NOTE on different LIMIT for history & rewards.
+     *
+     * Rewards history can have 2 different sources per epoch.
+     * We fetch twice the amount of rewards history make sure the whole epoch
+     * range is fetch.
+     */
+    const halfLimit = this.PROVIDER_LIMIT / 2;
+    const pages = Math.ceil(epochToSync / halfLimit);
 
     let history: AccountHistoryType = [];
     let rewardsHistory: AccountRewardsHistoryType = [];
 
     for (let i = pages; i >= 1; i--) {
-      const limit =
-        pages === 1 ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
+      const historyLimit = pages === 1 ? epochToSync % halfLimit : halfLimit;
       const fetchUpstreamHistory = this.source.getAccountHistory(
         account.stakeAddress,
         i,
-        limit,
+        historyLimit,
       );
+
+      const rewardsLimit =
+        pages === 1 ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
       const fetchUpstreamRewardsHistory = this.source.getAccountRewardsHistory(
         account.stakeAddress,
         i,
-        limit,
+        rewardsLimit,
       );
 
       let upstreamHistory = await fetchUpstreamHistory;
 
       if (!upstreamHistory) {
         this.logger.error(
-          `AccountSync()->syncHistory()->this.source.getAccountHistory(${account.stakeAddress},${i},${this.PROVIDER_LIMIT}) returned ${upstreamHistory}.`,
+          `AccountSync()->syncHistory()->this.source.getAccountHistory(${account.stakeAddress},${i},${halfLimit}) returned ${upstreamHistory}.`,
         );
         return;
       }
@@ -348,6 +358,8 @@ export class AccountSyncService {
 
       // Reset account loyalty score
       account.loyalty = 0;
+      // Reset account MIR last sync
+      account.mirTransactionsLastSync = null;
       await this.em.save(account);
 
       // Reset pools calculation

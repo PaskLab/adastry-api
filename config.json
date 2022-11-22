@@ -8,7 +8,7 @@
     "rateLimit": {
       "accountAddress": 43200000,
       "accountTransaction": 45000000,
-      "accountMIRTransaction": 400000000
+      "accountMIRTransaction": 45000000
     }
   },
   "api": {
