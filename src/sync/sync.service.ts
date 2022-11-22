@@ -40,7 +40,7 @@ export class SyncService {
     await this.accountSyncService.integrityCheck();
   }
 
-  @Cron('0 18 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
+  @Cron('0 22 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
   private async sync(): Promise<void> {
     if (process.env.SKIP_SYNC) {
       this.logger.log('SKIP_SYNC enabled, skipping daily sync ...');
