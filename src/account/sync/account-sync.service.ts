@@ -18,6 +18,7 @@ import { MirTransactionService } from '../mir-transaction.service';
 import { SyncService } from '../../pool/sync.service';
 import { AccountService } from '../account.service';
 import { PoolHistoryService } from '../../pool/pool-history.service';
+import { MirSyncService } from './mir-sync.service';
 
 @Injectable()
 export class AccountSyncService {
@@ -31,6 +32,7 @@ export class AccountSyncService {
     private readonly poolService: PoolService,
     private readonly poolHistoryService: PoolHistoryService,
     private readonly poolSyncService: SyncService,
+    private readonly mirSync: MirSyncService,
     @Inject(forwardRef(() => AccountService))
     private readonly accountService: AccountService,
     private readonly accountHistoryService: AccountHistoryService,
@@ -380,6 +382,7 @@ export class AccountSyncService {
         this.logger.log(
           `Account History integrity check: Syncing Account ${account.stakeAddress} history ...`,
         );
+        await this.mirSync.syncTransactions(account);
         await this.syncHistory(account, account.epoch);
       }
     }
