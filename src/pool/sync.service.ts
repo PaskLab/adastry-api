@@ -351,23 +351,6 @@ export class SyncService {
           (owner) => owner.account.stakeAddress,
         );
 
-        // Making sure pool reward account is part of the owners addresses
-        const ownersStakeAddr = [
-          ...new Set([cert.rewardAccount.stakeAddress, ...pledgeStakeAddr]),
-        ];
-
-        const ownersAccountHistory =
-          await this.accountHistoryService.findEpochHistorySelection(
-            ownersStakeAddr,
-            record.epoch.epoch,
-          );
-
-        let totalStake = 0;
-
-        for (const accountHistory of ownersAccountHistory) {
-          totalStake += accountHistory.balance;
-        }
-
         const rewardAccountHistory =
           await this.accountHistoryService.findOneRecord(
             cert.rewardAccount.stakeAddress,
@@ -380,6 +363,32 @@ export class SyncService {
             'PoolSyncService.processMultiOwner()',
           );
           continue;
+        }
+
+        // Making sure pool reward account is part of the owners addresses
+        const ownersStakeAddr = [
+          ...new Set([cert.rewardAccount.stakeAddress, ...pledgeStakeAddr]),
+        ];
+
+        const ownersAccountHistory =
+          await this.accountHistoryService.findEpochHistorySelection(
+            ownersStakeAddr,
+            record.epoch.epoch,
+          );
+
+        if (ownersAccountHistory.length !== ownersStakeAddr.length) {
+          // Reward account already verified, any pledge account history could be missing.
+          this.logger.warn(
+            `Missing pledge account history for epoch ${record.epoch.epoch}. (One or more.)`,
+            'PoolSyncService.processMultiOwner()',
+          );
+          continue;
+        }
+
+        let totalStake = 0;
+
+        for (const accountHistory of ownersAccountHistory) {
+          totalStake += accountHistory.balance;
         }
 
         const netRewards = rewardAccountHistory.rewards - record.fees;
