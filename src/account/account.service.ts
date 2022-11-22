@@ -359,6 +359,7 @@ export class AccountService {
       .orWhere('history.withdrawable < 0')
       .orWhere('history.opRewards < 0')
       .orWhere('history.revisedRewards < 0')
+      .orWhere('history.stakeShare < 0')
       .getMany();
   }
 }
