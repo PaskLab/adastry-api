@@ -36,4 +36,19 @@ export class MirTransactionService {
       .andWhere('epoch.epoch = :epoch', { epoch: epoch })
       .getMany();
   }
+
+  async findMIRTransaction(
+    stakeAddress: string,
+    txHash: string,
+  ): Promise<MirTransaction | null> {
+    return this.em
+      .getRepository(MirTransaction)
+      .createQueryBuilder('transaction')
+      .innerJoinAndSelect('transaction.account', 'account')
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .andWhere('transaction.txHash = :txHash', { txHash })
+      .getOne();
+  }
 }

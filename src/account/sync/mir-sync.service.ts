@@ -37,9 +37,10 @@ export class MirSyncService {
     );
 
     for (const tx of mirTransactions) {
-      const storedMIR = await this.em
-        .getRepository(MirTransaction)
-        .findOne({ where: { txHash: tx.txHash } });
+      const storedMIR = await this.mirTransactionService.findMIRTransaction(
+        account.stakeAddress,
+        tx.txHash,
+      );
 
       if (storedMIR) {
         continue;
