@@ -42,6 +42,10 @@ export class AuthService {
     return new JwtDto(this.jwtService.sign(payload));
   }
 
+  /**
+   * This function return the expiring encrypted auth token and carry out
+   * address format transformation at the same time.
+   */
   async getEphemeralPayload(
     message: string,
     address: string,
@@ -66,6 +70,10 @@ export class AuthService {
     return { message, stakeAddress, token };
   }
 
+  /**
+   * This is the function in charge of signed message verification, mostly business logic.
+   * See verify() function bellow for verification code.
+   */
   async validateSignature(
     key: string,
     signature: string,
@@ -90,7 +98,17 @@ export class AuthService {
     return verifiedAddress.user.id;
   }
 
+  /**
+   * Signed Message verification process.
+   *
+   * Every part related to what contained in the 'payload' is purely related to business logic,
+   * you can ignore it. Analysing the content of the payload isn't part of the key verification.
+   *
+   * But! In our case, the target stake address we wish to verify is included in the payload, it could
+   * have been sent separately but we will get it from the payload.
+   */
   async verify(key: string, signature: string): Promise<string | null> {
+    // business logic, ignore
     if (!process.env.MESSAGE_SECRET)
       throw new InternalServerErrorException('Missing MESSAGE_SECRET env var');
 
@@ -113,12 +131,18 @@ export class AuthService {
         Buffer.from(coseSig.signed_data().payload(), 'hex').toString(),
       );
 
+      /**
+       * The target address is used to compare the key used to sign the message
+       * with the address key that need to be verified.
+       */
       targetAddress = payload.stakeAddress;
 
+      // business logic, ignore
       const time = await decrypt(payload.token, process.env.MESSAGE_SECRET);
 
       if (parseInt(time) < 1654893621542) throw '';
 
+      // business logic, ignore
       expiry = new Date(parseInt(time) + 1000 * 60 * 5); // 5min expiry
     } catch (e) {
       throw new BadRequestException('Invalid payload format');
