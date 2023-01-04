@@ -26,8 +26,14 @@ export class Account {
   @Index({ unique: true })
   stakeAddress!: string;
 
+  @Column({ default: false })
+  active!: boolean;
+
   @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
   rewardsSum!: number;
+
+  @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
+  withdrawable!: number;
 
   @Column({ default: 0 })
   loyalty!: number;

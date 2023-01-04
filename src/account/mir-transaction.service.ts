@@ -51,4 +51,15 @@ export class MirTransactionService {
       .andWhere('transaction.txHash = :txHash', { txHash })
       .getOne();
   }
+
+  async findAccountMIRs(stakeAddress: string): Promise<MirTransaction[]> {
+    return this.em
+      .getRepository(MirTransaction)
+      .createQueryBuilder('transaction')
+      .innerJoinAndSelect('transaction.account', 'account')
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .getMany();
+  }
 }

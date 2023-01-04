@@ -131,6 +131,7 @@ export class AccountService {
           balance: h.balance,
           rewards: h.rewards,
           mir: h.mir,
+          refund: h.refund,
           revisedRewards: h.revisedRewards,
           opRewards: h.opRewards,
           withdrawable: h.withdrawable,

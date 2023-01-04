@@ -45,4 +45,15 @@ export class AccountWithdrawService {
       .andWhere('account.stakeAddress = :stakeAddress', { stakeAddress })
       .getOne();
   }
+
+  async findAccountWithdrawals(
+    stakeAddress: string,
+  ): Promise<AccountWithdraw[]> {
+    return this.em
+      .getRepository(AccountWithdraw)
+      .createQueryBuilder('withdraw')
+      .innerJoin('withdraw.account', 'account')
+      .where('account.stakeAddress = :stakeAddress', { stakeAddress })
+      .getMany();
+  }
 }

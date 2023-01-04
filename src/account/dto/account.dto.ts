@@ -6,7 +6,9 @@ export class AccountDto {
     if (props) {
       this.stakeAddress = props.stakeAddress;
       this.name = props.name;
+      this.active = props.active;
       this.rewardsSum = props.rewardsSum;
+      this.withdrawable = props.withdrawable;
       this.loyalty = props.loyalty;
       this.epoch = props.epoch;
       this.pool = props.pool;
@@ -26,10 +28,22 @@ export class AccountDto {
   name!: string;
 
   @ApiProperty({
+    title: 'Registration state',
+    example: true,
+  })
+  active!: boolean;
+
+  @ApiProperty({
     title: 'Account all time received rewards',
     example: 401171403,
   })
   rewardsSum!: number;
+
+  @ApiProperty({
+    title: 'Account current withdrawable amount',
+    example: 401171403,
+  })
+  withdrawable!: number;
 
   @ApiProperty({
     title: 'Number of consecutive loyal epoch to member pools',

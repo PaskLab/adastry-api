@@ -55,7 +55,9 @@ export class AccountSyncService {
       return account;
     }
 
+    account.active = accountUpdate.active;
     account.rewardsSum = accountUpdate.rewardsSum;
+    account.withdrawable = accountUpdate.withdrawableAmount;
 
     account.epoch = lastEpoch;
     if (account.pool?.poolId !== accountUpdate.poolId) {
@@ -96,7 +98,7 @@ export class AccountSyncService {
     /**
      * NOTE on different LIMIT for history & rewards.
      *
-     * Rewards history can have 2 different sources per epoch.
+     * Rewards history can have multiple different sources per epoch.
      * We fetch twice the amount of rewards history make sure the whole epoch
      * range is fetch.
      */
@@ -153,17 +155,42 @@ export class AccountSyncService {
     const poolRepository = this.em.getRepository(Pool);
 
     for (let i = 0; i < history.length; i++) {
-      // Combine leader and member rewards if needed
+      // Filter epoch rewards & refunds
       const epochRHs = rewardsHistory.filter(
         (rh) => rh.epoch === history[i].epoch,
       );
-      const rh = epochRHs.length
-        ? epochRHs.reduce((result, next) => ({
+
+      // Filter leader & member rewards
+      const standardRewards = epochRHs.filter(
+        (rh) => rh.type === 'leader' || rh.type === 'member',
+      );
+
+      // Filter refunds
+      const depositRefunds = epochRHs.filter(
+        (rh) => rh.type === 'pool_deposit_refund',
+      );
+
+      // Combine leader and member rewards if needed
+      const rewardsHs = standardRewards.length
+        ? standardRewards.reduce((result, next) => ({
             epoch: next.epoch,
             rewards: result.rewards + next.rewards,
             poolId: result.poolId,
+            type: 'rewards',
           }))
         : null;
+      const rewardsAmount = rewardsHs ? rewardsHs.rewards : 0;
+
+      // Combine pool deposit refunds
+      const refundsHs = depositRefunds.length
+        ? depositRefunds.reduce((result, next) => ({
+            epoch: next.epoch,
+            rewards: result.rewards + next.rewards,
+            poolId: result.poolId,
+            type: 'refunds',
+          }))
+        : null;
+      const refundsAmount = refundsHs ? refundsHs.rewards : 0;
 
       const epoch = history[i].epoch
         ? await epochRepository.findOne({ where: { epoch: history[i].epoch } })
@@ -200,15 +227,15 @@ export class AccountSyncService {
       }
 
       // Fetch previous epoch ( Current epoch - 1 )
-      const previousEpoch = await this.accountHistoryService.findOneRecord(
+      const epochM1 = await this.accountHistoryService.findOneRecord(
         account.stakeAddress,
         epoch.epoch - 1,
       );
 
-      // Fetch snapshot epoch ( Current epoch - 3 )
-      const snapshotEpoch = await this.accountHistoryService.findOneRecord(
+      // Fetch second previous epoch ( Current epoch - 2)
+      const epochM2 = await this.accountHistoryService.findOneRecord(
         account.stakeAddress,
-        epoch.epoch - 3,
+        epoch.epoch - 2,
       );
 
       // Epoch Withdrawals
@@ -235,25 +262,45 @@ export class AccountSyncService {
         totalMIR += mir.amount;
       }
 
+      /**
+       * epochM1.withdrawable - epochM1.withdrawn + epochM2.rewards + epochM0.MIRs + epochM0.refunds
+       */
+      const withdrawable =
+        epochM1 && epochM2
+          ? epochM1.withdrawable -
+            epochM1.withdrawn +
+            epochM2.rewards +
+            totalMIR +
+            refundsAmount
+          : epochM1
+          ? epochM1.withdrawable - epochM1.withdrawn + totalMIR + refundsAmount
+          : totalMIR + refundsAmount;
+
       // Create new history
       newHistory = new AccountHistory();
-
       newHistory.account = account;
       newHistory.epoch = epoch;
       newHistory.activeStake = history[i].amount;
       newHistory.revisedRewards = 0;
-      newHistory.rewards = rh ? rh.rewards : 0;
+      newHistory.rewards = rewardsAmount;
       newHistory.mir = totalMIR;
+      newHistory.refund = refundsAmount;
       newHistory.pool = pool;
-      newHistory.withdrawable = previousEpoch
-        ? previousEpoch.withdrawable -
-          previousEpoch.withdrawn +
-          newHistory.rewards +
-          totalMIR
-        : newHistory.rewards + totalMIR;
-      newHistory.balance = snapshotEpoch
-        ? newHistory.activeStake - snapshotEpoch.withdrawable
-        : newHistory.activeStake;
+      /**
+       * todo: investigate
+       * Account history found missing, see account history & rewards history for
+       * stake1u9p4gyue4cdx88znt856ehhtuceuca5gfpehh324r88hk2sj57gpn.
+       * (rh start at epoch ~308, history start at 317..!)
+       */
+      newHistory.withdrawable =
+        withdrawable - totalWithdraw >= 0 ? withdrawable : totalWithdraw;
+      /**
+       * epochM0.activeStake - (epochM1.withdrawable - epochM1.withdrawn)
+       */
+      newHistory.balance = newHistory.activeStake
+        ? newHistory.activeStake -
+          (epochM1 ? epochM1.withdrawable - epochM1.withdrawn : 0)
+        : 0;
       newHistory.withdrawn = totalWithdraw;
 
       // Tracking user loyalty to configured pools
@@ -325,6 +372,10 @@ export class AccountSyncService {
     if (accounts.length === 0) {
       this.logger.log('Account History balance integrity check: OK');
       return;
+    } else {
+      this.logger.warn(
+        `Account History balance integrity check: Failed with ${accounts.length} corrupted`,
+      );
     }
 
     for (const account of accounts) {
@@ -358,10 +409,33 @@ export class AccountSyncService {
         await this.em.remove(h);
       }
 
+      // Remove account withdrawal
+      const withdrawals =
+        await this.accountWithdrawService.findAccountWithdrawals(
+          account.stakeAddress,
+        );
+      for (const w of withdrawals) {
+        this.logger.warn(
+          `Account History integrity check: Removing withdrawal id: ${w.id}`,
+        );
+        await this.em.remove(w);
+      }
+
       // Reset account loyalty score
       account.loyalty = 0;
       // Reset account MIR last sync
       account.mirTransactionsLastSync = null;
+      // Remove account MIR
+      const MIRs = await this.mirTransactionService.findAccountMIRs(
+        account.stakeAddress,
+      );
+      for (const mir of MIRs) {
+        this.logger.warn(
+          `Account History integrity check: Removing MIR txHash: ${mir.txHash}#${mir.txIndex}`,
+        );
+        await this.em.remove(mir);
+      }
+
       await this.em.save(account);
 
       // Reset pools calculation
@@ -382,6 +456,7 @@ export class AccountSyncService {
         this.logger.log(
           `Account History integrity check: Syncing Account ${account.stakeAddress} history ...`,
         );
+        await this.syncAccountWithdrawal(account);
         await this.mirSync.syncTransactions(account);
         await this.syncHistory(account, account.epoch);
       }

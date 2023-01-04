@@ -33,6 +33,7 @@ export class AccountHistoryDto {
       this.balance = props.balance;
       this.rewards = props.rewards;
       this.mir = props.mir;
+      this.refund = props.refund;
       this.revisedRewards = props.revisedRewards;
       this.opRewards = props.opRewards;
       this.withdrawable = props.withdrawable;
@@ -79,6 +80,12 @@ export class AccountHistoryDto {
     example: 15000000,
   })
   mir!: number;
+
+  @ApiProperty({
+    title: 'Deposit refund',
+    example: 500000000,
+  })
+  refund!: number;
 
   @ApiProperty({
     title: 'Epoch pool owner revised rewards',

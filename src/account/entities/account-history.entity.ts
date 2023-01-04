@@ -31,6 +31,9 @@ export class AccountHistory {
   @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
   mir!: number;
 
+  @Column({ default: 0 })
+  refund!: number;
+
   @Column({ type: 'bigint', default: 0, transformer: [StrToBigInt] })
   activeStake!: number;
 

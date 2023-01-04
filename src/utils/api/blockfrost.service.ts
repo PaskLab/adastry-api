@@ -312,6 +312,7 @@ export class BlockfrostService {
     return result
       ? {
           stakeAddress: result.stake_address,
+          active: result.active,
           controlledAmount: parseInt(result.controlled_amount) || 0,
           withdrawalsSum: parseInt(result.withdrawals_sum) || 0,
           rewardsSum: parseInt(result.rewards_sum) || 0,
@@ -388,6 +389,7 @@ export class BlockfrostService {
             epoch: r.epoch,
             rewards: parseInt(r.amount) || 0,
             poolId: r.pool_id,
+            type: r.type,
           };
         })
       : null;

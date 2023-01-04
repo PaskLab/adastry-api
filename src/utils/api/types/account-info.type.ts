@@ -1,4 +1,5 @@
 export type AccountInfoType = {
+  active: boolean;
   stakeAddress: string;
   controlledAmount: number;
   withdrawalsSum: number;

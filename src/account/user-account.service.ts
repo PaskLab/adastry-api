@@ -83,7 +83,9 @@ export class UserAccountService {
     return new AccountDto({
       name: userAccount.name,
       stakeAddress: account.stakeAddress,
+      active: account.active,
       rewardsSum: account.rewardsSum,
+      withdrawable: account.withdrawable,
       loyalty: account.loyalty,
       epoch: account.epoch ? account.epoch.epoch : null,
       pool: poolDto,
