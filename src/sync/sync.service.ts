@@ -10,6 +10,7 @@ import { Cron } from '@nestjs/schedule';
 import { PoolService } from '../pool/pool.service';
 import { AccountService } from '../account/account.service';
 import { PoolCertService } from '../pool/pool-cert.service';
+import { Account } from '../account/entities/account.entity';
 
 @Injectable()
 export class SyncService {
@@ -74,14 +75,7 @@ export class SyncService {
 
   private async syncAccounts(lastEpoch: Epoch): Promise<void> {
     this.logger.log('Starting Sync:syncAccounts() ...');
-    const accountIds = await this.accountService.findUniqueLinkedAccountIds();
-    const certIds = await this.poolCertService.findOwnersUniqueCertIds(
-      accountIds,
-    );
-    const accounts = await this.accountService.findAccountsToSync(
-      accountIds,
-      certIds,
-    );
+    const accounts = await this.getAccountsToSync();
     for (const account of accounts) {
       await this.accountSyncService.syncAccount(account, lastEpoch);
     }
@@ -91,5 +85,18 @@ export class SyncService {
     this.logger.log('Starting Sync:syncSpotPrices() ...');
     this.spotSyncService.syncRates(lastEpoch).then();
     this.spotSyncService.syncSpotPrices(lastEpoch).then();
+  }
+
+  /**
+   * Sync only user linked accounts,
+   * along with related shared pool owner accounts.
+   */
+  async getAccountsToSync(): Promise<Account[]> {
+    const accountIds = await this.accountService.findUniqueLinkedAccountIds();
+    const certIds = await this.poolCertService.findOwnersUniqueCertIds(
+      accountIds,
+    );
+
+    return await this.accountService.findAccountsToSync(accountIds, certIds);
   }
 }

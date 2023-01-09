@@ -10,6 +10,7 @@ import { PoolHistoryDto, PoolHistoryListDto } from './dto/pool-history.dto';
 import config from '../../config.json';
 import { PoolCertService } from './pool-cert.service';
 import { PoolHistoryService } from './pool-history.service';
+import { AccountService } from '../account/account.service';
 
 @Injectable()
 export class PoolService {
@@ -19,6 +20,7 @@ export class PoolService {
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly poolHistoryService: PoolHistoryService,
     private readonly poolCertService: PoolCertService,
+    private readonly accountService: AccountService,
   ) {}
 
   async isOwner(
@@ -160,5 +162,22 @@ export class PoolService {
       .where('pool.poolId = :poolId')
       .setParameter('poolId', poolId)
       .getOne();
+  }
+
+  async findUserOwnedPools(): Promise<Pool[]> {
+    const userAccountIds =
+      await this.accountService.findUniqueLinkedAccountIds();
+    return this.em
+      .getRepository(Pool)
+      .createQueryBuilder('pool')
+      .innerJoinAndSelect('pool.lastCert', 'lastCert')
+      .innerJoinAndSelect('pool.epoch', 'epoch')
+      .innerJoin('pool.certs', 'certs')
+      .innerJoin('certs.owners', 'owners')
+      .where('owners.account IN (:...ids)', {
+        ids: userAccountIds.map((a) => a.account_id),
+      })
+      .orderBy('pool.id')
+      .getMany();
   }
 }

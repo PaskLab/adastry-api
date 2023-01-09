@@ -337,7 +337,7 @@ export class SyncService {
   async processMultiOwner() {
     this.logger.log(`*** Starting Multi-Owner calculation ***`);
 
-    const pools = await this.poolService.findAll();
+    const pools = await this.poolService.findUserOwnedPools();
 
     for (const pool of pools) {
       const unprocessed = await this.poolHistoryService.findUnprocessed(
