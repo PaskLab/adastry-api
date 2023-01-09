@@ -33,4 +33,20 @@ export class PoolCertService {
 
     return query.getOne();
   }
+
+  async findOwnersUniqueCertIds(
+    ownerIds: { account_id: number }[],
+  ): Promise<{ cert_id: number }[]> {
+    return this.em
+      .getRepository(PoolCert)
+      .createQueryBuilder('cert')
+      .select('cert.id')
+      .innerJoin('cert.owners', 'owners')
+      .where('owners.account IN (:...ids)', {
+        ids: ownerIds.map((a) => a.account_id),
+      })
+      .orderBy('cert.id')
+      .distinct()
+      .getRawMany();
+  }
 }

@@ -16,6 +16,8 @@ import { Transaction } from './transaction.entity';
 import { AccountWithdraw } from './account-withdraw.entity';
 import { StrToBigInt } from '../../utils/utils';
 import { MirTransaction } from './mir-transaction.entity';
+import { UserAccount } from './user-account.entity';
+import { PoolOwner } from '../../pool/entities/pool-owner.entity';
 
 @Entity()
 export class Account {
@@ -67,6 +69,12 @@ export class Account {
 
   @OneToMany(() => AccountWithdraw, (withdraw) => withdraw.account)
   withdraw!: AccountWithdraw[];
+
+  @OneToMany(() => UserAccount, (userAccount) => userAccount.account)
+  userAccounts!: UserAccount[];
+
+  @OneToMany(() => PoolOwner, (ownerCert) => ownerCert.account)
+  ownerCerts!: PoolOwner[];
 
   @Column({ default: false })
   syncing!: boolean;

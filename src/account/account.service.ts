@@ -363,4 +363,36 @@ export class AccountService {
       .orWhere('history.stakeShare < 0')
       .getMany();
   }
+
+  async findUniqueLinkedAccountIds(): Promise<{ account_id: number }[]> {
+    return this.em
+      .getRepository(Account)
+      .createQueryBuilder('account')
+      .select('account.id')
+      .innerJoin('account.userAccounts', 'userAccount')
+      .orderBy('account.id')
+      .distinct()
+      .getRawMany();
+  }
+
+  async findAccountsToSync(
+    userAccounts: { account_id: number }[],
+    ownerCerts: { cert_id: number }[],
+  ): Promise<Account[]> {
+    return this.em
+      .getRepository(Account)
+      .createQueryBuilder('account')
+      .leftJoinAndSelect('account.epoch', 'epoch')
+      .leftJoinAndSelect('account.pool', 'pool')
+      .leftJoin('account.ownerCerts', 'ownerCerts')
+      .where('account.id IN (:...userAccountIds)', {
+        userAccountIds: userAccounts.map((a) => a.account_id),
+      })
+      .orWhere('ownerCerts.cert IN (:...ownerCertIds)', {
+        ownerCertIds: ownerCerts.map((c) => c.cert_id),
+      })
+      .orderBy('account.id')
+      .distinct()
+      .getMany();
+  }
 }

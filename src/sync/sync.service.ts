@@ -9,6 +9,7 @@ import { Epoch } from '../epoch/entities/epoch.entity';
 import { Cron } from '@nestjs/schedule';
 import { PoolService } from '../pool/pool.service';
 import { AccountService } from '../account/account.service';
+import { PoolCertService } from '../pool/pool-cert.service';
 
 @Injectable()
 export class SyncService {
@@ -21,6 +22,7 @@ export class SyncService {
     private readonly epochSyncService: EpochSyncService,
     private readonly spotSyncService: SpotSyncService,
     private readonly poolService: PoolService,
+    private readonly poolCertService: PoolCertService,
     private readonly accountService: AccountService,
   ) {
     if (!process.env.SKIP_SYNC) {
@@ -57,6 +59,7 @@ export class SyncService {
       await this.syncSpotPrices(lastEpoch);
       await this.poolSyncService.processMultiOwner();
     }
+
     this.logger.log('*** Daily sync completed! ***');
   }
 
@@ -71,7 +74,14 @@ export class SyncService {
 
   private async syncAccounts(lastEpoch: Epoch): Promise<void> {
     this.logger.log('Starting Sync:syncAccounts() ...');
-    const accounts = await this.accountService.findAll();
+    const accountIds = await this.accountService.findUniqueLinkedAccountIds();
+    const certIds = await this.poolCertService.findOwnersUniqueCertIds(
+      accountIds,
+    );
+    const accounts = await this.accountService.findAccountsToSync(
+      accountIds,
+      certIds,
+    );
     for (const account of accounts) {
       await this.accountSyncService.syncAccount(account, lastEpoch);
     }
