@@ -1,6 +1,5 @@
 import config from '../../../config.json';
 import { Injectable, Logger } from '@nestjs/common';
-import { request as apiRequest } from './api.helper';
 import type { AccountInfoType } from './types/account-info.type';
 import type { AccountHistoryType } from './types/account-history.type';
 import type { AccountRewardsHistoryType } from './types/account-rewards-history.type';
@@ -27,9 +26,6 @@ import { components } from '@blockfrost/blockfrost-js/lib/types/OpenApi';
 export class BlockfrostService {
   private readonly logger = new Logger(BlockfrostService.name);
   private readonly PROVIDER_LIMIT: number = config.provider.blockfrost.limit;
-  private readonly PROVIDER_URL: string = config.provider.blockfrost.url;
-  private readonly PROVIDER_RATE: number = config.provider.blockfrost.rate;
-  private nextCallTime = new Date();
   private api: BlockFrostAPI;
 
   constructor() {
@@ -826,40 +822,5 @@ export class BlockfrostService {
     }
 
     return mirTransactions;
-  }
-
-  async request(
-    endpoint: string,
-    headers?: any,
-    body?: any,
-  ): Promise<any | null> {
-    let callDelay = 0;
-    const now = new Date();
-    if (this.nextCallTime > now) {
-      callDelay = this.nextCallTime.valueOf() - now.valueOf();
-      this.nextCallTime.setTime(
-        this.nextCallTime.valueOf() + this.PROVIDER_RATE,
-      );
-    } else {
-      this.nextCallTime.setTime(now.valueOf() + this.PROVIDER_RATE);
-    }
-
-    return new Promise<any>((resolve) => {
-      setTimeout(
-        () =>
-          resolve(
-            apiRequest(
-              this.PROVIDER_URL,
-              endpoint,
-              {
-                project_id: process.env.BLOCKFROST_API_KEY,
-                ...headers,
-              },
-              body,
-            ),
-          ),
-        callDelay,
-      );
-    });
   }
 }
