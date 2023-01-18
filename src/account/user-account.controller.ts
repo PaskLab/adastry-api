@@ -47,6 +47,7 @@ import { TxHistoryParam } from './params/tx-history.param';
 import { AccountHistoryListDto } from './dto/account-history.dto';
 import { QuarterParam } from './params/quarter.param';
 import { ForbiddenErrorDto } from '../utils/dto/forbidden-error.dto';
+import { UserPoolDto } from './dto/user-pool.dto';
 
 @ApiTags('User Account')
 @Controller('account')
@@ -102,6 +103,14 @@ export class UserAccountController {
   @ApiCreatedResponse({ type: [UserAccountDto] })
   async list(@Request() req): Promise<UserAccountDto[]> {
     return this.userAccountService.getAll(req.user.id);
+  }
+
+  @Get('pool-list')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiCreatedResponse({ type: [UserPoolDto] })
+  async poolsList(@Request() req): Promise<UserPoolDto[]> {
+    return this.userAccountService.getUserDelegatedPools(req.user.id);
   }
 
   @Get(':stakeAddress')

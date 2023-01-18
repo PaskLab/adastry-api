@@ -69,6 +69,11 @@ export const entities = [
     AccountWithdrawService,
     TransactionAddressService,
   ],
-  exports: [AccountService, SyncService, AccountHistoryService],
+  exports: [
+    AccountService,
+    SyncService,
+    AccountHistoryService,
+    UserAccountService,
+  ],
 })
 export class AccountModule {}

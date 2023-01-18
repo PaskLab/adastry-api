@@ -2,7 +2,12 @@
   "app": {
     "minLoyalty": 4,
     "tmpFileTTL": 600,
-    "tmpPath": "public/tmp"
+    "tmpPath": "public/tmp",
+    "billing": {
+      "paymentAddress": "addr1q98znjn7vn2vymnrkvlj2thfj45n7ncs9w9hahe7yj5n7fu0rg3ll6e9du5vqajcfa2y3udecptl9n7d2qlvgrpngvvsqeh7a3",
+      "accountUnitPrice": 2000000,
+      "poolUnitPrice": 50000000
+    }
   },
   "sync": {
     "rateLimit": {

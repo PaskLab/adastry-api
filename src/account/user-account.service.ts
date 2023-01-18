@@ -23,6 +23,8 @@ import { AccountHistoryService } from './account-history.service';
 import { UserService } from '../user/user.service';
 import config from '../../config.json';
 import { TransactionService } from './transaction.service';
+import { UserPoolDto } from './dto/user-pool.dto';
+import { Pool } from '../pool/entities/pool.entity';
 
 @Injectable()
 export class UserAccountService {
@@ -48,6 +50,30 @@ export class UserAccountService {
           syncing: a.account.syncing,
           createdAt: a.createdAt,
           updatedAt: a.updatedAt,
+        }),
+    );
+  }
+
+  async getUserDelegatedPools(userId: number): Promise<UserPoolDto[]> {
+    const userAccounts = await this.findAllUserAccountWithPool(userId);
+
+    const pools: Pool[] = [];
+
+    for (const uA of userAccounts) {
+      if (
+        uA.account.pool &&
+        !pools.some((p) => p.poolId === uA.account.pool?.poolId)
+      ) {
+        pools.push(uA.account.pool);
+      }
+    }
+
+    return pools.map(
+      (p) =>
+        new UserPoolDto({
+          poolId: p.poolId,
+          name: p.name,
+          isMember: p.isMember,
         }),
     );
   }
@@ -366,6 +392,20 @@ export class UserAccountService {
       .createQueryBuilder('userAccount')
       .innerJoinAndSelect('userAccount.account', 'account')
       .innerJoinAndSelect('userAccount.user', 'user')
+      .leftJoinAndSelect('account.pool', 'pool')
+      .where('user.id = :userId')
+      .setParameter('userId', userId)
+      .orderBy('userAccount.name', 'ASC')
+      .getMany();
+  }
+
+  async findAllUserAccountWithPool(userId: number): Promise<UserAccount[]> {
+    return this.em
+      .getRepository(UserAccount)
+      .createQueryBuilder('userAccount')
+      .innerJoinAndSelect('userAccount.account', 'account')
+      .innerJoinAndSelect('account.pool', 'pool')
+      .innerJoin('userAccount.user', 'user')
       .where('user.id = :userId')
       .setParameter('userId', userId)
       .orderBy('userAccount.name', 'ASC')

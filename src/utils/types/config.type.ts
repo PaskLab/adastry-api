@@ -1,5 +1,14 @@
 export type ConfigType = {
-  app: { minLoyalty: number; tmpFileTTL: number; tmpPath: string };
+  app: {
+    minLoyalty: number;
+    tmpFileTTL: number;
+    tmpPath: string;
+    billing: {
+      address: string;
+      accountUnitPrice: number;
+      poolUnitPrice: number;
+    };
+  };
   sync: {
     rateLimit: {
       accountAddress: number;
