@@ -6,6 +6,7 @@ import { entities as EpochEntities } from './src/epoch/epoch.module';
 import { entities as PoolEntities } from './src/pool/pool.module';
 import { entities as SpotEntities } from './src/spot/spot.module';
 import { entities as UserEntities } from './src/user/user.module';
+import { entities as BillingEntities } from './src/billing/billing.module';
 
 config();
 
@@ -17,6 +18,7 @@ const entities = [
   ...PoolEntities,
   ...SpotEntities,
   ...UserEntities,
+  ...BillingEntities,
 ];
 
 export default new DataSource({

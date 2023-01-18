@@ -48,6 +48,18 @@ Since he TypeORM cli cannot read from the Nest app configuration, it requires a 
 
 **Note:** The nestJs **autoLoadEntities** feature won't work here, therefore entities need to be manually registered. 
 
+### Check SQL before updating schema
+
+```bash
+npm run typeorm schema:log -- -d typeOrm.config.ts
+```
+
+### Updating schema
+
+```bash
+npm run typeorm schema:sync -- -d typeOrm.config.ts
+```
+
 ### Migrations
 
 If you need to pass parameter with dash to npm script, you will need to add them after --. For example, if you need to generate, the command is like this:
