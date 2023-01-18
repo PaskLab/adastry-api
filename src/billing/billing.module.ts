@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Invoice } from './entities/invoice.entity';
 import { InvoiceAccount } from './entities/invoice-account.entity';
@@ -10,9 +10,12 @@ import { AccountModule } from '../account/account.module';
 export const entities = [Invoice, InvoiceAccount, InvoicePool];
 
 @Module({
-  imports: [TypeOrmModule.forFeature(entities), AccountModule],
+  imports: [
+    TypeOrmModule.forFeature(entities),
+    forwardRef(() => AccountModule),
+  ],
   controllers: [BillingController],
   providers: [BillingService],
-  exports: [],
+  exports: [BillingService],
 })
 export class BillingModule {}

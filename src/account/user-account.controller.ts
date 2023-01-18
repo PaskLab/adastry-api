@@ -40,7 +40,6 @@ import {
   RewardsCsvFormatParam,
   TxCsvFormatParam,
 } from './params/csv-format.param';
-import config from '../../config.json';
 import { TransactionListDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 import { TxHistoryParam } from './params/tx-history.param';
@@ -48,16 +47,16 @@ import { AccountHistoryListDto } from './dto/account-history.dto';
 import { QuarterParam } from './params/quarter.param';
 import { ForbiddenErrorDto } from '../utils/dto/forbidden-error.dto';
 import { UserPoolDto } from './dto/user-pool.dto';
+import { BillingService } from '../billing/billing.service';
 
 @ApiTags('User Account')
 @Controller('account')
 export class UserAccountController {
-  private readonly MIN_LOYALTY = config.app.minLoyalty;
-
   constructor(
     private readonly accountService: AccountService,
     private readonly userAccountService: UserAccountService,
     private readonly transactionService: TransactionService,
+    private readonly billingService: BillingService,
   ) {}
 
   @Post()
@@ -190,14 +189,14 @@ export class UserAccountController {
     @Query() formatParam: TxCsvFormatParam,
     @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
-    if (
-      !(await this.accountService.loyaltyCheck(
-        stakeAddressParam.stakeAddress,
-        this.MIN_LOYALTY,
-      ))
-    ) {
+    const accountState = await this.billingService.getUserAccountState(
+      request.user.id,
+      stakeAddressParam.stakeAddress,
+    );
+
+    if (!(accountState && accountState.active)) {
       throw new ForbiddenException(
-        `Premium feature. Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
+        `Premium feature. Account must be subscribed to a premium plan.`,
       );
     }
 
@@ -245,14 +244,14 @@ export class UserAccountController {
     @Query() formatParam: RewardsCsvFormatParam,
     @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
-    if (
-      !(await this.accountService.loyaltyCheck(
-        stakeAddressParam.stakeAddress,
-        this.MIN_LOYALTY,
-      ))
-    ) {
+    const accountState = await this.billingService.getUserAccountState(
+      request.user.id,
+      stakeAddressParam.stakeAddress,
+    );
+
+    if (!(accountState && accountState.active)) {
       throw new ForbiddenException(
-        `Premium feature. Account must be delegated to Armada-Alliance for at least ${this.MIN_LOYALTY} epoch.`,
+        `Premium feature. Account must be subscribed to a premium plan.`,
       );
     }
 

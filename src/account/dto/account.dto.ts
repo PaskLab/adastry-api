@@ -7,6 +7,7 @@ export class AccountDto {
       this.stakeAddress = props.stakeAddress;
       this.name = props.name;
       this.active = props.active;
+      this.premiumPlan = props.premiumPlan;
       this.rewardsSum = props.rewardsSum;
       this.withdrawable = props.withdrawable;
       this.loyalty = props.loyalty;
@@ -32,6 +33,12 @@ export class AccountDto {
     example: true,
   })
   active!: boolean;
+
+  @ApiProperty({
+    title: 'Adastry Premium plan',
+    example: 'none',
+  })
+  premiumPlan!: 'account' | 'pool' | 'member' | 'none';
 
   @ApiProperty({
     title: 'Account all time received rewards',

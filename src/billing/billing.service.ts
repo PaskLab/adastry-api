@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -19,6 +21,7 @@ import { Invoice } from './entities/invoice.entity';
 import { InvoiceDto, InvoiceListDto } from './dto/invoice.dto';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
 import { Cron } from '@nestjs/schedule';
+import { UserAccount } from '../account/entities/user-account.entity';
 
 @Injectable()
 export class BillingService {
@@ -28,6 +31,7 @@ export class BillingService {
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
+    @Inject(forwardRef(() => UserAccountService))
     private readonly userAccountService: UserAccountService,
     private readonly source: BlockfrostService,
   ) {}
@@ -106,7 +110,55 @@ export class BillingService {
     return this.em.save(invoice);
   }
 
-  async getUserAccountsState(userId: number): Promise<AccountStateDto[]> {
+  private plansSelector(
+    userAccount: UserAccount,
+    activeIAccounts: InvoiceAccount[],
+    activeIPools: InvoicePool[],
+  ): AccountStateDto {
+    const accountState = new AccountStateDto({
+      stakeAddress: userAccount.account.stakeAddress,
+      name: userAccount.name,
+      active: false,
+      type: 'none',
+      invoiceId: '',
+      createdAt: '',
+      confirmedAt: '',
+    });
+
+    // Check if paid account
+    const iAccount = activeIAccounts.findIndex(
+      (ia) => ia.account.stakeAddress === userAccount.account.stakeAddress,
+    );
+    if (iAccount >= 0) {
+      accountState.active = true;
+      accountState.type = 'account';
+      accountState.invoiceId = activeIAccounts[iAccount].invoice.invoiceId;
+      accountState.createdAt = activeIAccounts[iAccount].invoice.createdAt;
+      accountState.confirmedAt = activeIAccounts[iAccount].invoice.confirmedAt;
+    }
+
+    // Check if paid pool
+    const iPool = activeIPools.findIndex(
+      (ip) => ip.pool.poolId === userAccount.account.pool?.poolId,
+    );
+    if (iPool >= 0) {
+      accountState.active = true;
+      accountState.type = 'pool';
+      accountState.invoiceId = activeIPools[iPool].invoice.invoiceId;
+      accountState.createdAt = activeIPools[iPool].invoice.createdAt;
+      accountState.confirmedAt = activeIPools[iPool].invoice.confirmedAt;
+    }
+
+    // Check if loyal to Armada Alliance
+    if (userAccount.account.loyalty >= this.MIN_LOYALTY) {
+      accountState.active = true;
+      accountState.type = 'member';
+    }
+
+    return accountState;
+  }
+
+  async getAllUserAccountsState(userId: number): Promise<AccountStateDto[]> {
     const userAccounts = await this.userAccountService.findAllUserAccount(
       userId,
     );
@@ -126,68 +178,37 @@ export class BillingService {
     const activeAccounts: AccountStateDto[] = [];
 
     for (const account of userAccounts) {
-      const iAccount = activeInvoiceAccounts.findIndex(
-        (ia) => ia.account.stakeAddress === account.account.stakeAddress,
-      );
-      if (iAccount >= 0) {
-        activeAccounts.push(
-          new AccountStateDto({
-            stakeAddress: account.account.stakeAddress,
-            name: account.name,
-            active: true,
-            type: 'account',
-            invoiceId: activeInvoiceAccounts[iAccount].invoice.invoiceId,
-            createdAt: activeInvoiceAccounts[iAccount].invoice.createdAt,
-            confirmedAt: activeInvoiceAccounts[iAccount].invoice.confirmedAt,
-          }),
-        );
-        continue;
-      }
-      const iPool = activeInvoicePools.findIndex(
-        (ip) => ip.pool.poolId === account.account.pool?.poolId,
-      );
-      if (iPool >= 0) {
-        activeAccounts.push(
-          new AccountStateDto({
-            stakeAddress: account.account.stakeAddress,
-            name: account.name,
-            active: true,
-            type: 'pool',
-            invoiceId: activeInvoicePools[iPool].invoice.invoiceId,
-            createdAt: activeInvoicePools[iPool].invoice.createdAt,
-            confirmedAt: activeInvoicePools[iPool].invoice.confirmedAt,
-          }),
-        );
-        continue;
-      }
-      if (account.account.loyalty >= this.MIN_LOYALTY) {
-        activeAccounts.push(
-          new AccountStateDto({
-            stakeAddress: account.account.stakeAddress,
-            name: account.name,
-            active: true,
-            type: 'member',
-            invoiceId: '',
-            createdAt: '',
-            confirmedAt: '',
-          }),
-        );
-        continue;
-      }
       activeAccounts.push(
-        new AccountStateDto({
-          stakeAddress: account.account.stakeAddress,
-          name: account.name,
-          active: false,
-          type: 'none',
-          invoiceId: '',
-          createdAt: '',
-          confirmedAt: '',
-        }),
+        this.plansSelector(account, activeInvoiceAccounts, activeInvoicePools),
       );
     }
 
     return activeAccounts;
+  }
+
+  async getUserAccountState(
+    userId: number,
+    stakeAddress: string,
+  ): Promise<AccountStateDto> {
+    const userAccount = await this.userAccountService.findUserAccount(
+      userId,
+      stakeAddress,
+    );
+
+    if (!userAccount) {
+      throw new NotFoundException('User account not found.');
+    }
+
+    const activeInvoiceAccounts = await this.findActiveAccounts([stakeAddress]);
+    const activeInvoicePools = await this.findActivePools([
+      userAccount.account.pool ? userAccount.account.pool.poolId : '',
+    ]);
+
+    return this.plansSelector(
+      userAccount,
+      activeInvoiceAccounts,
+      activeInvoicePools,
+    );
   }
 
   async getUserInvoices(userId: number): Promise<InvoiceListDto> {
@@ -302,6 +323,7 @@ export class BillingService {
         aYearAgo: date.valueOf().toString(),
       })
       .andWhere('invoice.confirmed IS TRUE')
+      .andWhere('invoice.canceled IS FALSE')
       .orderBy('invoice.createdAt')
       .getMany();
   }
@@ -324,6 +346,7 @@ export class BillingService {
         aYearAgo: date.valueOf().toString(),
       })
       .andWhere('invoice.confirmed IS TRUE')
+      .andWhere('invoice.canceled IS FALSE')
       .orderBy('invoice.createdAt')
       .getMany();
   }

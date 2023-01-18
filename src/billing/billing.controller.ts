@@ -33,7 +33,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: [AccountStateDto] })
   async accountsState(@Request() request): Promise<AccountStateDto[]> {
-    return this.billingService.getUserAccountsState(request.user.id);
+    return this.billingService.getAllUserAccountsState(request.user.id);
   }
 
   @Get('invoice-list')

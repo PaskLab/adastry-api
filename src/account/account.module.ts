@@ -30,6 +30,7 @@ import { TransactionAddressService } from './transaction-address.service';
 import { MirTransaction } from './entities/mir-transaction.entity';
 import { MirSyncService } from './sync/mir-sync.service';
 import { MirTransactionService } from './mir-transaction.service';
+import { BillingModule } from '../billing/billing.module';
 
 export const entities = [
   Account,
@@ -50,6 +51,7 @@ export const entities = [
     SpotModule,
     EpochModule,
     UserModule,
+    forwardRef(() => BillingModule),
   ],
   controllers: [UserAccountController, StatsController],
   providers: [

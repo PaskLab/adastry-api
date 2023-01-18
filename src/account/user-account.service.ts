@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -21,15 +23,13 @@ import { Request } from 'express';
 import { CsvFileDto } from './dto/csv-file.dto';
 import { AccountHistoryService } from './account-history.service';
 import { UserService } from '../user/user.service';
-import config from '../../config.json';
 import { TransactionService } from './transaction.service';
 import { UserPoolDto } from './dto/user-pool.dto';
 import { Pool } from '../pool/entities/pool.entity';
+import { BillingService } from '../billing/billing.service';
 
 @Injectable()
 export class UserAccountService {
-  private readonly MIN_LOYALTY = config.app.minLoyalty;
-
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly syncService: SyncService,
@@ -37,6 +37,8 @@ export class UserAccountService {
     private readonly accountHistoryService: AccountHistoryService,
     private readonly transactionService: TransactionService,
     private readonly userService: UserService,
+    @Inject(forwardRef(() => BillingService))
+    private readonly billingService: BillingService,
   ) {}
 
   async getAll(userId: number): Promise<UserAccountDto[]> {
@@ -106,10 +108,17 @@ export class UserAccountService {
       });
     }
 
+    // Get premium state
+    const accountState = await this.billingService.getUserAccountState(
+      userId,
+      stakeAddress,
+    );
+
     return new AccountDto({
       name: userAccount.name,
       stakeAddress: account.stakeAddress,
       active: account.active,
+      premiumPlan: accountState.type,
       rewardsSum: account.rewardsSum,
       withdrawable: account.withdrawable,
       loyalty: account.loyalty,
@@ -219,30 +228,21 @@ export class UserAccountService {
       throw new NotFoundException('User not found.');
     }
 
-    const userAccounts = await this.getAll(userId);
-
-    if (!userAccounts.length) {
-      throw new NotFoundException(`No accounts found for this user.`);
-    }
+    const userAccountsState = await this.billingService.getAllUserAccountsState(
+      userId,
+    );
 
     const stakeAddresses: string[] = [];
 
-    // LOYALTY CHECK
-    for (const account of userAccounts) {
-      if (
-        await this.accountService.loyaltyCheck(
-          account.stakeAddress,
-          this.MIN_LOYALTY,
-        )
-      ) {
-        stakeAddresses.push(account.stakeAddress);
+    // PREMIUM CHECK
+    for (const state of userAccountsState) {
+      if (state.active) {
+        stakeAddresses.push(state.stakeAddress);
       }
     }
 
     if (!stakeAddresses.length) {
-      throw new NotFoundException(
-        'No accounts meet the Armada loyalty requirement for export.',
-      );
+      throw new NotFoundException('No account subscribed to premium plan.');
     }
 
     const history = await this.accountHistoryService.findByYearSelection(
@@ -293,30 +293,21 @@ export class UserAccountService {
       throw new NotFoundException('User not found.');
     }
 
-    const userAccounts = await this.getAll(userId);
-
-    if (!userAccounts.length) {
-      throw new NotFoundException(`No accounts found for this user.`);
-    }
+    const userAccountsState = await this.billingService.getAllUserAccountsState(
+      userId,
+    );
 
     const stakeAddresses: string[] = [];
 
-    // LOYALTY CHECK
-    for (const account of userAccounts) {
-      if (
-        await this.accountService.loyaltyCheck(
-          account.stakeAddress,
-          this.MIN_LOYALTY,
-        )
-      ) {
-        stakeAddresses.push(account.stakeAddress);
+    // PREMIUM CHECK
+    for (const state of userAccountsState) {
+      if (state.active) {
+        stakeAddresses.push(state.stakeAddress);
       }
     }
 
     if (!stakeAddresses.length) {
-      throw new NotFoundException(
-        'No accounts meet the Armada loyalty requirement for export.',
-      );
+      throw new NotFoundException('No account subscribed to premium plan.');
     }
 
     const history = await this.transactionService.findByYearSelection(
