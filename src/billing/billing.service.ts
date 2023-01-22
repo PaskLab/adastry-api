@@ -341,7 +341,7 @@ export class BillingService {
       .createQueryBuilder('ip')
       .innerJoinAndSelect('ip.invoice', 'invoice')
       .innerJoinAndSelect('ip.pool', 'pool')
-      .where('pool.poolId IN (:...pools)', { pools: poolIds })
+      .where('pool.poolId IN (:...poolIds)', { poolIds })
       .andWhere('invoice.createdAt > :aYearAgo', {
         aYearAgo: date.valueOf().toString(),
       })
