@@ -353,6 +353,7 @@ export class UserAccountService {
       .createQueryBuilder('userAccount')
       .innerJoinAndSelect('userAccount.account', 'account')
       .innerJoinAndSelect('userAccount.user', 'user')
+      .leftJoinAndSelect('account.pool', 'pool')
       .where('user.id = :userId')
       .andWhere('account.stakeAddress = :stakeAddress')
       .setParameters({ userId: userId, stakeAddress: stakeAddress })
