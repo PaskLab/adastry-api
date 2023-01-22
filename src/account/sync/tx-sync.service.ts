@@ -33,9 +33,6 @@ export class TxSyncService {
   ) {}
 
   async syncAddresses(account: Account): Promise<Account> {
-    const accountAddresses = await this.accountAddressService.findAccountAddr(
-      account.stakeAddress,
-    );
     let upstreamAddresses: string[] | null = [];
     let page = 1;
 
@@ -47,7 +44,12 @@ export class TxSyncService {
       ))
     ) {
       for (const upstreamAddress of upstreamAddresses) {
-        if (accountAddresses.some((addr) => addr.address === upstreamAddress)) {
+        const exist = await this.accountAddressService.findOneAccountAddress(
+          account.stakeAddress,
+          upstreamAddress,
+        );
+
+        if (exist) {
           break syncLoop;
         }
 
@@ -71,9 +73,10 @@ export class TxSyncService {
   }
 
   async syncTransactions(account: Account): Promise<Account> {
-    const addressesEntities = await this.accountAddressService.findAccountAddr(
-      account.stakeAddress,
-    );
+    const addressesEntities =
+      await this.accountAddressService.findAccountAddresses(
+        account.stakeAddress,
+      );
 
     const accountAddresses = addressesEntities.map((a) => a.address);
 

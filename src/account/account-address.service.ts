@@ -9,7 +9,7 @@ export class AccountAddressService {
 
   // REPOSITORY
 
-  async findAccountAddr(stakeAddress: string): Promise<AccountAddress[]> {
+  async findAccountAddresses(stakeAddress: string): Promise<AccountAddress[]> {
     return this.em
       .getRepository(AccountAddress)
       .createQueryBuilder('address')
@@ -18,5 +18,20 @@ export class AccountAddressService {
         stakeAddress: stakeAddress,
       })
       .getMany();
+  }
+
+  async findOneAccountAddress(
+    stakeAddress: string,
+    address: string,
+  ): Promise<AccountAddress | null> {
+    return this.em
+      .getRepository(AccountAddress)
+      .createQueryBuilder('address')
+      .innerJoin('address.account', 'account')
+      .where('account.stakeAddress = :stakeAddress', {
+        stakeAddress: stakeAddress,
+      })
+      .andWhere('address.address = :address', { address })
+      .getOne();
   }
 }
