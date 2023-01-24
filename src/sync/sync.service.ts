@@ -58,7 +58,7 @@ export class SyncService {
       await this.syncPools(lastEpoch);
       await this.syncAccounts(lastEpoch);
       await this.syncSpotPrices(lastEpoch);
-      await this.poolSyncService.processMultiOwner();
+      await this.poolSyncService.processPoolOwner(lastEpoch);
     }
 
     this.logger.log('*** Daily sync completed! ***');

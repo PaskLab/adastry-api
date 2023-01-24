@@ -84,7 +84,10 @@ export class PoolHistoryService {
     return qb.getManyAndCount();
   }
 
-  async findUnprocessed(poolId: string): Promise<PoolHistory[]> {
+  async findUnprocessed(
+    poolId: string,
+    untilEpoch: number,
+  ): Promise<PoolHistory[]> {
     return this.em
       .getRepository(PoolHistory)
       .createQueryBuilder('history')
@@ -98,6 +101,8 @@ export class PoolHistoryService {
       .where('pool.poolId = :poolId', { poolId: poolId })
       .andWhere('history.rewards > 0')
       .andWhere('history.rewardsRevised = FALSE')
+      .andWhere('epoch.epoch <= :epoch', { epoch: untilEpoch })
+      .orderBy('epoch.epoch', 'ASC')
       .getMany();
   }
 

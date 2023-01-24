@@ -142,8 +142,8 @@ export class AccountSyncService {
         return;
       }
 
-      // Rewards are 2 epoch backwards, ignore 2 last history records
-      upstreamHistory = upstreamHistory.slice(i === 1 ? 2 : 0);
+      // Events like MIR and Refunds affect current epoch, ignore current epoch
+      upstreamHistory = upstreamHistory.slice(i === 1 ? 1 : 0);
       upstreamHistory.reverse();
       history = history.concat(upstreamHistory);
 
@@ -151,29 +151,60 @@ export class AccountSyncService {
       rewardsHistory = rewardsHistory.concat(upstreamRewardsHistory);
     }
 
-    const epochRepository = this.em.getRepository(Epoch);
-    const poolRepository = this.em.getRepository(Pool);
-
     for (let i = 0; i < history.length; i++) {
-      // Filter epoch rewards & refunds
-      const epochRHs = rewardsHistory.filter(
-        (rh) => rh.epoch === history[i].epoch,
+      if (lastStoredEpoch && history[i].epoch <= lastStoredEpoch.epoch.epoch) {
+        continue;
+      }
+
+      const epoch = history[i].epoch
+        ? await this.em
+            .getRepository(Epoch)
+            .findOne({ where: { epoch: history[i].epoch } })
+        : null;
+
+      if (!epoch) {
+        this.logger.log(
+          `NOT FOUND::AccountSync()->syncHistory()->this.epochRepository.findOne(${history[i].epoch})`,
+        );
+        continue;
+      }
+
+      // Safety unique constraint check
+      let newHistory = await this.accountHistoryService.findOneRecord(
+        account.stakeAddress,
+        epoch.epoch,
       );
 
-      // Filter leader & member rewards
-      const standardRewards = epochRHs.filter(
-        (rh) => rh.type === 'leader' || rh.type === 'member',
+      if (newHistory) {
+        this.logger.warn(
+          `DUPLICATE::AccountSync()->syncHistory()->accountHistoryRepository.findOneRecord(${account.stakeAddress}, ${epoch.epoch})`,
+        );
+        continue;
+      }
+
+      let pool = history[i].poolId
+        ? await this.em
+            .getRepository(Pool)
+            .findOne({ where: { poolId: history[i].poolId } })
+        : null;
+
+      // Filter leader & member rewards (2 epochs behind)
+      const standardRewards = rewardsHistory.filter(
+        (rh) =>
+          rh.epoch === history[i].epoch - 2 &&
+          (rh.type === 'leader' || rh.type === 'member'),
       );
 
-      // Filter refunds
-      const depositRefunds = epochRHs.filter(
-        (rh) => rh.type === 'pool_deposit_refund',
+      // Filter refunds (same epoch, like MIR)
+      const depositRefunds = rewardsHistory.filter(
+        (rh) =>
+          rh.epoch === history[i].epoch && rh.type === 'pool_deposit_refund',
       );
 
       // Combine leader and member rewards if needed
       const rewardsHs = standardRewards.length
         ? standardRewards.reduce((result, next) => ({
-            epoch: next.epoch,
+            epoch: history[i].epoch, // Override source epoch with current
             rewards: result.rewards + next.rewards,
             poolId: result.poolId,
             type: 'rewards',
@@ -192,32 +223,6 @@ export class AccountSyncService {
         : null;
       const refundsAmount = refundsHs ? refundsHs.rewards : 0;
 
-      const epoch = history[i].epoch
-        ? await epochRepository.findOne({ where: { epoch: history[i].epoch } })
-        : null;
-      let pool = history[i].poolId
-        ? await poolRepository.findOne({ where: { poolId: history[i].poolId } })
-        : null;
-
-      if (!epoch) {
-        this.logger.log(
-          `NOT FOUND::AccountSync()->syncHistory()->this.epochRepository.findOne(${history[i].epoch})`,
-        );
-        continue;
-      }
-
-      let newHistory = await this.accountHistoryService.findOneRecord(
-        account.stakeAddress,
-        epoch.epoch,
-      );
-
-      if (newHistory) {
-        this.logger.log(
-          `DUPLICATE::AccountSync()->syncHistory()->accountHistoryRepository.findOneRecord(${account.stakeAddress}, ${epoch.epoch})`,
-        );
-        continue;
-      }
-
       if (!pool && history[i].poolId) {
         pool = new Pool();
         pool.poolId = history[i].poolId;
@@ -226,16 +231,10 @@ export class AccountSyncService {
         await this.poolSyncService.syncPool(pool, lastEpoch);
       }
 
-      // Fetch previous epoch ( Current epoch - 1 )
+      // epochM1 : Fetch previous epoch ( Current epoch - 1 )
       const epochM1 = await this.accountHistoryService.findOneRecord(
         account.stakeAddress,
         epoch.epoch - 1,
-      );
-
-      // Fetch second previous epoch ( Current epoch - 2)
-      const epochM2 = await this.accountHistoryService.findOneRecord(
-        account.stakeAddress,
-        epoch.epoch - 2,
       );
 
       // Epoch Withdrawals
@@ -263,18 +262,16 @@ export class AccountSyncService {
       }
 
       /**
-       * epochM1.withdrawable - epochM1.withdrawn + epochM2.rewards + epochM0.MIRs + epochM0.refunds
+       * epochM1.withdrawable - epochM1.withdrawn
+       *   + epochM0.paidRewards + epochM0.MIRs + epochM0.refunds
        */
-      const withdrawable =
-        epochM1 && epochM2
-          ? epochM1.withdrawable -
-            epochM1.withdrawn +
-            epochM2.rewards +
-            totalMIR +
-            refundsAmount
-          : epochM1
-          ? epochM1.withdrawable - epochM1.withdrawn + totalMIR + refundsAmount
-          : totalMIR + refundsAmount;
+      const withdrawable = epochM1
+        ? epochM1.withdrawable -
+          epochM1.withdrawn +
+          rewardsAmount +
+          totalMIR +
+          refundsAmount
+        : rewardsAmount + totalMIR + refundsAmount;
 
       // Create new history
       newHistory = new AccountHistory();
@@ -286,12 +283,6 @@ export class AccountSyncService {
       newHistory.mir = totalMIR;
       newHistory.refund = refundsAmount;
       newHistory.pool = pool;
-      /**
-       * todo: investigate
-       * Account history found missing, see account history & rewards history for
-       * stake1u9p4gyue4cdx88znt856ehhtuceuca5gfpehh324r88hk2sj57gpn.
-       * (rh start at epoch ~308, history start at 317..!)
-       */
       newHistory.withdrawable =
         withdrawable - totalWithdraw >= 0 ? withdrawable : totalWithdraw;
       /**

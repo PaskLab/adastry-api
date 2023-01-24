@@ -370,6 +370,8 @@ export class AccountService {
       .createQueryBuilder('account')
       .select('account.id')
       .innerJoin('account.userAccounts', 'userAccount')
+      .innerJoin('userAccount.user', 'user')
+      .where('user.active IS TRUE')
       .orderBy('account.id')
       .distinct()
       .getRawMany();
