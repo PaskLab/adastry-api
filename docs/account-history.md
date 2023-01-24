@@ -17,11 +17,13 @@ The active stake that determine the share of the rewards is from 3 epoch ago.
 
 Stand for *"Moving instant rewards"*. ie: project catalyst voting rewards.
 
-Those rewards are available immediately at the moment of the MIR transaction.
+Those rewards are available immediately for withdraw at the moment of the MIR transaction.
+
+They are not part of the epoch snapshot, therefore they become active two epochs later. **(epoch + 2)**.
 
 ## refund
 
-Refer to **refund rewards**. Pool deregistration refund is available at
+Refer to **refund rewards**. Pool deregistration refund is available immediately for withdraw at
 the epoch where the deregistration certificate takes effect.
 
 ## activeStake
@@ -38,7 +40,7 @@ This is the *calculated* active stake balance of the account at the start of
 
 The formula used is the following:
 
-    epochM0.activeStake - (epochM1.withdrawable - epochM1.withdrawn)
+    epochM0.activeStake - (epochM1.withdrawable - (epochM1.withdrawn + epochM1.MIR))
 
 
 ## withdrawable

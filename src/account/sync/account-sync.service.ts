@@ -286,11 +286,13 @@ export class AccountSyncService {
       newHistory.withdrawable =
         withdrawable - totalWithdraw >= 0 ? withdrawable : totalWithdraw;
       /**
-       * epochM0.activeStake - (epochM1.withdrawable - epochM1.withdrawn)
+       * epochM0.activeStake - (epochM1.withdrawable - (epochM1.withdrawn + epochM1.MIR))
        */
       newHistory.balance = newHistory.activeStake
         ? newHistory.activeStake -
-          (epochM1 ? epochM1.withdrawable - epochM1.withdrawn : 0)
+          (epochM1
+            ? epochM1.withdrawable - (epochM1.withdrawn + epochM1.mir)
+            : 0)
         : 0;
       newHistory.withdrawn = totalWithdraw;
 
