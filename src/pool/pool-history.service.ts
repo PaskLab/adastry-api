@@ -99,7 +99,6 @@ export class PoolHistoryService {
       .innerJoinAndSelect('cert.owners', 'owners')
       .innerJoinAndSelect('owners.account', 'ownerAccount')
       .where('pool.poolId = :poolId', { poolId: poolId })
-      .andWhere('history.rewards > 0')
       .andWhere('history.rewardsRevised = FALSE')
       .andWhere('epoch.epoch <= :epoch', { epoch: untilEpoch })
       .orderBy('epoch.epoch', 'ASC')
