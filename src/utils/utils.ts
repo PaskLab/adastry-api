@@ -37,9 +37,14 @@ export function toAda(amount: number): number {
   return amount / 1000000;
 }
 
-export function parseAssetHex(hex: string): { policy: string; name: string } {
+export function parseAssetHex(hex: string): {
+  policy: string;
+  hexName: string;
+  name: string;
+} {
   return {
     policy: hex.slice(0, 56),
+    hexName: hex.slice(56),
     name: Buffer.from(hex.slice(56), 'hex').toString(),
   };
 }
