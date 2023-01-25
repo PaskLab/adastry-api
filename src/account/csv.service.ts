@@ -10,6 +10,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import AssetFingerprint from '@emurgo/cip14-js';
 import { parseAssetHex } from '../utils/utils';
+import { Asset } from './entities/asset.entity';
 
 @Injectable()
 export class CsvService {
@@ -317,36 +318,78 @@ export class CsvService {
     });
 
     const records: any = [];
+    const nftCount: { [key: string]: number } = {};
+    const tokenCount: { [key: string]: number } = {};
 
     for (const row of data) {
+      // Koinly doesn't support native assets, replace for wildcards
       let sentCurrency = row.sentCurrency;
       let receivedCurrency = row.receivedCurrency;
       let description = row.description;
+      const realTxHash = row.txHash.slice(-64);
 
       if (row.sentCurrency.length && row.sentCurrency !== 'ADA') {
-        const asset = parseAssetHex(row.sentCurrency);
+        const parsedAsset = parseAssetHex(row.sentCurrency);
         const fingerprint = AssetFingerprint.fromParts(
-          Buffer.from(asset.policy, 'hex'),
-          Buffer.from(asset.hexName, 'hex'),
+          Buffer.from(parsedAsset.policy, 'hex'),
+          Buffer.from(parsedAsset.hexName, 'hex'),
         );
 
-        sentCurrency = fingerprint.fingerprint();
-        description = `${
-          asset.name
-        } - ${fingerprint.fingerprint()} (${description})`;
+        const asset = await this.em
+          .getRepository(Asset)
+          .findOne({ where: { hexId: row.sentCurrency } });
+
+        if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
+          tokenCount[realTxHash] = tokenCount[realTxHash]
+            ? tokenCount[realTxHash] + 1
+            : 1;
+
+          sentCurrency = 'NULL' + tokenCount[realTxHash];
+          description = `${sentCurrency} = ${
+            parsedAsset.name
+          } [${fingerprint.fingerprint()}] (${description})`;
+        } else {
+          nftCount[realTxHash] = nftCount[realTxHash]
+            ? nftCount[realTxHash] + 1
+            : 1;
+
+          sentCurrency = 'NFT' + nftCount[realTxHash];
+          description = `${sentCurrency} = ${
+            parsedAsset.name
+          } [${fingerprint.fingerprint()}] (${description})`;
+        }
       }
 
       if (row.receivedCurrency.length && row.receivedCurrency !== 'ADA') {
-        const asset = parseAssetHex(row.receivedCurrency);
+        const parsedAsset = parseAssetHex(row.receivedCurrency);
         const fingerprint = AssetFingerprint.fromParts(
-          Buffer.from(asset.policy, 'hex'),
-          Buffer.from(asset.hexName, 'hex'),
+          Buffer.from(parsedAsset.policy, 'hex'),
+          Buffer.from(parsedAsset.hexName, 'hex'),
         );
 
-        receivedCurrency = fingerprint.fingerprint();
-        description = `${
-          asset.name
-        } - ${fingerprint.fingerprint()} (${description})`;
+        const asset = await this.em
+          .getRepository(Asset)
+          .findOne({ where: { hexId: row.receivedCurrency } });
+
+        if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
+          tokenCount[realTxHash] = tokenCount[realTxHash]
+            ? tokenCount[realTxHash] + 1
+            : 1;
+
+          receivedCurrency = 'NULL' + tokenCount[realTxHash];
+          description = `${receivedCurrency} = ${
+            parsedAsset.name
+          } [${fingerprint.fingerprint()}] (${description})`;
+        } else {
+          nftCount[realTxHash] = nftCount[realTxHash]
+            ? nftCount[realTxHash] + 1
+            : 1;
+
+          receivedCurrency = 'NFT' + nftCount[realTxHash];
+          description = `${receivedCurrency} = ${
+            parsedAsset.name
+          } [${fingerprint.fingerprint()}] (${description})`;
+        }
       }
 
       const record = {
