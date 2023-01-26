@@ -337,24 +337,28 @@ export class TransactionService {
       new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
     );
 
-    return this.em
-      .getRepository(Transaction)
-      .createQueryBuilder('transaction')
-      .innerJoin('transaction.account', 'account')
-      .where('account.stakeAddress IN (:...stakeAddresses)', {
-        stakeAddresses: stakeAddresses,
-      })
-      .andWhere(
-        'transaction.blockTime >= :startTime AND transaction.blockTime <= :endTime',
-        {
-          startTime: firstDay,
-          endTime: lastDay,
-        },
-      )
-      .orderBy('transaction.blockTime', 'ASC')
-      .addOrderBy('transaction.txIndex', 'ASC')
-      .addOrderBy('transaction.txType', 'DESC')
-      .getMany();
+    return (
+      this.em
+        .getRepository(Transaction)
+        .createQueryBuilder('transaction')
+        .innerJoin('transaction.account', 'account')
+        .where('account.stakeAddress IN (:...stakeAddresses)', {
+          stakeAddresses: stakeAddresses,
+        })
+        .andWhere(
+          'transaction.blockTime >= :startTime AND transaction.blockTime <= :endTime',
+          {
+            startTime: firstDay,
+            endTime: lastDay,
+          },
+        )
+        .orderBy('transaction.blockTime', 'ASC')
+        .addOrderBy('transaction.txIndex', 'ASC')
+        .addOrderBy('transaction.txType', 'DESC')
+        // Help to return sent transaction before received transaction for the same time
+        .addOrderBy('transaction.received', 'ASC')
+        .getMany()
+    );
   }
 
   findOneForAccount(

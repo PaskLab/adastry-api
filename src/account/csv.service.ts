@@ -397,7 +397,7 @@ export class CsvService {
         sentAmount:
           row.sentAmount.toString() === '0' && row.feeAmount != ''
             ? row.feeAmount
-            : row.sentAmount, // Handle self transaction
+            : row.sentAmount, // Handle self transaction for Koinly
         sentCurrency: sentCurrency,
         receivedAmount: row.receivedAmount,
         receivedCurrency: receivedCurrency,
