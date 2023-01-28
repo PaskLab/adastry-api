@@ -184,20 +184,25 @@ export class StatsService {
         };
       }
 
-      if (history.rewards || history.revisedRewards) {
+      const activeStakeRecord = accountsHistory[0].find(
+        (h) =>
+          h.epoch.epoch === history.epoch.epoch - 2 &&
+          h.account.stakeAddress == history.account.stakeAddress,
+      );
+
+      if (activeStakeRecord) {
         const rewards = history.revisedRewards
           ? history.revisedRewards
           : history.rewards;
 
         poolsEpochsROS[history.pool.poolId].epochsROS.push(
-          (rewards / history.activeStake) * 73,
+          (rewards / activeStakeRecord.activeStake) * 73,
         );
-      }
-
-      if (history.opRewards) {
-        poolsEpochsROS[history.pool.poolId].epochsROO.push(
-          (history.opRewards / history.activeStake) * 73,
-        );
+        if (history.owner) {
+          poolsEpochsROS[history.pool.poolId].epochsROO.push(
+            (history.opRewards / activeStakeRecord.activeStake) * 73,
+          );
+        }
       }
     }
 
