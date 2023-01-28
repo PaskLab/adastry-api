@@ -354,10 +354,10 @@ export class SyncService {
           (owner) => owner.account.stakeAddress,
         );
 
-        const rewardAccountHistoryM1 =
+        const rewardAccountHistoryM0 =
           await this.accountHistoryService.findOneRecord(
             cert.rewardAccount.stakeAddress,
-            record.epoch.epoch - 1,
+            record.epoch.epoch,
           );
 
         const rewardAccountHistoryP2 =
@@ -366,9 +366,9 @@ export class SyncService {
             record.epoch.epoch + 2,
           );
 
-        if (!rewardAccountHistoryM1 || !rewardAccountHistoryP2) {
+        if (!rewardAccountHistoryM0 || !rewardAccountHistoryP2) {
           this.logger.warn(
-            `Epoch ${record.epoch.epoch} Reward account history M1 or P2 not found for pool cert ID: ${cert.id}`,
+            `Epoch ${record.epoch.epoch} Reward account history M0 or P2 not found for pool cert ID: ${cert.id}`,
             'PoolSyncService.processMultiOwner()',
           );
           continue;
@@ -379,10 +379,10 @@ export class SyncService {
           ...new Set([cert.rewardAccount.stakeAddress, ...pledgeStakeAddr]),
         ];
 
-        const ownersAccountHistoryM1 =
+        const ownersAccountHistoryM0 =
           await this.accountHistoryService.findEpochHistorySelection(
             ownersStakeAddr,
-            record.epoch.epoch - 1,
+            record.epoch.epoch,
           );
 
         const ownersAccountHistoryP2 =
@@ -392,12 +392,12 @@ export class SyncService {
           );
 
         if (
-          ownersAccountHistoryM1.length !== ownersStakeAddr.length ||
+          ownersAccountHistoryM0.length !== ownersStakeAddr.length ||
           ownersAccountHistoryP2.length !== ownersStakeAddr.length
         ) {
           // Reward account already verified, any pledge account history could be missing.
           this.logger.warn(
-            `Missing pledge account history M1 or P2 for epoch ${record.epoch.epoch}. (One or more.)`,
+            `Missing pledge account history M0 or P2 for epoch ${record.epoch.epoch}. (One or more.)`,
             'PoolSyncService.processMultiOwner()',
           );
           continue;
@@ -405,24 +405,24 @@ export class SyncService {
 
         let totalStake = 0;
 
-        for (const accountHistoryM1 of ownersAccountHistoryM1) {
-          totalStake += accountHistoryM1.balance;
+        for (const accountHistoryM0 of ownersAccountHistoryM0) {
+          totalStake += accountHistoryM0.balance;
         }
 
         const netRewards = rewardAccountHistoryP2.rewards - record.fees;
 
-        for (const accountHistoryM1 of ownersAccountHistoryM1) {
+        for (const accountHistoryM0 of ownersAccountHistoryM0) {
           const historyP2Index = ownersAccountHistoryP2.findIndex(
             (h) =>
-              h.account.stakeAddress === accountHistoryM1.account.stakeAddress,
+              h.account.stakeAddress === accountHistoryM0.account.stakeAddress,
           );
 
-          accountHistoryM1.stakeShare = totalStake
-            ? accountHistoryM1.balance / totalStake
+          accountHistoryM0.stakeShare = totalStake
+            ? accountHistoryM0.balance / totalStake
             : 0;
 
           // OpRewards equally shared among pledge addresses only
-          if (pledgeStakeAddr.includes(accountHistoryM1.account.stakeAddress)) {
+          if (pledgeStakeAddr.includes(accountHistoryM0.account.stakeAddress)) {
             ownersAccountHistoryP2[historyP2Index].opRewards = Math.floor(
               record.fees / pledgeStakeAddr.length,
             );
@@ -430,18 +430,18 @@ export class SyncService {
 
           // RevisedRewards == netRewards * stakeShare
           ownersAccountHistoryP2[historyP2Index].revisedRewards = Math.floor(
-            accountHistoryM1.stakeShare * netRewards,
+            accountHistoryM0.stakeShare * netRewards,
           );
-          accountHistoryM1.owner = true;
+          accountHistoryM0.owner = true;
           ownersAccountHistoryP2[historyP2Index].owner = true;
 
-          await this.em.save(accountHistoryM1);
+          await this.em.save(accountHistoryM0);
           await this.em.save(ownersAccountHistoryP2[historyP2Index]);
           this.logger.log(
             `Epoch ${
               record.epoch.epoch + 2
             } Rewards revised for owner account ${
-              accountHistoryM1.account.stakeAddress
+              accountHistoryM0.account.stakeAddress
             }`,
           );
         }
