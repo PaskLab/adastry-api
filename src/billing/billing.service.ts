@@ -238,9 +238,9 @@ export class BillingService {
     timeZone: 'America/Toronto',
   })
   private async confirmInvoices(): Promise<void> {
-    // 6 hours ago
+    // 2 hours ago
     const dateLimit = new Date();
-    dateLimit.setHours(dateLimit.getHours() - 6);
+    dateLimit.setHours(dateLimit.getHours() - 2);
 
     const invoices = await this.em
       .getRepository(Invoice)
