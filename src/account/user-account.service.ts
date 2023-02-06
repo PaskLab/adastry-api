@@ -70,14 +70,30 @@ export class UserAccountService {
       }
     }
 
-    return pools.map(
-      (p) =>
-        new UserPoolDto({
-          poolId: p.poolId,
-          name: p.name,
-          isMember: p.isMember,
-        }),
+    const activePools = await this.billingService.findActivePools(
+      pools.map((p) => p.poolId),
+      true,
     );
+
+    const userPools: UserPoolDto[] = [];
+
+    for (const pool of pools) {
+      const subscription = activePools.find(
+        (aP) => aP.pool.poolId === pool.poolId,
+      );
+
+      const userPoolDto = new UserPoolDto({
+        poolId: pool.poolId,
+        name: pool.name,
+        isMember: pool.isMember,
+        isSubscribed: subscription ? subscription.invoice.confirmed : false,
+        pending: subscription ? !subscription.invoice.confirmed : false,
+      });
+
+      userPools.push(userPoolDto);
+    }
+
+    return userPools;
   }
 
   async getAccountInfo(userId, stakeAddress: string): Promise<AccountDto> {

@@ -119,6 +119,7 @@ export class BillingService {
       stakeAddress: userAccount.account.stakeAddress,
       name: userAccount.name,
       active: false,
+      pending: false,
       type: 'none',
       invoiceId: '',
       createdAt: '',
@@ -130,7 +131,8 @@ export class BillingService {
       (ia) => ia.account.stakeAddress === userAccount.account.stakeAddress,
     );
     if (iAccount >= 0) {
-      accountState.active = true;
+      accountState.active = activeIAccounts[iAccount].invoice.confirmed;
+      accountState.pending = !activeIAccounts[iAccount].invoice.confirmed;
       accountState.type = 'account';
       accountState.invoiceId = activeIAccounts[iAccount].invoice.invoiceId;
       accountState.createdAt = activeIAccounts[iAccount].invoice.createdAt;
@@ -142,7 +144,8 @@ export class BillingService {
       (ip) => ip.pool.poolId === userAccount.account.pool?.poolId,
     );
     if (iPool >= 0) {
-      accountState.active = true;
+      accountState.active = activeIPools[iPool].invoice.confirmed;
+      accountState.pending = !activeIPools[iPool].invoice.confirmed;
       accountState.type = 'pool';
       accountState.invoiceId = activeIPools[iPool].invoice.invoiceId;
       accountState.createdAt = activeIPools[iPool].invoice.createdAt;
@@ -172,8 +175,11 @@ export class BillingService {
       ]),
     ];
 
-    const activeInvoiceAccounts = await this.findActiveAccounts(stakeAddresses);
-    const activeInvoicePools = await this.findActivePools(poolIds);
+    const activeInvoiceAccounts = await this.findActiveAccounts(
+      stakeAddresses,
+      true,
+    );
+    const activeInvoicePools = await this.findActivePools(poolIds, true);
 
     const activeAccounts: AccountStateDto[] = [];
 
@@ -199,10 +205,14 @@ export class BillingService {
       throw new NotFoundException('User account not found.');
     }
 
-    const activeInvoiceAccounts = await this.findActiveAccounts([stakeAddress]);
-    const activeInvoicePools = await this.findActivePools([
-      userAccount.account.pool ? userAccount.account.pool.poolId : '',
-    ]);
+    const activeInvoiceAccounts = await this.findActiveAccounts(
+      [stakeAddress],
+      true,
+    );
+    const activeInvoicePools = await this.findActivePools(
+      [userAccount.account.pool ? userAccount.account.pool.poolId : ''],
+      true,
+    );
 
     return this.plansSelector(
       userAccount,
@@ -303,15 +313,15 @@ export class BillingService {
 
   /**
    * Return all active InvoiceAccount from a defined set
-   * @param stakeAddresses
    */
   async findActiveAccounts(
     stakeAddresses: string[],
+    includePending = false,
   ): Promise<InvoiceAccount[]> {
     const date = new Date();
     date.setFullYear(date.getFullYear() - 1);
 
-    return this.em
+    const query = this.em
       .getRepository(InvoiceAccount)
       .createQueryBuilder('ia')
       .innerJoinAndSelect('ia.invoice', 'invoice')
@@ -322,21 +332,28 @@ export class BillingService {
       .andWhere('invoice.createdAt > :aYearAgo', {
         aYearAgo: date.valueOf().toString(),
       })
-      .andWhere('invoice.confirmed IS TRUE')
+
       .andWhere('invoice.canceled IS FALSE')
-      .orderBy('invoice.createdAt')
-      .getMany();
+      .orderBy('invoice.createdAt');
+
+    if (!includePending) {
+      query.andWhere('invoice.confirmed IS TRUE');
+    }
+
+    return query.getMany();
   }
 
   /**
    * Return all active InvoicePool from a defined set
-   * @param poolIds
    */
-  async findActivePools(poolIds: string[]): Promise<InvoicePool[]> {
+  async findActivePools(
+    poolIds: string[],
+    includePending = false,
+  ): Promise<InvoicePool[]> {
     const date = new Date();
     date.setFullYear(date.getFullYear() - 1);
 
-    return this.em
+    const query = this.em
       .getRepository(InvoicePool)
       .createQueryBuilder('ip')
       .innerJoinAndSelect('ip.invoice', 'invoice')
@@ -345,10 +362,15 @@ export class BillingService {
       .andWhere('invoice.createdAt > :aYearAgo', {
         aYearAgo: date.valueOf().toString(),
       })
-      .andWhere('invoice.confirmed IS TRUE')
+
       .andWhere('invoice.canceled IS FALSE')
-      .orderBy('invoice.createdAt')
-      .getMany();
+      .orderBy('invoice.createdAt');
+
+    if (!includePending) {
+      query.andWhere('invoice.confirmed IS TRUE');
+    }
+
+    return query.getMany();
   }
 
   async findLastAccountInvoice(

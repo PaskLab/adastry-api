@@ -6,6 +6,7 @@ export class AccountStateDto {
       this.stakeAddress = props.stakeAddress;
       this.name = props.name;
       this.active = props.active;
+      this.pending = props.pending;
       this.type = props.type;
       this.createdAt = props.createdAt;
       this.confirmedAt = props.confirmedAt;
@@ -29,6 +30,12 @@ export class AccountStateDto {
     example: true,
   })
   active!: boolean;
+
+  @ApiProperty({
+    title: 'Subscription confirmation state',
+    example: true,
+  })
+  pending!: boolean;
 
   @ApiProperty({
     title: 'Subscription related invoice',

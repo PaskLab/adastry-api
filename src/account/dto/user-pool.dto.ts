@@ -6,6 +6,8 @@ export class UserPoolDto {
       this.poolId = props.poolId;
       this.name = props.name;
       this.isMember = props.isMember;
+      this.isSubscribed = props.isSubscribed;
+      this.pending = props.pending;
     }
   }
 
@@ -26,4 +28,16 @@ export class UserPoolDto {
     example: true,
   })
   isMember!: boolean;
+
+  @ApiProperty({
+    title: 'Is subscribed to premium plan',
+    example: true,
+  })
+  isSubscribed!: boolean;
+
+  @ApiProperty({
+    title: 'Is subscription payment pending',
+    example: true,
+  })
+  pending!: boolean;
 }
