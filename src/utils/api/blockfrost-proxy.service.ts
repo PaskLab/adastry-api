@@ -1,9 +1,9 @@
 import config from '../../../config.json';
 import { Injectable } from '@nestjs/common';
-
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import { components } from '@blockfrost/blockfrost-js/lib/types/OpenApi';
 import { request as apiRequest } from './api.helper';
+import * as process from 'process';
 
 @Injectable()
 export class BlockfrostProxyService {
@@ -45,6 +45,14 @@ export class BlockfrostProxyService {
   }
 
   async submit(body: any): Promise<string> {
+    if (process.env.SUBMIT_API_URL) {
+      return this.request(
+        process.env.SUBMIT_API_URL,
+        { contentType: 'application/cbor' },
+        body,
+      );
+    }
+
     return this.api.txSubmit(body);
   }
 
