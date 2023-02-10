@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TIMESTAMP=$(date +"%F")_$(date +"%H")H$(date +"%M")
+DIR="/backup"
+BACKUP_DIR="$DIR/$TIMESTAMP"
+PGSQL_USER="postgres"
+PGSQL_CMD_PATH="/usr/lib/postgresql/14/bin"
+DOCKER_CMD="docker exec adastry-postgres bash -c"
+
+$DOCKER_CMD "find '$DIR' -mindepth 1 -maxdepth 1 -type d -mtime +60 -exec rm -rf {} \;"
+$DOCKER_CMD "mkdir -p '$BACKUP_DIR'"
+
+PGSQL_CMD="${PGSQL_CMD_PATH}/psql --u $PGSQL_USER -tqc 'SELECT datname FROM pg_database where datistemplate = false;'"
+databases=`$DOCKER_CMD "${PGSQL_CMD}"`
+
+for db in $databases; do
+  PGSQL_CMD="${PGSQL_CMD_PATH}/pg_dump -U $PGSQL_USER $db -O | gzip > '$BACKUP_DIR/$db.sql.gz'"
+  $DOCKER_CMD "${PGSQL_CMD}"
+done
