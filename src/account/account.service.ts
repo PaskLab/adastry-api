@@ -204,6 +204,7 @@ export class AccountService {
     }-rewards-${stakeAddress.slice(0, 15)}-${format ? format : 'default'}.csv`;
 
     const fileInfo = await this.generateRewardCSV(
+      userId,
       filename,
       history,
       baseCurrency,
@@ -242,6 +243,7 @@ export class AccountService {
   }
 
   async generateRewardCSV(
+    userId: number,
     filename: string,
     history: AccountHistory[],
     baseCurrency: string,
@@ -312,7 +314,7 @@ export class AccountService {
         fileInfo = await this.csvService.writeTransactionCSV(filename, data);
         break;
       case 'koinly':
-        fileInfo = await this.csvService.writeKoinlyCSV(filename, data);
+        fileInfo = await this.csvService.writeKoinlyCSV(userId, filename, data);
         break;
       case 'spo':
         fileInfo = await this.csvService.writeSpoCSV(filename, data);

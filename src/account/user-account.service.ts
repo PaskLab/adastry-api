@@ -280,6 +280,7 @@ export class UserAccountService {
     }.csv`;
 
     const fileInfo = await this.accountService.generateRewardCSV(
+      userId,
       filename,
       history,
       baseCurrency,
@@ -343,6 +344,7 @@ export class UserAccountService {
     }.csv`;
 
     const fileInfo = await this.transactionService.generateTransactionsCSV(
+      userId,
       filename,
       history,
       format,

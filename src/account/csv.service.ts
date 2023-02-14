@@ -1,4 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import config from '../../config.json';
 import { Cron } from '@nestjs/schedule';
 import path from 'path';
@@ -11,6 +17,11 @@ import { EntityManager } from 'typeorm';
 import AssetFingerprint from '@emurgo/cip14-js';
 import { parseAssetHex } from '../utils/utils';
 import { Asset } from './entities/asset.entity';
+import { TxSyncService } from './sync/tx-sync.service';
+import { AssetMappingService } from './asset-mapping.service';
+import { UserMapping } from './entities/user-mapping.entity';
+import { User } from '../user/entities/user.entity';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class CsvService {
@@ -18,7 +29,13 @@ export class CsvService {
   private readonly TMP_PATH = config.app.tmpPath;
   private readonly TMP_TTL = config.app.tmpFileTTL;
 
-  constructor(@InjectEntityManager() private readonly em: EntityManager) {}
+  constructor(
+    @InjectEntityManager() private readonly em: EntityManager,
+    @Inject(forwardRef(() => TxSyncService))
+    private readonly txSyncService: TxSyncService,
+    private readonly assetMappingService: AssetMappingService,
+    private readonly userService: UserService,
+  ) {}
 
   /**
    * Use with "Rewards Export" only
@@ -294,9 +311,16 @@ export class CsvService {
   }
 
   async writeKoinlyCSV(
+    userId: number,
     filename: string,
     data: CsvFieldsType[],
   ): Promise<CsvFileInfoType> {
+    const user = await this.userService.findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
     const filePath = path.join(__dirname, '../../..', this.TMP_PATH, filename);
 
     const writer = csvWriter.createObjectCsvWriter({
@@ -329,67 +353,31 @@ export class CsvService {
       const realTxHash = row.txHash.slice(-64);
 
       if (row.sentCurrency.length && row.sentCurrency !== 'ADA') {
-        const parsedAsset = parseAssetHex(row.sentCurrency);
-        const fingerprint = AssetFingerprint.fromParts(
-          Buffer.from(parsedAsset.policy, 'hex'),
-          Buffer.from(parsedAsset.hexName, 'hex'),
+        const mapping = await this.mapAssetKoinly(
+          user,
+          row.sentCurrency,
+          row.sentAmount,
+          description,
+          realTxHash,
+          nftCount,
+          tokenCount,
         );
-
-        const asset = await this.em
-          .getRepository(Asset)
-          .findOne({ where: { hexId: row.sentCurrency } });
-
-        if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
-          tokenCount[realTxHash] = tokenCount[realTxHash]
-            ? tokenCount[realTxHash] + 1
-            : 1;
-
-          sentCurrency = 'NULL' + tokenCount[realTxHash];
-          description = `${sentCurrency} = ${
-            parsedAsset.name
-          } [${fingerprint.fingerprint()}] (${description})`;
-        } else {
-          nftCount[realTxHash] = nftCount[realTxHash]
-            ? nftCount[realTxHash] + 1
-            : 1;
-
-          sentCurrency = 'NFT' + nftCount[realTxHash];
-          description = `${sentCurrency} = ${
-            parsedAsset.name
-          } [${fingerprint.fingerprint()}] (${description})`;
-        }
+        sentCurrency = mapping.id;
+        description = mapping.description;
       }
 
       if (row.receivedCurrency.length && row.receivedCurrency !== 'ADA') {
-        const parsedAsset = parseAssetHex(row.receivedCurrency);
-        const fingerprint = AssetFingerprint.fromParts(
-          Buffer.from(parsedAsset.policy, 'hex'),
-          Buffer.from(parsedAsset.hexName, 'hex'),
+        const mapping = await this.mapAssetKoinly(
+          user,
+          row.receivedCurrency,
+          row.receivedAmount,
+          description,
+          realTxHash,
+          nftCount,
+          tokenCount,
         );
-
-        const asset = await this.em
-          .getRepository(Asset)
-          .findOne({ where: { hexId: row.receivedCurrency } });
-
-        if (!asset || BigInt(asset.quantity) !== BigInt(1)) {
-          tokenCount[realTxHash] = tokenCount[realTxHash]
-            ? tokenCount[realTxHash] + 1
-            : 1;
-
-          receivedCurrency = 'NULL' + tokenCount[realTxHash];
-          description = `${receivedCurrency} = ${
-            parsedAsset.name
-          } [${fingerprint.fingerprint()}] (${description})`;
-        } else {
-          nftCount[realTxHash] = nftCount[realTxHash]
-            ? nftCount[realTxHash] + 1
-            : 1;
-
-          receivedCurrency = 'NFT' + nftCount[realTxHash];
-          description = `${receivedCurrency} = ${
-            parsedAsset.name
-          } [${fingerprint.fingerprint()}] (${description})`;
-        }
+        receivedCurrency = mapping.id;
+        description = mapping.description;
       }
 
       const record = {
@@ -427,6 +415,112 @@ export class CsvService {
       path: filePath,
       expireAt: this.getExpire(),
     };
+  }
+
+  private async mapAssetKoinly(
+    user: User,
+    assetHex: string,
+    assetAmount: string | number,
+    description: string,
+    realTxHash: string,
+    nftCount: { [key: string]: number },
+    tokenCount: { [key: string]: number },
+  ): Promise<{ id: string; description: string }> {
+    let assetId: string;
+    let rowDescription: string;
+    const parsedAsset = parseAssetHex(assetHex);
+    const fingerprint = AssetFingerprint.fromParts(
+      Buffer.from(parsedAsset.policy, 'hex'),
+      Buffer.from(parsedAsset.hexName, 'hex'),
+    );
+
+    let asset = await this.em
+      .getRepository(Asset)
+      .findOne({ where: { hexId: assetHex } });
+
+    if (!asset) {
+      // Try to sync Asset Info
+      await this.txSyncService.syncAsset(assetHex);
+      asset = await this.em
+        .getRepository(Asset)
+        .findOne({ where: { hexId: assetHex } });
+    }
+
+    let userMapping = await this.assetMappingService.findUserMapping(
+      user.id,
+      assetHex,
+    );
+
+    const globalMapping = await this.assetMappingService.findKoinlyMapping(
+      assetHex,
+      true,
+    );
+
+    // Create or update 'userMapping' if no 'globalMapping' for 'asset'
+    if (
+      asset &&
+      (!userMapping || !userMapping.koinlyId.length) &&
+      !globalMapping
+    ) {
+      const nextId = await this.assetMappingService.findUserNextKoinlyId(
+        user.id,
+        asset.quantity === '1' ? 'NFT' : 'NULL',
+      );
+
+      let newUserMapping: UserMapping;
+
+      if (userMapping) {
+        // User mapping can exist for multiple services, ie: koinly, cointracker
+        newUserMapping = userMapping;
+      } else {
+        newUserMapping = new UserMapping();
+        newUserMapping.asset = asset;
+        newUserMapping.user = user;
+      }
+
+      newUserMapping.koinlyId = nextId;
+
+      userMapping = await this.em.save(newUserMapping);
+    }
+
+    if (
+      (asset && asset.quantity === '1') ||
+      BigInt(assetAmount) !== BigInt(1)
+    ) {
+      if (userMapping) {
+        assetId = userMapping.koinlyId;
+      } else if (globalMapping) {
+        assetId = globalMapping.koinlyId;
+      } else {
+        tokenCount[realTxHash] = tokenCount[realTxHash]
+          ? tokenCount[realTxHash] + 1
+          : 1;
+
+        assetId = 'NULL' + tokenCount[realTxHash];
+      }
+
+      rowDescription = `${assetId} = ${
+        parsedAsset.name
+      } [${fingerprint.fingerprint()}] | ${description}`;
+    } else {
+      if (userMapping) {
+        assetId = userMapping.koinlyId;
+      } else if (globalMapping) {
+        assetId = globalMapping.koinlyId;
+      } else {
+        nftCount[realTxHash] = nftCount[realTxHash]
+          ? nftCount[realTxHash] + 1
+          : 1;
+
+        assetId = 'NFT' + nftCount[realTxHash];
+      }
+
+      rowDescription = `${assetId} = ${
+        parsedAsset.name
+      } [${fingerprint.fingerprint()}] | ${description}`;
+    }
+
+    return { id: assetId, description: rowDescription };
   }
 
   private getExpire(): Date {

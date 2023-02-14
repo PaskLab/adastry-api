@@ -22,6 +22,7 @@ import { CsvService } from './csv.service';
 import config from '../../config.json';
 import { Transaction } from './entities/transaction.entity';
 import { CsvFileInfoType } from './types/csv-file-info.type';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class TransactionService {
@@ -30,6 +31,7 @@ export class TransactionService {
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly csvService: CsvService,
+    private readonly userService: UserService,
   ) {}
 
   async getHistory(
@@ -77,11 +79,18 @@ export class TransactionService {
 
   async getTransactionsCSV(
     request: Request,
+    userId: number,
     stakeAddress: string,
     year: number,
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
+    const user = await this.userService.findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
     const history = await this.findByYear(stakeAddress, year, quarter);
 
     if (!history.length) {
@@ -95,6 +104,7 @@ export class TransactionService {
     }-txs-${stakeAddress.slice(0, 15)}-${format ? format : 'default'}.csv`;
 
     const fileInfo = await this.generateTransactionsCSV(
+      userId,
       filename,
       history,
       format,
@@ -111,6 +121,7 @@ export class TransactionService {
   }
 
   async generateTransactionsCSV(
+    userId: number,
     filename: string,
     history: Transaction[],
     format?: string,
@@ -201,7 +212,7 @@ export class TransactionService {
 
     switch (format) {
       case 'koinly':
-        fileInfo = await this.csvService.writeKoinlyCSV(filename, data);
+        fileInfo = await this.csvService.writeKoinlyCSV(userId, filename, data);
         break;
       default:
         fileInfo = await this.csvService.writeTransactionCSV(filename, data);
@@ -274,7 +285,7 @@ export class TransactionService {
     return qb.getManyAndCount();
   }
 
-  findByYear(
+  async findByYear(
     stakeAddress: string,
     year: number,
     quarter?: number,

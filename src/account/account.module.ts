@@ -31,6 +31,9 @@ import { MirTransaction } from './entities/mir-transaction.entity';
 import { MirSyncService } from './sync/mir-sync.service';
 import { MirTransactionService } from './mir-transaction.service';
 import { BillingModule } from '../billing/billing.module';
+import { AssetMapping } from './entities/asset-mapping.entity';
+import { UserMapping } from './entities/user-mapping.entity';
+import { AssetMappingService } from './asset-mapping.service';
 
 export const entities = [
   Account,
@@ -42,6 +45,8 @@ export const entities = [
   Transaction,
   MirTransaction,
   Asset,
+  AssetMapping,
+  UserMapping,
 ];
 
 @Module({
@@ -70,6 +75,7 @@ export const entities = [
     AccountAddressService,
     AccountWithdrawService,
     TransactionAddressService,
+    AssetMappingService,
   ],
   exports: [
     AccountService,
