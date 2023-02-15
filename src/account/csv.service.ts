@@ -451,16 +451,13 @@ export class CsvService {
       assetHex,
     );
 
-    const globalMapping = await this.assetMappingService.findKoinlyMapping(
-      assetHex,
-      true,
-    );
+    const globalMapping = await this.assetMappingService.findMapping(assetHex);
 
     // Create or update 'userMapping' if no 'globalMapping' for 'asset'
     if (
       asset &&
       (!userMapping || !userMapping.koinlyId.length) &&
-      !globalMapping
+      !(globalMapping && globalMapping.activeKoinlyId)
     ) {
       const nextId = await this.assetMappingService.findUserNextKoinlyId(
         user.id,
@@ -487,14 +484,14 @@ export class CsvService {
       (asset && asset.quantity === '1') ||
       BigInt(assetAmount) !== BigInt(1)
     ) {
-      if (userMapping) {
+      if (userMapping && !userMapping.useGlobalKoinlyId) {
         assetId = userMapping.koinlyId;
-      } else if (globalMapping) {
+      } else if (globalMapping && globalMapping.activeKoinlyId) {
         assetId = globalMapping.koinlyId;
       } else {
         tokenCount[realTxHash] = tokenCount[realTxHash]
           ? tokenCount[realTxHash] + 1
-          : 1;
+          : 4500;
 
         assetId = 'NULL' + tokenCount[realTxHash];
       }
@@ -503,14 +500,14 @@ export class CsvService {
         parsedAsset.name
       } [${fingerprint.fingerprint()}] | ${description}`;
     } else {
-      if (userMapping) {
+      if (userMapping && !userMapping.useGlobalKoinlyId) {
         assetId = userMapping.koinlyId;
-      } else if (globalMapping) {
+      } else if (globalMapping && globalMapping.activeKoinlyId) {
         assetId = globalMapping.koinlyId;
       } else {
         nftCount[realTxHash] = nftCount[realTxHash]
           ? nftCount[realTxHash] + 1
-          : 1;
+          : 4500;
 
         assetId = 'NFT' + nftCount[realTxHash];
       }

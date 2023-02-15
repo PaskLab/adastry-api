@@ -42,21 +42,4 @@ export class AssetMappingService {
       .where('asset.hexId = :hexId', { hexId })
       .getOne();
   }
-
-  async findKoinlyMapping(
-    hexId: string,
-    onlyActive = true,
-  ): Promise<AssetMapping | null> {
-    const query = this.em
-      .getRepository(AssetMapping)
-      .createQueryBuilder('mapping')
-      .innerJoin('mapping.asset', 'asset')
-      .where('asset.hexId = :hexId', { hexId });
-
-    if (onlyActive) {
-      query.andWhere('mapping.activeKoinlyId = TRUE');
-    }
-
-    return query.getOne();
-  }
 }
