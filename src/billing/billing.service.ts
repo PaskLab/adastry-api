@@ -166,6 +166,8 @@ export class BillingService {
       userId,
     );
 
+    if (!userAccounts.length) return [];
+
     const stakeAddresses = userAccounts.map((ua) => ua.account.stakeAddress);
     const poolIds = [
       ...new Set([
@@ -179,7 +181,9 @@ export class BillingService {
       stakeAddresses,
       true,
     );
-    const activeInvoicePools = await this.findActivePools(poolIds, true);
+    const activeInvoicePools = poolIds.length
+      ? await this.findActivePools(poolIds, true)
+      : [];
 
     const activeAccounts: AccountStateDto[] = [];
 
@@ -310,6 +314,8 @@ export class BillingService {
       this.logger.log(`Invoices # ${invoice.invoiceId} confirmed.`);
     }
   }
+
+  // REPOSITORY
 
   /**
    * Return all active InvoiceAccount from a defined set

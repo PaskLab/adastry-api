@@ -70,10 +70,12 @@ export class UserAccountService {
       }
     }
 
-    const activePools = await this.billingService.findActivePools(
-      pools.map((p) => p.poolId),
-      true,
-    );
+    const activePools = pools.length
+      ? await this.billingService.findActivePools(
+          pools.map((p) => p.poolId),
+          true,
+        )
+      : [];
 
     const userPools: UserPoolDto[] = [];
 

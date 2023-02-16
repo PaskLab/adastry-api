@@ -167,6 +167,9 @@ export class PoolService {
   async findUserOwnedPools(): Promise<Pool[]> {
     const userAccountIds =
       await this.accountService.findUniqueLinkedAccountIds();
+
+    if (!userAccountIds.length) return [];
+
     return this.em
       .getRepository(Pool)
       .createQueryBuilder('pool')
