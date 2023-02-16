@@ -34,6 +34,7 @@ import { BillingModule } from '../billing/billing.module';
 import { AssetMapping } from './entities/asset-mapping.entity';
 import { UserMapping } from './entities/user-mapping.entity';
 import { AssetMappingService } from './asset-mapping.service';
+import { AssetController } from './asset.controller';
 
 export const entities = [
   Account,
@@ -58,7 +59,7 @@ export const entities = [
     UserModule,
     forwardRef(() => BillingModule),
   ],
-  controllers: [UserAccountController, StatsController],
+  controllers: [UserAccountController, StatsController, AssetController],
   providers: [
     AccountService,
     UserAccountService,
