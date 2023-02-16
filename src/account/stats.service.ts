@@ -156,6 +156,8 @@ export class StatsService {
       userId,
     );
 
+    if (!userAccounts.length) return [];
+
     const flatAccountsList = userAccounts.map(
       (userAccount) => userAccount.account.stakeAddress,
     );
@@ -165,6 +167,8 @@ export class StatsService {
         flatAccountsList,
         params,
       );
+
+    if (!accountsHistory.length) return [];
 
     // Reverse to get most recent pool name first
     accountsHistory[0].reverse();
