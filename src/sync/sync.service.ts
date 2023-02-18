@@ -11,6 +11,7 @@ import { PoolService } from '../pool/pool.service';
 import { AccountService } from '../account/account.service';
 import { PoolCertService } from '../pool/pool-cert.service';
 import { Account } from '../account/entities/account.entity';
+import * as process from 'process';
 
 @Injectable()
 export class SyncService {
@@ -26,16 +27,25 @@ export class SyncService {
     private readonly poolCertService: PoolCertService,
     private readonly accountService: AccountService,
   ) {
-    if (!process.env.SKIP_SYNC) {
-      this.init().then();
-    }
+    this.init().then();
   }
 
   async init(): Promise<void> {
-    await this.integrityCheck();
-    this.logger.log('Init sync data ...');
-    await this.spotSyncService.init();
-    this.sync().then();
+    if (process.env.SKIP_INTEGRITY_CHECK === 'yes') {
+      this.logger.warn(
+        'SKIP_INTEGRITY_CHECK enabled, skipping integrity checks ...',
+      );
+    } else {
+      await this.integrityCheck();
+    }
+
+    if (process.env.SKIP_INIT_SYNC === 'yes') {
+      this.logger.warn('SKIP_INIT_SYNC enabled, skipping initial sync ...');
+    } else {
+      this.logger.log('Init sync data ...');
+      await this.spotSyncService.init();
+      this.sync().then();
+    }
   }
 
   private async integrityCheck(): Promise<void> {
@@ -45,8 +55,8 @@ export class SyncService {
 
   @Cron('0 20 * * *', { name: 'Daily Sync', timeZone: 'America/Toronto' })
   private async sync(): Promise<void> {
-    if (process.env.SKIP_SYNC) {
-      this.logger.log('SKIP_SYNC enabled, skipping daily sync ...');
+    if (process.env.SKIP_SYNC === 'yes') {
+      this.logger.warn('SKIP_SYNC enabled, skipping daily sync ...');
       return;
     }
 

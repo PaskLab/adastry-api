@@ -35,12 +35,25 @@ Not implemented yet.
 
 #### TypeORM
 
-To prevent production data lost, database schema synchronization is disable 
+To prevent production data lost, database schema synchronization is disabled 
 by default. To enable entities **auto-synchronization**, set the node environment to the following:
 
 ```bash
 NODE_ENV=development
 ```
+
+#### Integrity Check
+
+Integrity check is skipped when env `SKIP_INTEGRITY_CHECK` have the string value `yes`. String value is used instead of
+boolean for **dotenv** compatibility.
+
+#### Data Sync
+
+Initial sync is skipped when env `SKIP_INIT_SYNC` have the string value `yes`. String value is used instead of
+boolean for **dotenv** compatibility.
+
+Data Sync at startup or scheduled cronjob is skipped when env `SKIP_SYNC` have the string value `yes`. String value is used instead of
+boolean for **dotenv** compatibility.
 
 ## TypeORM CLI
 
