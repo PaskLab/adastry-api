@@ -338,9 +338,9 @@ export class BillingService {
       .andWhere('invoice.createdAt > :aYearAgo', {
         aYearAgo: date.valueOf().toString(),
       })
-
       .andWhere('invoice.canceled IS FALSE')
-      .orderBy('invoice.createdAt');
+      .orderBy('invoice.confirmed', 'DESC')
+      .addOrderBy('invoice.createdAt', 'ASC');
 
     if (!includePending) {
       query.andWhere('invoice.confirmed IS TRUE');
@@ -368,9 +368,9 @@ export class BillingService {
       .andWhere('invoice.createdAt > :aYearAgo', {
         aYearAgo: date.valueOf().toString(),
       })
-
       .andWhere('invoice.canceled IS FALSE')
-      .orderBy('invoice.createdAt');
+      .orderBy('invoice.confirmed', 'DESC')
+      .addOrderBy('invoice.createdAt', 'ASC');
 
     if (!includePending) {
       query.andWhere('invoice.confirmed IS TRUE');
