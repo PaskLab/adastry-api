@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-export async function request(
+export async function silentFailRequest(
   providerUrl: string,
   endpoint: string,
   headers?: any,
@@ -23,4 +23,24 @@ export async function request(
       }
     })
     .catch(console.log);
+}
+
+export async function request(
+  providerUrl: string,
+  endpoint: string,
+  headers?: any,
+  body?: any,
+): Promise<any | null> {
+  return fetch(providerUrl + endpoint, {
+    headers: {
+      ...headers,
+      'User-Agent': 'rewards-tracker',
+    },
+    method: body ? 'POST' : 'GET',
+    body,
+  })
+    .then((res) => res.json())
+    .catch((e) => {
+      throw e;
+    });
 }

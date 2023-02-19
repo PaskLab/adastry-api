@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guard/jwt-auth.guard';
 import { BlockfrostProxyService } from './blockfrost-proxy.service';
@@ -54,12 +46,5 @@ export class ProxyController {
     @Param('hash') hash: string,
   ): Promise<components['schemas']['tx_content']> {
     return this.proxy.txInfo(hash);
-  }
-
-  @Post('submit')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async submit(@Body() body: any): Promise<string> {
-    return this.proxy.submit(body);
   }
 }

@@ -1,10 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   forwardRef,
   Inject,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -22,6 +25,8 @@ import { InvoiceDto, InvoiceListDto } from './dto/invoice.dto';
 import { BlockfrostService } from '../utils/api/blockfrost.service';
 import { Cron } from '@nestjs/schedule';
 import { UserAccount } from '../account/entities/user-account.entity';
+import process from 'process';
+import { request as apiRequest } from '../utils/api/api.helper';
 
 @Injectable()
 export class BillingService {
@@ -52,6 +57,27 @@ export class BillingService {
       throw new BadRequestException('Must contain at least 1 product.');
     }
 
+    // Prevent duplicate payment for a same account
+    if (newInvoice.accounts.length) {
+      const accountsInvoices = await this.findActiveAccounts(
+        newInvoice.accounts,
+        true,
+      );
+      if (accountsInvoices.length)
+        throw new ConflictException(
+          'Active or Pending subscription already exist for at least one of the selected account(s).',
+        );
+    }
+
+    // Prevent duplicate payment for a same pool
+    if (newInvoice.pools.length) {
+      const poolsInvoices = await this.findActivePools(newInvoice.pools, true);
+      if (poolsInvoices.length)
+        throw new ConflictException(
+          'Active or Pending subscription already exist for at least one of the selected pool(s).',
+        );
+    }
+
     const accounts: Account[] = [];
 
     for (const stakeAddress of newInvoice.accounts) {
@@ -80,13 +106,32 @@ export class BillingService {
       pools.push(pool);
     }
 
+    if (!process.env.SUBMIT_API_URL) {
+      throw new InternalServerErrorException('Submit API URL not set.');
+    }
+
+    let txHash = '';
+
+    try {
+      txHash = await apiRequest(
+        process.env.SUBMIT_API_URL,
+        '',
+        { 'Content-Type': 'application/cbor' },
+        Uint8Array.from(Buffer.from(newInvoice.txBody, 'hex')),
+      );
+    } catch (e) {
+      throw new ServiceUnavailableException(
+        'Failed to submit payment. Please try again later or contact support.',
+      );
+    }
+
     const totalAmount =
       newInvoice.accounts.length * this.BILLING_CONFIG.accountUnitPrice +
       newInvoice.pools.length * this.BILLING_CONFIG.poolUnitPrice;
 
     const invoice = new Invoice();
     invoice.invoiceId = newInvoice.invoiceId;
-    invoice.txHash = newInvoice.txHash;
+    invoice.txHash = txHash.length != 64 ? txHash : newInvoice.txHash;
     invoice.user = user;
     invoice.createdAt = new Date().valueOf().toString();
     invoice.totalAmount = totalAmount;
@@ -377,28 +422,6 @@ export class BillingService {
     }
 
     return query.getMany();
-  }
-
-  async findLastAccountInvoice(
-    stakeAddress: string,
-  ): Promise<InvoiceAccount | null> {
-    const date = new Date();
-    date.setFullYear(date.getFullYear() - 1);
-
-    return this.em
-      .getRepository(InvoiceAccount)
-      .createQueryBuilder('ia')
-      .innerJoinAndSelect('ia.invoice', 'invoice')
-      .leftJoinAndSelect('ia.account', 'account')
-      .where('invoice.createdAt > :aYearAgo', {
-        aYearAgo: date.valueOf().toString(),
-      })
-      .andWhere('invoice.confirmed IS TRUE')
-      .andWhere('account.stakeAddress = :stakeAddress', {
-        stakeAddress: stakeAddress,
-      })
-      .orderBy('invoice.createdAt', 'DESC')
-      .getOne();
   }
 
   async findUserInvoices(userId: number): Promise<Invoice[]> {

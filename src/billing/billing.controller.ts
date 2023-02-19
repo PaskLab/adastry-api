@@ -9,6 +9,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -22,6 +23,7 @@ import { NewInvoiceDto } from './dto/new-invoice.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { InvoiceListDto } from './dto/invoice.dto';
+import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
 
 @ApiTags('Billing')
 @Controller('billing')
@@ -49,9 +51,10 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiCreatedResponse({ type: ResponseDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
+  @ApiConflictResponse({ type: ConflictErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   async newInvoice(@Request() req, @Body() newInvoice: NewInvoiceDto) {
     await this.billingService.createInvoice(req.user.id, newInvoice);
-    return new ResponseDto(`Invoice created.`);
+    return new ResponseDto(`Payment sent and new invoice created.`);
   }
 }

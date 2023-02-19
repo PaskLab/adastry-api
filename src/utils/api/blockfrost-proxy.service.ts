@@ -44,18 +44,6 @@ export class BlockfrostProxyService {
     return this.api.txs(hash);
   }
 
-  async submit(body: any): Promise<string> {
-    if (process.env.SUBMIT_API_URL) {
-      return this.request(
-        process.env.SUBMIT_API_URL,
-        { contentType: 'application/cbor' },
-        body,
-      );
-    }
-
-    return this.api.txSubmit(body);
-  }
-
   async request(
     endpoint: string,
     headers?: any,

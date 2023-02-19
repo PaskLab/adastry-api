@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import config from '../../../config.json';
-import { request as apiRequest } from './api.helper';
+import { silentFailRequest as apiRequest } from './api.helper';
 
 @Injectable()
 export class CoinGeckoService {

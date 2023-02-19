@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, Length, Matches } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
 
 export class NewInvoiceDto {
   @IsString()
@@ -19,6 +25,14 @@ export class NewInvoiceDto {
     example: '26524fb341571fba35c07ee2ba29e5589b2211cfa00d76f1f4918ddb048091f5',
   })
   txHash!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    title: 'Transaction Hex Encoded Body',
+    example: '26524fb341571fba35c07ee2ba29e5589b2211cfa00...',
+  })
+  txBody!: string;
 
   @IsArray()
   @Matches('^stake1[a-z0-9]{53}$', '', {
