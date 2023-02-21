@@ -48,6 +48,7 @@ import { QuarterParam } from './params/quarter.param';
 import { ForbiddenErrorDto } from '../utils/dto/forbidden-error.dto';
 import { UserPoolDto } from './dto/user-pool.dto';
 import { BillingService } from '../billing/billing.service';
+import { StartMonthParam } from './params/start-month.param';
 
 @ApiTags('User Account')
 @Controller('account')
@@ -186,6 +187,7 @@ export class UserAccountController {
     @Request() request,
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
+    @Query() monthParam: StartMonthParam,
     @Query() formatParam: TxCsvFormatParam,
     @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
@@ -205,6 +207,7 @@ export class UserAccountController {
       request.user.id,
       stakeAddressParam.stakeAddress,
       yearParam.year,
+      monthParam.startMonth,
       formatParam.format,
       quarterParam.quarter,
     );
@@ -219,6 +222,7 @@ export class UserAccountController {
   async exportBulkTransactions(
     @Request() request,
     @Param() yearParam: YearParam,
+    @Query() monthParam: StartMonthParam,
     @Query() formatParam: TxCsvFormatParam,
     @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
@@ -226,6 +230,7 @@ export class UserAccountController {
       request,
       request.user.id,
       yearParam.year,
+      monthParam.startMonth,
       formatParam.format,
       quarterParam.quarter,
     );
@@ -242,6 +247,7 @@ export class UserAccountController {
     @Request() request,
     @Param() stakeAddressParam: StakeAddressParam,
     @Param() yearParam: YearParam,
+    @Query() monthParam: StartMonthParam,
     @Query() formatParam: RewardsCsvFormatParam,
     @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
@@ -261,6 +267,7 @@ export class UserAccountController {
       request.user.id,
       stakeAddressParam.stakeAddress,
       yearParam.year,
+      monthParam.startMonth,
       formatParam.format,
       quarterParam.quarter,
     );
@@ -275,6 +282,7 @@ export class UserAccountController {
   async exportBulkRewards(
     @Request() request,
     @Param() yearParam: YearParam,
+    @Query() monthParam: StartMonthParam,
     @Query() formatParam: RewardsCsvFormatParam,
     @Query() quarterParam: QuarterParam,
   ): Promise<CsvFileDto> {
@@ -282,6 +290,7 @@ export class UserAccountController {
       request,
       request.user.id,
       yearParam.year,
+      monthParam.startMonth,
       formatParam.format,
       quarterParam.quarter,
     );

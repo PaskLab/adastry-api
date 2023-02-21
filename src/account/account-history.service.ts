@@ -4,7 +4,7 @@ import { EntityManager } from 'typeorm';
 import config from '../../config.json';
 import { AccountHistory } from './entities/account-history.entity';
 import { AccountHistoryQueryType } from './types/account-history-query.type';
-import { dateToUnix } from '../utils/utils';
+import { generateUnixTimeRange } from '../utils/utils';
 import { FromQueryType } from '../utils/types/from-query.type';
 
 @Injectable()
@@ -114,23 +114,10 @@ export class AccountHistoryService {
   findByYear(
     stakeAddress: string,
     year: number,
+    month?: number,
     quarter?: number,
   ): Promise<AccountHistory[]> {
-    let startMonth = '01';
-    let endMonth = '12';
-    let endDay = '31';
-
-    if (quarter) {
-      const zeroLead = (str) => ('0' + str).slice(-2);
-      startMonth = zeroLead((quarter - 1) * 3 + 1);
-      endMonth = zeroLead((quarter - 1) * 3 + 3);
-      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
-    }
-
-    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
-    const lastDay = dateToUnix(
-      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
-    );
+    const range = generateUnixTimeRange(year, month, quarter);
 
     return this.em
       .getRepository(AccountHistory)
@@ -142,7 +129,7 @@ export class AccountHistoryService {
       })
       .andWhere(
         'epoch.startTime >= :startTime AND epoch.startTime <= :endTime',
-        { startTime: firstDay, endTime: lastDay },
+        range,
       )
       .orderBy('epoch.startTime', 'ASC')
       .getMany();
@@ -151,25 +138,12 @@ export class AccountHistoryService {
   async findByYearSelection(
     stakeAddresses: string[],
     year: number,
+    month?: number,
     quarter?: number,
   ): Promise<AccountHistory[]> {
     if (!stakeAddresses.length) return [];
 
-    let startMonth = '01';
-    let endMonth = '12';
-    let endDay = '31';
-
-    if (quarter) {
-      const zeroLead = (str) => ('0' + str).slice(-2);
-      startMonth = zeroLead((quarter - 1) * 3 + 1);
-      endMonth = zeroLead((quarter - 1) * 3 + 3);
-      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
-    }
-
-    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
-    const lastDay = dateToUnix(
-      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
-    );
+    const range = generateUnixTimeRange(year, month, quarter);
 
     return this.em
       .getRepository(AccountHistory)
@@ -181,7 +155,7 @@ export class AccountHistoryService {
       })
       .andWhere(
         'epoch.startTime >= :startTime AND epoch.startTime <= :endTime',
-        { startTime: firstDay, endTime: lastDay },
+        range,
       )
       .orderBy('epoch.startTime', 'ASC')
       .addOrderBy('account.id', 'ASC')

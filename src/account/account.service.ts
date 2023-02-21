@@ -176,6 +176,7 @@ export class AccountService {
     userId: number,
     stakeAddress: string,
     year: number,
+    month?: number,
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
@@ -188,12 +189,13 @@ export class AccountService {
     const history = await this.accountHistoryService.findByYear(
       stakeAddress,
       year,
+      month,
       quarter,
     );
 
     if (!history.length) {
       throw new NotFoundException(
-        `No reward history found for ${stakeAddress} in year ${year}`,
+        `No reward history found for ${stakeAddress} in the selected date range.`,
       );
     }
 

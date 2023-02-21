@@ -7,7 +7,9 @@ import * as CSL from '@emurgo/cardano-serialization-lib-nodejs';
 import { BadRequestException } from '@nestjs/common';
 
 export function generateUrl(request: Request, ...args: string[]) {
-  return `https://${request.get('host')}/${args.join('/')}`;
+  return `http${
+    process.env.NODE_ENV === 'development' ? '' : 's'
+  }://${request.get('host')}/${args.join('/')}`;
 }
 
 export function dateFromUnix(unixTimestamp): Date {
@@ -18,14 +20,47 @@ export function dateToUnix(date: Date): number {
   return Math.floor(date.valueOf() / 1000);
 }
 
-export function createTimestamp(date): string {
-  const zeroLead = (str) => ('0' + str).slice(-2);
+export const zeroLead = (str) => ('0' + str).slice(-2);
 
+export function createTimestamp(date): string {
   return `${date.getUTCFullYear()}-${zeroLead(
     date.getUTCMonth() + 1,
   )}-${zeroLead(date.getUTCDate())} ${zeroLead(date.getUTCHours())}:${zeroLead(
     date.getUTCMinutes(),
   )}:${zeroLead(date.getUTCSeconds())}Z`;
+}
+
+export function generateUnixTimeRange(
+  year: number,
+  startMonth?: number,
+  quarter?: number,
+): { startTime: number; endTime: number } {
+  const endDay = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  // Use 0-11 month notation for modulo support
+  let _startMonth = startMonth ? startMonth - 1 : 0;
+  let endMonth = _startMonth === 0 ? 11 : _startMonth - 1;
+
+  if (quarter) {
+    endMonth = ((quarter - 1) * 3 + 2 + _startMonth) % 12;
+    _startMonth = ((quarter - 1) * 3 + _startMonth) % 12;
+  }
+
+  return {
+    startTime: dateToUnix(
+      new Date(
+        `${
+          startMonth && _startMonth < startMonth - 1 ? year + 1 : year
+        }-${zeroLead(_startMonth + 1)}-01T00:00:00Z`,
+      ),
+    ),
+    endTime: dateToUnix(
+      new Date(
+        `${
+          startMonth && endMonth < startMonth - 1 ? year + 1 : year
+        }-${zeroLead(endMonth + 1)}-${endDay[endMonth]}T23:59:59Z`,
+      ),
+    ),
+  };
 }
 
 export function roundTo(num: number, decimals: number): number {

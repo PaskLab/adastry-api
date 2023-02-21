@@ -237,6 +237,7 @@ export class UserAccountService {
     request: Request,
     userId: number,
     year: number,
+    month?: number,
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
@@ -266,12 +267,13 @@ export class UserAccountService {
     const history = await this.accountHistoryService.findByYearSelection(
       stakeAddresses,
       year,
+      month,
       quarter,
     );
 
     if (!history.length) {
       throw new NotFoundException(
-        `No reward history found for this user in year ${year}`,
+        `No reward history found for this user in the selected date range.`,
       );
     }
 
@@ -303,6 +305,7 @@ export class UserAccountService {
     request: Request,
     userId: number,
     year: number,
+    month?: number,
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
@@ -332,12 +335,13 @@ export class UserAccountService {
     const history = await this.transactionService.findByYearSelection(
       stakeAddresses,
       year,
+      month,
       quarter,
     );
 
     if (!history.length) {
       throw new NotFoundException(
-        `No transaction history found for this user in year ${year}`,
+        `No transaction history found for this user in the selected date range.`,
       );
     }
 

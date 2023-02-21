@@ -13,7 +13,7 @@ import { CsvFieldsType } from './types/csv-fields.type';
 import {
   createTimestamp,
   dateFromUnix,
-  dateToUnix,
+  generateUnixTimeRange,
   generateUrl,
   parseAssetHex,
   toAda,
@@ -82,6 +82,7 @@ export class TransactionService {
     userId: number,
     stakeAddress: string,
     year: number,
+    month?: number,
     format?: string,
     quarter?: number,
   ): Promise<CsvFileDto> {
@@ -91,11 +92,11 @@ export class TransactionService {
       throw new NotFoundException('User not found.');
     }
 
-    const history = await this.findByYear(stakeAddress, year, quarter);
+    const history = await this.findByYear(stakeAddress, year, month, quarter);
 
     if (!history.length) {
       throw new NotFoundException(
-        `No transaction history found for ${stakeAddress} in year ${year}`,
+        `No transaction history found for ${stakeAddress} in the selected date range.`,
       );
     }
 
@@ -288,23 +289,10 @@ export class TransactionService {
   async findByYear(
     stakeAddress: string,
     year: number,
+    month?: number,
     quarter?: number,
   ): Promise<Transaction[]> {
-    let startMonth = '01';
-    let endMonth = '12';
-    let endDay = '31';
-
-    if (quarter) {
-      const zeroLead = (str) => ('0' + str).slice(-2);
-      startMonth = zeroLead((quarter - 1) * 3 + 1);
-      endMonth = zeroLead((quarter - 1) * 3 + 3);
-      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
-    }
-
-    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
-    const lastDay = dateToUnix(
-      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
-    );
+    const range = generateUnixTimeRange(year, month, quarter);
 
     return this.em
       .getRepository(Transaction)
@@ -315,10 +303,7 @@ export class TransactionService {
       })
       .andWhere(
         'transaction.blockTime >= :startTime AND transaction.blockTime <= :endTime',
-        {
-          startTime: firstDay,
-          endTime: lastDay,
-        },
+        range,
       )
       .orderBy('transaction.blockTime', 'ASC')
       .addOrderBy('transaction.txIndex', 'ASC')
@@ -328,25 +313,12 @@ export class TransactionService {
   async findByYearSelection(
     stakeAddresses: string[],
     year: number,
+    month?: number,
     quarter?: number,
   ): Promise<Transaction[]> {
     if (!stakeAddresses.length) return [];
 
-    let startMonth = '01';
-    let endMonth = '12';
-    let endDay = '31';
-
-    if (quarter) {
-      const zeroLead = (str) => ('0' + str).slice(-2);
-      startMonth = zeroLead((quarter - 1) * 3 + 1);
-      endMonth = zeroLead((quarter - 1) * 3 + 3);
-      endDay = quarter < 2 || quarter > 3 ? '31' : '30';
-    }
-
-    const firstDay = dateToUnix(new Date(`${year}-${startMonth}-01T00:00:00Z`));
-    const lastDay = dateToUnix(
-      new Date(`${year}-${endMonth}-${endDay}T23:59:59Z`),
-    );
+    const range = generateUnixTimeRange(year, month, quarter);
 
     return (
       this.em
@@ -358,10 +330,7 @@ export class TransactionService {
         })
         .andWhere(
           'transaction.blockTime >= :startTime AND transaction.blockTime <= :endTime',
-          {
-            startTime: firstDay,
-            endTime: lastDay,
-          },
+          range,
         )
         .orderBy('transaction.blockTime', 'ASC')
         .addOrderBy('transaction.txIndex', 'ASC')
