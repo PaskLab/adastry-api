@@ -30,12 +30,13 @@ export function createTimestamp(date): string {
   )}:${zeroLead(date.getUTCSeconds())}Z`;
 }
 
+const isLeapYear = (year: number) => new Date(year, 1, 29).getDate() === 29;
+
 export function generateUnixTimeRange(
   year: number,
   startMonth?: number,
   quarter?: number,
 ): { startTime: number; endTime: number } {
-  const endDay = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   // Use 0-11 month notation for modulo support
   let _startMonth = startMonth ? startMonth - 1 : 0;
   let endMonth = _startMonth === 0 ? 11 : _startMonth - 1;
@@ -45,19 +46,32 @@ export function generateUnixTimeRange(
     _startMonth = ((quarter - 1) * 3 + _startMonth) % 12;
   }
 
+  const startYear =
+    startMonth && _startMonth < startMonth - 1 ? year + 1 : year;
+  const endYear = startMonth && endMonth < startMonth - 1 ? year + 1 : year;
+
+  const endDay = [
+    31,
+    isLeapYear(endYear) ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+
   return {
     startTime: dateToUnix(
-      new Date(
-        `${
-          startMonth && _startMonth < startMonth - 1 ? year + 1 : year
-        }-${zeroLead(_startMonth + 1)}-01T00:00:00Z`,
-      ),
+      new Date(`${startYear}-${zeroLead(_startMonth + 1)}-01T00:00:00Z`),
     ),
     endTime: dateToUnix(
       new Date(
-        `${
-          startMonth && endMonth < startMonth - 1 ? year + 1 : year
-        }-${zeroLead(endMonth + 1)}-${endDay[endMonth]}T23:59:59Z`,
+        `${endYear}-${zeroLead(endMonth + 1)}-${endDay[endMonth]}T23:59:59Z`,
       ),
     ),
   };
