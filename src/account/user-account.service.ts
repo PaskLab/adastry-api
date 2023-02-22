@@ -393,7 +393,7 @@ export class UserAccountService {
       .createQueryBuilder('userAccount')
       .innerJoinAndSelect('userAccount.account', 'account')
       .innerJoinAndSelect('userAccount.user', 'user')
-      .innerJoinAndSelect('account.pool', 'pool')
+      .leftJoinAndSelect('account.pool', 'pool')
       .leftJoinAndSelect('account.epoch', 'epoch')
       .leftJoinAndSelect('pool.epoch', 'poolEpoch')
       .where('user.id = :userId')
