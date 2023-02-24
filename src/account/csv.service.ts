@@ -389,11 +389,14 @@ export class CsvService {
         sentCurrency: sentCurrency,
         receivedAmount: row.receivedAmount,
         receivedCurrency: receivedCurrency,
-        feeAmount: row.feeAmount,
+        feeAmount:
+          row.sentAmount.toString() === '0' && row.feeAmount != ''
+            ? ''
+            : row.feeAmount, // Handle self transaction for Koinly
         feeCurrency:
           row.sentAmount.toString() === '0' && row.feeAmount != ''
             ? ''
-            : row.feeCurrency, // Handle self transaction
+            : row.feeCurrency, // Handle self transaction for Koinly
         netWorthAmount: row.netWorthAmount,
         netWorthCurrency: row.netWorthCurrency,
         label:
