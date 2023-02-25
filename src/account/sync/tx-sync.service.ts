@@ -6,7 +6,7 @@ import { BlockfrostService } from '../../utils/api/blockfrost.service';
 import { Account } from '../entities/account.entity';
 import { AccountAddress } from '../entities/account-address.entity';
 import { AddressTransactionType } from '../../utils/api/types/address-transaction.type';
-import { BlockfrostAmount } from '../../utils/api/types/transaction-outputs.type';
+import { AssetAmount } from '../../utils/api/types/transaction-outputs.type';
 import { Transaction } from '../entities/transaction.entity';
 import { Asset } from '../entities/asset.entity';
 import { parseAssetHex, toAda } from '../../utils/utils';
@@ -162,7 +162,7 @@ export class TxSyncService {
         if (!txInfo.validContract) comments.push('COLLATERAL LOSS');
 
         // Sort and accumulate sent input and received output amounts
-        const txAmounts: BlockfrostAmount[] = [];
+        const txAmounts: AssetAmount[] = [];
 
         // Handle withdraw
         const withdraw = await this.accountWithdrawService.findOneByAccountTx(
@@ -239,8 +239,8 @@ export class TxSyncService {
         }
 
         // Split Received and Sent
-        const receivedAmounts: BlockfrostAmount[] = [];
-        const sentAmounts: BlockfrostAmount[] = [];
+        const receivedAmounts: AssetAmount[] = [];
+        const sentAmounts: AssetAmount[] = [];
 
         for (const txAmount of txAmounts) {
           // Amounts that equal 0 are rejected

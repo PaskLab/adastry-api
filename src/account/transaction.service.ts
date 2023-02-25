@@ -23,6 +23,7 @@ import config from '../../config.json';
 import { Transaction } from './entities/transaction.entity';
 import { CsvFileInfoType } from './types/csv-file-info.type';
 import { UserService } from '../user/user.service';
+import { AssetAmount } from '../utils/api/types/transaction-outputs.type';
 
 @Injectable()
 export class TransactionService {
@@ -126,10 +127,67 @@ export class TransactionService {
     filename: string,
     history: Transaction[],
     format?: string,
+    merge = false,
   ): Promise<CsvFileInfoType> {
+    const txs: Transaction[] = [...history];
+    let _history: Transaction[] = [];
+
+    if (merge) {
+      while (txs.length) {
+        const baseTx = txs.shift();
+        if (!baseTx) break;
+
+        let index = txs.findIndex((tx) => tx.txHash === baseTx.txHash);
+        while (index >= 0) {
+          const matchTx = txs.splice(index, 1)[0];
+
+          const baseSent: AssetAmount[] = JSON.parse(baseTx.sent);
+          const matchSent: AssetAmount[] = JSON.parse(matchTx.sent);
+          const baseReceived: AssetAmount[] = JSON.parse(baseTx.received);
+          const matchReceived: AssetAmount[] = JSON.parse(matchTx.received);
+
+          for (const asset of matchSent) {
+            const assetIndex = baseSent.findIndex((a) => a.unit === asset.unit);
+            if (assetIndex >= 0) {
+              baseSent[assetIndex].quantity = (
+                BigInt(baseSent[assetIndex].quantity) + BigInt(asset.quantity)
+              ).toString();
+            } else {
+              baseSent.push(asset);
+            }
+          }
+          for (const asset of matchReceived) {
+            const assetIndex = baseReceived.findIndex(
+              (a) => a.unit === asset.unit,
+            );
+            if (assetIndex >= 0) {
+              baseReceived[assetIndex].quantity = (
+                BigInt(baseReceived[assetIndex].quantity) +
+                BigInt(asset.quantity)
+              ).toString();
+            } else {
+              baseReceived.push(asset);
+            }
+          }
+
+          baseTx.txType = 'MX';
+          baseTx.sent = JSON.stringify(baseSent);
+          baseTx.received = JSON.stringify(baseReceived);
+          if (matchTx.fees > baseTx.fees) {
+            baseTx.fees = matchTx.fees;
+          }
+
+          index = txs.findIndex((tx) => tx.txHash === baseTx.txHash);
+        }
+        _history.push(baseTx);
+      }
+    } else {
+      _history = history;
+    }
+
     const data: CsvFieldsType[] = [];
 
-    for (const record of history) {
+    for (const record of _history) {
       const received = JSON.parse(record.received);
       const sent = JSON.parse(record.sent);
 
@@ -152,15 +210,6 @@ export class TransactionService {
       if (received.length < 2 && sent.length < 2) {
         // Simple transaction & trade
         const row = JSON.parse(JSON.stringify(template));
-        if (received.length) {
-          if (received[0].unit === 'lovelace') {
-            row.receivedAmount = toAda(parseInt(received[0].quantity));
-            row.receivedCurrency = 'ADA';
-          } else {
-            row.receivedAmount = BigInt(received[0].quantity).toString();
-            row.receivedCurrency = received[0].unit;
-          }
-        }
         if (sent.length) {
           if (sent[0].unit === 'lovelace') {
             row.sentAmount = toAda(parseInt(sent[0].quantity) - record.fees);
@@ -172,10 +221,57 @@ export class TransactionService {
             row.sentCurrency = sent[0].unit;
           }
         }
+        if (received.length) {
+          if (received[0].unit === 'lovelace') {
+            row.receivedAmount = toAda(parseInt(received[0].quantity));
+            row.receivedCurrency = 'ADA';
+          } else {
+            row.receivedAmount = BigInt(received[0].quantity).toString();
+            row.receivedCurrency = received[0].unit;
+          }
+        }
 
         data.push(row);
       } else {
         // Complex transactions are exploded in multiples records
+        for (const tx of sent) {
+          const row = JSON.parse(JSON.stringify(template));
+          if (tx.unit === 'lovelace') {
+            row.sentAmount = toAda(parseInt(tx.quantity) - record.fees);
+            row.sentCurrency = 'ADA';
+            row.feeAmount = toAda(record.fees);
+            row.feeCurrency = 'ADA';
+
+            if (merge) {
+              const receivedIndex = received.findIndex(
+                (a) => a.unit === tx.unit,
+              );
+              if (receivedIndex >= 0) {
+                const rxAsset = received.splice(receivedIndex, 1)[0];
+                row.receivedAmount = toAda(parseInt(rxAsset.quantity));
+                row.receivedCurrency = 'ADA';
+              }
+            }
+          } else {
+            const unit = tx.unit;
+            row.sentAmount = BigInt(tx.quantity).toString();
+            row.sentCurrency = unit;
+            row.description = `Subpart of txHash: ${row.txHash}`;
+            row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
+
+            if (merge) {
+              const receivedIndex = received.findIndex(
+                (a) => a.unit === tx.unit,
+              );
+              if (receivedIndex >= 0) {
+                const rxAsset = received.splice(receivedIndex, 1)[0];
+                row.receivedAmount = BigInt(rxAsset.quantity).toString();
+                row.receivedCurrency = unit;
+              }
+            }
+          }
+          data.push(row);
+        }
         for (const rx of received) {
           const row = JSON.parse(JSON.stringify(template));
           if (rx.unit === 'lovelace') {
@@ -185,22 +281,6 @@ export class TransactionService {
             const unit = rx.unit;
             row.receivedAmount = BigInt(rx.quantity).toString();
             row.receivedCurrency = unit;
-            row.description = `Subpart of txHash: ${row.txHash}`;
-            row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
-          }
-          data.push(row);
-        }
-        for (const tx of sent) {
-          const row = JSON.parse(JSON.stringify(template));
-          if (tx.unit === 'lovelace') {
-            row.sentAmount = toAda(parseInt(tx.quantity) - record.fees);
-            row.sentCurrency = 'ADA';
-            row.feeAmount = toAda(record.fees);
-            row.feeCurrency = 'ADA';
-          } else {
-            const unit = tx.unit;
-            row.sentAmount = BigInt(tx.quantity).toString();
-            row.sentCurrency = unit;
             row.description = `Subpart of txHash: ${row.txHash}`;
             row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
           }

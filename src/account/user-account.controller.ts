@@ -49,6 +49,7 @@ import { ForbiddenErrorDto } from '../utils/dto/forbidden-error.dto';
 import { UserPoolDto } from './dto/user-pool.dto';
 import { BillingService } from '../billing/billing.service';
 import { StartMonthParam } from './params/start-month.param';
+import { MergeParam } from './params/merge.param';
 
 @ApiTags('User Account')
 @Controller('account')
@@ -225,6 +226,7 @@ export class UserAccountController {
     @Query() monthParam: StartMonthParam,
     @Query() formatParam: TxCsvFormatParam,
     @Query() quarterParam: QuarterParam,
+    @Query() mergeParam: MergeParam,
   ): Promise<CsvFileDto> {
     return this.userAccountService.getBulkTransactionsCSV(
       request,
@@ -233,6 +235,7 @@ export class UserAccountController {
       monthParam.startMonth,
       formatParam.format,
       quarterParam.quarter,
+      mergeParam.merge === 'true',
     );
   }
 

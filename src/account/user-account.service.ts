@@ -308,6 +308,7 @@ export class UserAccountService {
     month?: number,
     format?: string,
     quarter?: number,
+    merge = false,
   ): Promise<CsvFileDto> {
     const user = await this.userService.findOneById(userId);
 
@@ -354,6 +355,7 @@ export class UserAccountService {
       filename,
       history,
       format,
+      merge,
     );
 
     return new CsvFileDto({

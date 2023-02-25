@@ -2,7 +2,7 @@ export type TransactionOutputsType = {
   hash: string;
   inputs: {
     address: string;
-    amount: BlockfrostAmount[];
+    amount: AssetAmount[];
     txHash: string;
     outputIndex: number;
     dataHash: string | null;
@@ -10,12 +10,12 @@ export type TransactionOutputsType = {
   }[];
   outputs: {
     address: string;
-    amount: BlockfrostAmount[];
+    amount: AssetAmount[];
     outputIndex: number;
   }[];
 };
 
-export type BlockfrostAmount = {
+export type AssetAmount = {
   unit: string;
   quantity: string;
 };
