@@ -204,7 +204,9 @@ export class AssetMappingService {
     const count = await this.em
       .getRepository(UserMapping)
       .createQueryBuilder('mapping')
+      .innerJoin('mapping.user', 'user')
       .where('mapping.koinlyId LIKE :prefix', { prefix: `${prefix}%` })
+      .andWhere('user.id = :userId', { userId })
       .getCount();
 
     return `${prefix}${count + 1}`;
