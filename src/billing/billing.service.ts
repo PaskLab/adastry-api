@@ -131,7 +131,7 @@ export class BillingService {
 
     const invoice = new Invoice();
     invoice.invoiceId = newInvoice.invoiceId;
-    invoice.txHash = txHash.length != 64 ? txHash : newInvoice.txHash;
+    invoice.txHash = txHash.length === 64 ? txHash : newInvoice.txHash;
     invoice.user = user;
     invoice.createdAt = new Date().valueOf().toString();
     invoice.totalAmount = totalAmount;
