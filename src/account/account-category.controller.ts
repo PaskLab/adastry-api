@@ -12,13 +12,11 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiConflictResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ConflictErrorDto } from '../utils/dto/conflict-error.dto';
 import { BadRequestErrorDto } from '../utils/dto/bad-request-error.dto';
 import { NotFoundErrorDto } from '../utils/dto/not-found-error.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
