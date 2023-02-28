@@ -40,7 +40,6 @@ export class AccountCategoryController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiCreatedResponse({ type: AccountCategoryDto })
-  @ApiConflictResponse({ type: ConflictErrorDto })
   @ApiBadRequestResponse({ type: BadRequestErrorDto })
   @ApiNotFoundResponse({ type: NotFoundErrorDto })
   async createCategory(

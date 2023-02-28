@@ -123,8 +123,6 @@ export class AccountCategoryService {
     );
     const accountCategories = await this.findUserCategories(userId);
 
-    console.log(accountCategories.length);
-
     const categories: { [key: number]: AccountCategoryDto } = {};
 
     for (const uC of userCategories) {
