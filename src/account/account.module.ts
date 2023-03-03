@@ -35,11 +35,15 @@ import { AssetMapping } from './entities/asset-mapping.entity';
 import { UserMapping } from './entities/user-mapping.entity';
 import { AssetMappingService } from './asset-mapping.service';
 import { AssetController } from './asset.controller';
+import { AccountCategory } from './entities/account-category.entity';
+import { AccountCategoryController } from './account-category.controller';
+import { AccountCategoryService } from './account-category.service';
 
 export const entities = [
   Account,
   AccountHistory,
   UserAccount,
+  AccountCategory,
   AccountWithdraw,
   AccountAddress,
   TransactionAddress,
@@ -59,7 +63,12 @@ export const entities = [
     UserModule,
     forwardRef(() => BillingModule),
   ],
-  controllers: [UserAccountController, StatsController, AssetController],
+  controllers: [
+    UserAccountController,
+    StatsController,
+    AssetController,
+    AccountCategoryController,
+  ],
   providers: [
     AccountService,
     UserAccountService,
@@ -77,6 +86,7 @@ export const entities = [
     AccountWithdrawService,
     TransactionAddressService,
     AssetMappingService,
+    AccountCategoryService,
   ],
   exports: [
     AccountService,
