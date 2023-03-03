@@ -27,6 +27,7 @@ import { TransactionService } from './transaction.service';
 import { UserPoolDto } from './dto/user-pool.dto';
 import { Pool } from '../pool/entities/pool.entity';
 import { BillingService } from '../billing/billing.service';
+import { AccountCategoryService } from './account-category.service';
 
 @Injectable()
 export class UserAccountService {
@@ -39,6 +40,8 @@ export class UserAccountService {
     private readonly userService: UserService,
     @Inject(forwardRef(() => BillingService))
     private readonly billingService: BillingService,
+    @Inject(forwardRef(() => AccountCategoryService))
+    private readonly categoryService: AccountCategoryService,
   ) {}
 
   async getAll(userId: number): Promise<UserAccountDto[]> {
@@ -240,6 +243,7 @@ export class UserAccountService {
     month?: number,
     format?: string,
     quarter?: number,
+    slug?: string,
   ): Promise<CsvFileDto> {
     const user = await this.userService.findOneById(userId);
 
@@ -251,7 +255,7 @@ export class UserAccountService {
       userId,
     );
 
-    const stakeAddresses: string[] = [];
+    let stakeAddresses: string[] = [];
 
     // PREMIUM CHECK
     for (const state of userAccountsState) {
@@ -262,6 +266,16 @@ export class UserAccountService {
 
     if (!stakeAddresses.length) {
       throw new NotFoundException('No account subscribed to premium plan.');
+    }
+
+    if (slug) {
+      const categoryAccounts =
+        await this.categoryService.findCategoryAccountsBySlug(userId, slug);
+      stakeAddresses = stakeAddresses.filter((stakeAddress) =>
+        categoryAccounts.some(
+          (cA) => cA.account.account.stakeAddress === stakeAddress,
+        ),
+      );
     }
 
     const history = await this.accountHistoryService.findByYearSelection(
@@ -308,6 +322,7 @@ export class UserAccountService {
     month?: number,
     format?: string,
     quarter?: number,
+    slug?: string,
   ): Promise<CsvFileDto> {
     const user = await this.userService.findOneById(userId);
 
@@ -319,7 +334,7 @@ export class UserAccountService {
       userId,
     );
 
-    const stakeAddresses: string[] = [];
+    let stakeAddresses: string[] = [];
 
     // PREMIUM CHECK
     for (const state of userAccountsState) {
@@ -330,6 +345,16 @@ export class UserAccountService {
 
     if (!stakeAddresses.length) {
       throw new NotFoundException('No account subscribed to premium plan.');
+    }
+
+    if (slug) {
+      const categoryAccounts =
+        await this.categoryService.findCategoryAccountsBySlug(userId, slug);
+      stakeAddresses = stakeAddresses.filter((stakeAddress) =>
+        categoryAccounts.some(
+          (cA) => cA.account.account.stakeAddress === stakeAddress,
+        ),
+      );
     }
 
     const history = await this.transactionService.findByYearSelection(

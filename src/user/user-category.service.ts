@@ -105,6 +105,7 @@ export class UserCategoryService {
       .innerJoin('category.user', 'user')
       .where('user.id = :userId', { userId })
       .andWhere('category.type = :type', { type })
+      .orderBy('category.name', 'ASC')
       .getMany();
   }
 }

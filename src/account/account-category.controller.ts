@@ -26,6 +26,7 @@ import { AccountCategoryDto } from './dto/category/account-category.dto';
 import { ResponseDto } from '../utils/dto/response.dto';
 import { UpdateCategoryDto } from './dto/category/update-category.dto';
 import { SlugParam } from './params/slug.param';
+import { UserAccountDto } from './dto/user-account.dto';
 
 @ApiTags('Account Category')
 @Controller('account/category')
@@ -83,5 +84,19 @@ export class AccountCategoryController {
   ): Promise<ResponseDto> {
     await this.accountCategoryService.remove(req.user.id, param.slug);
     return new ResponseDto(`Category ${param.slug} successfully deleted.`);
+  }
+
+  @Get(':slug/accounts')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiCreatedResponse({ type: [UserAccountDto] })
+  async accountsList(
+    @Request() req,
+    @Param() param: SlugParam,
+  ): Promise<UserAccountDto[]> {
+    return this.accountCategoryService.getCategoryAccountList(
+      req.user.id,
+      param.slug,
+    );
   }
 }

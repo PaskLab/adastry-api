@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { UserService } from '../user/user.service';
@@ -8,6 +13,7 @@ import { UpdateCategoryDto } from './dto/category/update-category.dto';
 import { UserCategory } from '../user/entities/user-category.entity';
 import { AccountCategory } from './entities/account-category.entity';
 import { UserAccountService } from './user-account.service';
+import { UserAccountDto } from './dto/user-account.dto';
 
 @Injectable()
 export class AccountCategoryService {
@@ -17,6 +23,7 @@ export class AccountCategoryService {
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly userService: UserService,
     private readonly userCategoryService: UserCategoryService,
+    @Inject(forwardRef(() => UserAccountService))
     private readonly userAccountService: UserAccountService,
   ) {}
 
@@ -76,10 +83,12 @@ export class AccountCategoryService {
       }
     }
 
-    if (update.accounts && update.accounts.length) {
+    if (update.accounts) {
       const categoryAccounts = await this.findCategoryAccounts(category.id);
 
-      const addresses = categoryAccounts.map((cA) => cA.account.stakeAddress);
+      const addresses = categoryAccounts.map(
+        (cA) => cA.account.account.stakeAddress,
+      );
 
       for (const account of update.accounts) {
         if (!addresses.includes(account)) {
@@ -93,7 +102,7 @@ export class AccountCategoryService {
           }
 
           const accountCategory = new AccountCategory();
-          accountCategory.account = userAccount.account;
+          accountCategory.account = userAccount;
           accountCategory.category = category;
 
           await this.em.save(accountCategory);
@@ -101,7 +110,7 @@ export class AccountCategoryService {
       }
 
       for (const cA of categoryAccounts) {
-        if (!update.accounts.includes(cA.account.stakeAddress)) {
+        if (!update.accounts.includes(cA.account.account.stakeAddress)) {
           await this.em.remove(cA);
         }
       }
@@ -112,7 +121,7 @@ export class AccountCategoryService {
     return new AccountCategoryDto({
       name: category.name,
       slug: category.slug,
-      accounts: accounts.map((a) => a.account.stakeAddress),
+      accounts: accounts.map((a) => a.account.account.stakeAddress),
     });
   }
 
@@ -141,10 +150,10 @@ export class AccountCategoryService {
           accounts: [],
         });
       }
-      categories[aC.category.id].accounts.push(aC.account.stakeAddress);
+      categories[aC.category.id].accounts.push(aC.account.account.stakeAddress);
     }
 
-    return Object.values(categories);
+    return Object.values(categories).sort((a, b) => (a.name < b.name ? -1 : 1));
   }
 
   async remove(userId: number, slug: string): Promise<boolean> {
@@ -163,6 +172,34 @@ export class AccountCategoryService {
     return true;
   }
 
+  async getCategoryAccountList(
+    userId: number,
+    slug: string,
+  ): Promise<UserAccountDto[]> {
+    const category = await this.userCategoryService.findOneCategory(
+      userId,
+      slug,
+      this.CATEGORY_TYPE,
+    );
+
+    if (!category) {
+      throw new NotFoundException(`Category "${slug}" not found.`);
+    }
+
+    const categoryAccounts = await this.findCategoryAccounts(category.id);
+
+    return categoryAccounts.map(
+      (cA) =>
+        new UserAccountDto({
+          stakeAddress: cA.account.account.stakeAddress,
+          name: cA.account.name,
+          syncing: cA.account.account.syncing,
+          createdAt: cA.account.createdAt,
+          updatedAt: cA.account.updatedAt,
+        }),
+    );
+  }
+
   // REPOSITORY
 
   findCategoryAccounts(categoryId: number): Promise<AccountCategory[]> {
@@ -170,8 +207,26 @@ export class AccountCategoryService {
       .getRepository(AccountCategory)
       .createQueryBuilder('ac')
       .innerJoin('ac.category', 'category')
-      .innerJoinAndSelect('ac.account', 'account')
+      .innerJoinAndSelect('ac.account', 'userAccount')
+      .innerJoinAndSelect('userAccount.account', 'account')
       .where('category.id = :categoryId', { categoryId })
+      .getMany();
+  }
+
+  findCategoryAccountsBySlug(
+    userId: number,
+    slug: string,
+  ): Promise<AccountCategory[]> {
+    return this.em
+      .getRepository(AccountCategory)
+      .createQueryBuilder('ac')
+      .innerJoin('ac.category', 'category')
+      .innerJoin('category.user', 'user')
+      .innerJoinAndSelect('ac.account', 'userAccount')
+      .innerJoinAndSelect('userAccount.account', 'account')
+      .where('category.slug = :slug', { slug })
+      .andWhere('category.type = :type', { type: this.CATEGORY_TYPE })
+      .andWhere('user.id = :userId', { userId })
       .getMany();
   }
 
@@ -179,11 +234,13 @@ export class AccountCategoryService {
     return this.em
       .getRepository(AccountCategory)
       .createQueryBuilder('ac')
-      .innerJoinAndSelect('ac.account', 'account')
+      .innerJoinAndSelect('ac.account', 'userAccount')
+      .innerJoinAndSelect('userAccount.account', 'account')
       .innerJoinAndSelect('ac.category', 'category')
       .innerJoin('category.user', 'user')
       .where('user.id = :userId', { userId })
       .andWhere('category.type = :type', { type: this.CATEGORY_TYPE })
+      .orderBy('category.name', 'ASC')
       .getMany();
   }
 }
