@@ -13,6 +13,7 @@ export class InvoiceDto {
       this.pools = props.pools;
       this.createdAt = props.createdAt;
       this.confirmedAt = props.confirmedAt;
+      this.note = props.note;
     }
   }
 
@@ -69,6 +70,11 @@ export class InvoiceDto {
     example: '1641849529405',
   })
   createdAt!: string;
+
+  @ApiProperty({
+    title: 'Note',
+  })
+  note!: string;
 }
 
 export class InvoiceListDto extends ListAbstract {

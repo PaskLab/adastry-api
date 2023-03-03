@@ -129,7 +129,7 @@ export class BillingService {
       newInvoice.accounts.length * this.BILLING_CONFIG.accountUnitPrice +
       newInvoice.pools.length * this.BILLING_CONFIG.poolUnitPrice;
 
-    const invoice = new Invoice();
+    let invoice = new Invoice();
     invoice.invoiceId = newInvoice.invoiceId;
     invoice.txHash = txHash.length === 64 ? txHash : newInvoice.txHash;
     invoice.user = user;
@@ -151,8 +151,18 @@ export class BillingService {
       ip.unitPrice = this.BILLING_CONFIG.poolUnitPrice;
       return ip;
     });
+    invoice.note = txHash.length === 64 ? '' : 'SUBMIT ERROR: ' + txHash;
 
-    return this.em.save(invoice);
+    invoice = await this.em.save(invoice);
+
+    // Invoice saved to monitor transaction. Error thrown to notify user of issue.
+    if (txHash.length !== 64) {
+      throw new InternalServerErrorException(
+        'Failed to submit payment. Please try again later or contact support.',
+      );
+    }
+
+    return invoice;
   }
 
   private plansSelector(
@@ -287,6 +297,7 @@ export class BillingService {
             createdAt: i.createdAt,
             accounts: i.accounts.map((ia) => ia.account.stakeAddress),
             pools: i.pools.map((ip) => ip.pool.poolId),
+            note: i.note,
           }),
       ),
     });

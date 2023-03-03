@@ -46,4 +46,7 @@ export class Invoice {
 
   @Column()
   confirmedAt!: string;
+
+  @Column({ default: '' })
+  note!: string;
 }
