@@ -260,7 +260,7 @@ export class SyncService {
     for (let i = pages; i >= 1; i--) {
       const limit =
         pages === 1 ? epochToSync % this.PROVIDER_LIMIT : this.PROVIDER_LIMIT;
-      const upstreamHistory = await this.source.getPoolHistory(
+      let upstreamHistory = await this.source.getPoolHistory(
         pool.poolId,
         i,
         limit,
@@ -273,6 +273,9 @@ export class SyncService {
         continue;
       }
 
+      // Rewards are updated 2 epoch backwards, ignore 2 last history records
+      // Pool history on Blockfrost is already 1 epoch backwards, so slice 1
+      upstreamHistory = upstreamHistory.slice(i === 1 ? 1 : 0);
       upstreamHistory.reverse();
       history = history.concat(upstreamHistory);
     }
