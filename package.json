@@ -1,10 +1,10 @@
 {
-  "name": "dashboard-api",
+  "name": "adastry-api",
   "version": "1.0.0",
   "description": "",
-  "author": "",
+  "author": "Pascal Lapointe",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
@@ -38,8 +38,6 @@
     "@nestjs/serve-static": "^3.0.0",
     "@nestjs/swagger": "^6.0.5",
     "@nestjs/typeorm": "^9.0.1",
-    "@types/ejs": "^3.1.0",
-    "@types/nodemailer": "^6.4.4",
     "bcrypt": "^5.0.1",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
@@ -57,7 +55,8 @@
     "short-unique-id": "^4.4.4",
     "slugify": "^1.6.5",
     "swagger-ui-express": "^4.1.6",
-    "typeorm": "^0.3.10"
+    "typeorm": "^0.3.10",
+    "utf-8-validate": "^6.0.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
@@ -68,6 +67,9 @@
     "@types/express": "^4.17.13",
     "@types/jest": "^27.0.1",
     "@types/node": "^16.0.0",
+    "@types/ejs": "^3.1.0",
+    "@types/nodemailer": "^6.4.4",
+    "@types/utf-8-validate": "^5.0.0",
     "@types/passport-jwt": "^3.0.6",
     "@types/passport-local": "^1.0.34",
     "@types/supertest": "^2.0.11",

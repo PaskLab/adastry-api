@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import {
@@ -16,22 +16,31 @@ import {
   generateUnixTimeRange,
   generateUrl,
   parseAssetHex,
+  requireSync,
   toAda,
+  toDecimals,
 } from '../utils/utils';
 import { CsvService } from './csv.service';
 import config from '../../config.json';
 import { Transaction } from './entities/transaction.entity';
 import { CsvFileInfoType } from './types/csv-file-info.type';
 import { UserService } from '../user/user.service';
+import { Asset } from './entities/asset.entity';
+import { BlockfrostService } from '../utils/api/blockfrost.service';
+import { isInt } from 'class-validator';
+import isValidUTF8 from 'utf-8-validate';
+import AssetFingerprint from '@emurgo/cip14-js';
 
 @Injectable()
 export class TransactionService {
   private readonly MAX_LIMIT = config.api.pageLimit;
+  private readonly logger = new Logger(TransactionService.name);
 
   constructor(
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly csvService: CsvService,
     private readonly userService: UserService,
+    private readonly source: BlockfrostService,
   ) {}
 
   async getHistory(
@@ -160,7 +169,15 @@ export class TransactionService {
             row.feeAmount = toAda(record.fees);
             row.feeCurrency = 'ADA';
           } else {
-            row.sentAmount = BigInt(sent[0].quantity).toString();
+            const asset = await this.updatedAsset(sent[0].unit);
+            if (asset && asset.decimals) {
+              row.sentAmount = toDecimals(
+                BigInt(sent[0].quantity),
+                asset.decimals,
+              ).toString();
+            } else {
+              row.sentAmount = BigInt(sent[0].quantity).toString();
+            }
             row.sentCurrency = sent[0].unit;
           }
         }
@@ -169,7 +186,15 @@ export class TransactionService {
             row.receivedAmount = toAda(parseInt(received[0].quantity));
             row.receivedCurrency = 'ADA';
           } else {
-            row.receivedAmount = BigInt(received[0].quantity).toString();
+            const asset = await this.updatedAsset(received[0].unit);
+            if (asset && asset.decimals) {
+              row.receivedAmount = toDecimals(
+                BigInt(received[0].quantity),
+                asset.decimals,
+              ).toString();
+            } else {
+              row.receivedAmount = BigInt(received[0].quantity).toString();
+            }
             row.receivedCurrency = received[0].unit;
           }
         }
@@ -187,10 +212,27 @@ export class TransactionService {
             row.feeCurrency = 'ADA';
           } else {
             const unit = tx.unit;
-            row.sentAmount = BigInt(tx.quantity).toString();
+            const parsedAsset = parseAssetHex(unit);
+            const asset = await this.updatedAsset(unit);
+            if (asset && asset.decimals) {
+              row.sentAmount = toDecimals(
+                BigInt(tx.quantity),
+                asset.decimals,
+              ).toString();
+            } else {
+              row.sentAmount = BigInt(tx.quantity).toString();
+            }
             row.sentCurrency = unit;
             row.description = `Subpart of txHash: ${row.txHash}`;
-            row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
+            if (isValidUTF8(Buffer.from(parsedAsset.hexName, 'hex'))) {
+              row.txHash = `(${parsedAsset.name})${row.txHash}`;
+            } else {
+              const fingerprint = AssetFingerprint.fromParts(
+                Buffer.from(parsedAsset.policy, 'hex'),
+                Buffer.from(parsedAsset.hexName, 'hex'),
+              );
+              row.txHash = `(${fingerprint.fingerprint()})${row.txHash}`;
+            }
           }
           data.push(row);
         }
@@ -202,10 +244,27 @@ export class TransactionService {
             row.receivedCurrency = 'ADA';
           } else {
             const unit = rx.unit;
-            row.receivedAmount = BigInt(rx.quantity).toString();
+            const parsedAsset = parseAssetHex(unit);
+            const asset = await this.updatedAsset(unit);
+            if (asset && asset.decimals) {
+              row.receivedAmount = toDecimals(
+                BigInt(rx.quantity),
+                asset.decimals,
+              ).toString();
+            } else {
+              row.receivedAmount = BigInt(rx.quantity).toString();
+            }
             row.receivedCurrency = unit;
             row.description = `Subpart of txHash: ${row.txHash}`;
-            row.txHash = `(${parseAssetHex(unit).name})${row.txHash}`;
+            if (isValidUTF8(Buffer.from(parsedAsset.hexName, 'hex'))) {
+              row.txHash = `(${parsedAsset.name})${row.txHash}`;
+            } else {
+              const fingerprint = AssetFingerprint.fromParts(
+                Buffer.from(parsedAsset.policy, 'hex'),
+                Buffer.from(parsedAsset.hexName, 'hex'),
+              );
+              row.txHash = `(${fingerprint.fingerprint()})${row.txHash}`;
+            }
           }
           data.push(row);
         }
@@ -223,6 +282,44 @@ export class TransactionService {
     }
 
     return fileInfo;
+  }
+
+  private async updatedAsset(hexId: string): Promise<Asset | null> {
+    let asset = await this.em
+      .getRepository(Asset)
+      .findOne({ where: { hexId: hexId } });
+
+    if (!asset) return null;
+
+    // Update asset off chain metadata every 90 days
+    if (requireSync(asset.metadataLastSync, 7776000000)) {
+      const assetInfo = await this.source.getAssetInfo(hexId);
+
+      if (assetInfo) {
+        if (assetInfo.metadata !== asset.metadata) {
+          asset.metadata = assetInfo.metadata;
+        }
+      } else {
+        this.logger.error(
+          `getAssetInfo returned ${assetInfo}`,
+          `TxSync()->syncAsset()->this.source.getAssetInfo(${hexId})`,
+        );
+      }
+
+      if (asset.metadata && asset.metadata !== 'null') {
+        const metadata = JSON.parse(asset.metadata);
+
+        if (metadata && isInt(metadata.decimals)) {
+          asset.decimals = metadata.decimals;
+        }
+      }
+
+      asset.metadataLastSync = new Date();
+
+      asset = await this.em.save(asset);
+    }
+
+    return asset;
   }
 
   // REPOSITORY

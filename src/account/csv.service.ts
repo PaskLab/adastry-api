@@ -22,6 +22,7 @@ import { AssetMappingService } from './asset-mapping.service';
 import { UserMapping } from './entities/user-mapping.entity';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
+import isValidUTF8 from 'utf-8-validate';
 
 @Injectable()
 export class CsvService {
@@ -134,10 +135,15 @@ export class CsvService {
           Buffer.from(asset.hexName, 'hex'),
         );
 
-        sentCurrency = asset.name;
-        description = `${
-          asset.name
-        } - ${fingerprint.fingerprint()} (${description})`;
+        if (isValidUTF8(Buffer.from(asset.hexName, 'hex'))) {
+          sentCurrency = asset.name;
+          description = `${
+            asset.name
+          } - ${fingerprint.fingerprint()} (${description})`;
+        } else {
+          sentCurrency = fingerprint.fingerprint();
+          description = `${fingerprint.fingerprint()} (${description})`;
+        }
       }
 
       if (row.receivedCurrency.length && row.receivedCurrency !== 'ADA') {
@@ -147,10 +153,15 @@ export class CsvService {
           Buffer.from(asset.hexName, 'hex'),
         );
 
-        receivedCurrency = asset.name;
-        description = `${
-          asset.name
-        } - ${fingerprint.fingerprint()} (${description})`;
+        if (isValidUTF8(Buffer.from(asset.hexName, 'hex'))) {
+          receivedCurrency = asset.name;
+          description = `${
+            asset.name
+          } - ${fingerprint.fingerprint()} (${description})`;
+        } else {
+          receivedCurrency = fingerprint.fingerprint();
+          description = `${fingerprint.fingerprint()} (${description})`;
+        }
       }
 
       const record = {
@@ -499,9 +510,13 @@ export class CsvService {
         assetId = 'NULL' + tokenCount[realTxHash];
       }
 
-      rowDescription = `${assetId} = ${
-        parsedAsset.name
-      } [${fingerprint.fingerprint()}] | ${description}`;
+      if (isValidUTF8(Buffer.from(parsedAsset.hexName, 'hex'))) {
+        rowDescription = `${assetId} = ${
+          parsedAsset.name
+        } [${fingerprint.fingerprint()}] | ${description}`;
+      } else {
+        rowDescription = `${assetId} = [${fingerprint.fingerprint()}] | ${description}`;
+      }
     } else {
       if (userMapping && !userMapping.useGlobalKoinlyId) {
         assetId = userMapping.koinlyId;
@@ -515,9 +530,13 @@ export class CsvService {
         assetId = 'NFT' + nftCount[realTxHash];
       }
 
-      rowDescription = `${assetId} = ${
-        parsedAsset.name
-      } [${fingerprint.fingerprint()}] | ${description}`;
+      if (isValidUTF8(Buffer.from(parsedAsset.hexName, 'hex'))) {
+        rowDescription = `${assetId} = ${
+          parsedAsset.name
+        } [${fingerprint.fingerprint()}] | ${description}`;
+      } else {
+        rowDescription = `${assetId} = [${fingerprint.fingerprint()}] | ${description}`;
+      }
     }
 
     return { id: assetId, description: rowDescription };

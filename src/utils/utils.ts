@@ -86,6 +86,10 @@ export function toAda(amount: number): number {
   return amount / 1000000;
 }
 
+export function toDecimals(amount: bigint, decimals: number): bigint {
+  return amount / BigInt(10 ** decimals);
+}
+
 export function parseAssetHex(hex: string): {
   policy: string;
   hexName: string;
@@ -162,6 +166,12 @@ export function hexToBech32(
     throw new BadRequestException(`Wrong ${type} address format`);
 
   return addressObject.to_address().to_bech32();
+}
+
+export function requireSync(lastSync: Date | null, rateLimit: number): boolean {
+  if (!lastSync) return true;
+  const nextSync = new Date(lastSync.valueOf() + rateLimit);
+  return new Date() >= nextSync;
 }
 
 /**

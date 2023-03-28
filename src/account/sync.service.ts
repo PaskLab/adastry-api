@@ -7,6 +7,7 @@ import config from '../../config.json';
 import { MirSyncService } from './sync/mir-sync.service';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import { requireSync } from '../utils/utils';
 
 @Injectable()
 export class SyncService {
@@ -30,17 +31,15 @@ export class SyncService {
 
     account = await this.accountSync.syncAccountWithdrawal(account);
 
-    if (this.requireSync(account.addressesLastSync, this.ADDRESS_SYNC_RATE)) {
+    if (requireSync(account.addressesLastSync, this.ADDRESS_SYNC_RATE)) {
       account = await this.txSync.syncAddresses(account);
     }
 
-    if (this.requireSync(account.transactionsLastSync, this.TX_SYNC_RATE)) {
+    if (requireSync(account.transactionsLastSync, this.TX_SYNC_RATE)) {
       account = await this.txSync.syncTransactions(account);
     }
 
-    if (
-      this.requireSync(account.mirTransactionsLastSync, this.MIR_TX_SYNC_RATE)
-    ) {
+    if (requireSync(account.mirTransactionsLastSync, this.MIR_TX_SYNC_RATE)) {
       account = await this.mirSync.syncTransactions(account);
     }
 
@@ -53,11 +52,5 @@ export class SyncService {
   async integrityCheck(): Promise<void> {
     await this.txSync.fetchMissingMetadata();
     await this.accountSync.clearNegativeBalance();
-  }
-
-  private requireSync(lastSync: Date | null, rateLimit: number): boolean {
-    if (!lastSync) return true;
-    const nextSync = new Date(lastSync.valueOf() + rateLimit);
-    return new Date() >= nextSync;
   }
 }

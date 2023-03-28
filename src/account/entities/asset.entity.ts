@@ -21,6 +21,9 @@ export class Asset {
   @Column()
   quantity!: string;
 
+  @Column({ nullable: true })
+  decimals!: number;
+
   @Column()
   mintTxHash!: string;
 
@@ -29,4 +32,7 @@ export class Asset {
 
   @Column()
   metadata!: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  metadataLastSync!: Date | null;
 }
