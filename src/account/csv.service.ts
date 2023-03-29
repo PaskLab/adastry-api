@@ -23,6 +23,7 @@ import { UserMapping } from './entities/user-mapping.entity';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import isValidUTF8 from 'utf-8-validate';
+import BigNumber from 'bignumber.js';
 
 @Injectable()
 export class CsvService {
@@ -495,8 +496,8 @@ export class CsvService {
     }
 
     if (
-      (asset && asset.quantity === '1') ||
-      BigInt(assetAmount) !== BigInt(1)
+      (asset && asset.quantity !== '1') ||
+      !BigNumber(assetAmount).isEqualTo('1')
     ) {
       if (userMapping && !userMapping.useGlobalKoinlyId) {
         assetId = userMapping.koinlyId;
