@@ -5,6 +5,7 @@ import { EncryptedTextType } from './types/encrypted-text.type';
 import { ValueTransformer } from 'typeorm';
 import * as CSL from '@emurgo/cardano-serialization-lib-nodejs';
 import { BadRequestException } from '@nestjs/common';
+import BigNumber from 'bignumber.js';
 
 export function generateUrl(request: Request, ...args: string[]) {
   return `http${
@@ -86,8 +87,8 @@ export function toAda(amount: number): number {
   return amount / 1000000;
 }
 
-export function toDecimals(amount: bigint, decimals: number): bigint {
-  return amount / BigInt(10 ** decimals);
+export function toDecimals(amount: string, decimals: number): BigNumber {
+  return BigNumber(amount.toString()).dividedBy(10 ** decimals);
 }
 
 export function parseAssetHex(hex: string): {

@@ -172,7 +172,7 @@ export class TransactionService {
             const asset = await this.updatedAsset(sent[0].unit);
             if (asset && asset.decimals) {
               row.sentAmount = toDecimals(
-                BigInt(sent[0].quantity),
+                sent[0].quantity,
                 asset.decimals,
               ).toString();
             } else {
@@ -189,9 +189,9 @@ export class TransactionService {
             const asset = await this.updatedAsset(received[0].unit);
             if (asset && asset.decimals) {
               row.receivedAmount = toDecimals(
-                BigInt(received[0].quantity),
+                received[0].quantity,
                 asset.decimals,
-              ).toString();
+              );
             } else {
               row.receivedAmount = BigInt(received[0].quantity).toString();
             }
@@ -216,7 +216,7 @@ export class TransactionService {
             const asset = await this.updatedAsset(unit);
             if (asset && asset.decimals) {
               row.sentAmount = toDecimals(
-                BigInt(tx.quantity),
+                tx.quantity,
                 asset.decimals,
               ).toString();
             } else {
@@ -248,7 +248,7 @@ export class TransactionService {
             const asset = await this.updatedAsset(unit);
             if (asset && asset.decimals) {
               row.receivedAmount = toDecimals(
-                BigInt(rx.quantity),
+                rx.quantity,
                 asset.decimals,
               ).toString();
             } else {
